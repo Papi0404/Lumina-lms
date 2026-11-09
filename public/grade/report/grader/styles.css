@@ -16,6 +16,9 @@
     border-right-width: 0;
     margin-bottom: 2em;
     height: 100%;
+    table-layout: fixed;
+    width: 100%;
+    max-width: 100%;
 }
 
 /**
@@ -88,7 +91,9 @@
 
 .path-grade-report-grader .gradeparent .heading .header,
 .path-grade-report-grader .gradeparent .heading .userfield {
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .path-grade-report-grader .heading .gradeitemheader {
@@ -109,11 +114,16 @@
  * The user cells.
  */
 .path-grade-report-grader .gradeparent .user.cell {
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    width: 180px;
+    min-width: 150px;
+    max-width: 220px;
 }
 
 .path-grade-report-grader .gradeparent .highlightable.cell {
-    min-width: 200px;
+    min-width: unset;
 }
 
 .path-grade-report-grader .gradeparent .highlightable.cell.collapsed {
@@ -126,10 +136,13 @@
 }
 
 .path-grade-report-grader .gradeitemheader {
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+    display: block;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
     vertical-align: middle;
 }
 
@@ -217,6 +230,18 @@
     display: inline-block;
     margin-right: -0.5rem;
     padding-left: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.path-grade-report-grader .gradeparent table tr:hover .action-menu,
+.path-grade-report-grader .gradeparent table .cell:hover .action-menu,
+.path-grade-report-grader .gradeparent table th:hover .action-menu,
+.path-grade-report-grader .gradeparent table .action-menu.show,
+.path-grade-report-grader .gradeparent table .action-menu:focus-within {
+    opacity: 1;
+    visibility: visible;
 }
 
 .path-grade-report-grader .gradeparent table .heading .action-menu {
@@ -274,6 +299,6 @@
 
 @media only screen and (min-width: 768px) {
     .path-grade-report-grader .gradeparent table {
-        padding-right: 6em;
+        padding-right: 0;
     }
 }

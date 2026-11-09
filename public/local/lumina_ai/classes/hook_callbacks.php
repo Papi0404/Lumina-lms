@@ -57,6 +57,11 @@ class hook_callbacks {
             return;
         }
 
+        // Dynamically sync .env and Moodle AI keys.
+        if (class_exists('\local_lumina_ai\env_sync')) {
+            \local_lumina_ai\env_sync::auto_sync();
+        }
+
         // Build template context.
         $context = [
             'wwwroot'       => $CFG->wwwroot,

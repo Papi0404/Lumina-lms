@@ -106,6 +106,12 @@ Guidelines:
 // Whenever an admin adds or enables an AI provider in Moodle settings,
 // Lumina AI will automatically recognize and use it immediately!
 // -----------------------------------------------------------------------------
+if (class_exists('\local_lumina_ai\env_sync')) {
+    \local_lumina_ai\env_sync::auto_sync();
+} else if (class_exists('\theme_lumina\env_sync')) {
+    \theme_lumina\env_sync::auto_sync();
+}
+
 $geminikey = getenv('GEMINI_API_KEY') ?: '';
 $geminimodel_configured = '';
 $openaikey = getenv('OPENAI_API_KEY') ?: '';

@@ -146,6 +146,11 @@ Guidelines:
 5. If the user asks about their courses or deadlines, provide their real academic context.";
 
 // 4. Resolve API credentials — priority: plugin settings > Moodle AI providers > env vars.
+// Automatically sync .env and Moodle settings dynamically.
+if (class_exists('\local_lumina_ai\env_sync')) {
+    \local_lumina_ai\env_sync::auto_sync();
+}
+
 $preferred = get_config('local_lumina_ai', 'preferred_provider') ?: 'auto';
 
 $geminikey = get_config('local_lumina_ai', 'gemini_api_key') ?: getenv('GEMINI_API_KEY') ?: '';

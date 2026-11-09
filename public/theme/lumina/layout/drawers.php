@@ -248,7 +248,7 @@ $templatecontext = [
     'lumina_grade_items'         => $luminadata['grade_items'] ?? [],
     'has_grade_items'            => !empty($luminadata['grade_items']),
     'lumina_security'            => $luminadata['security'] ?? [],
-    'has_local_lumina_ai'        => !empty(get_config('local_lumina_ai', 'enabled')),
+    'has_local_lumina_ai'        => (\core_plugin_manager::instance()->get_plugin_info('local_lumina_ai') !== null && !empty(get_config('local_lumina_ai', 'enabled'))),
 ];
 
 echo $OUTPUT->render_from_template('theme_lumina/drawers', $templatecontext);

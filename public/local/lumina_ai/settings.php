@@ -25,6 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
+    // Auto-sync environment variables and Moodle settings dynamically.
+    if (class_exists('\local_lumina_ai\env_sync')) {
+        \local_lumina_ai\env_sync::auto_sync();
+    }
+
     $settings = new admin_settingpage('local_lumina_ai', get_string('pluginname', 'local_lumina_ai'));
     $ADMIN->add('localplugins', $settings);
 

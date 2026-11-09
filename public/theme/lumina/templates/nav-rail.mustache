@@ -83,6 +83,7 @@
                     </a>
                 </li>
                 {{/lumina_user.is_siteadmin}}
+                {{#has_local_lumina_ai}}
                 <li>
                     <a href="javascript:void(0)" id="luminaNavAiBtn" class="nav-link-item" role="button" aria-label="Tanya Lumina AI" title="Buka Asisten AI Akademik">
                         <div class="nav-item-content">
@@ -94,6 +95,7 @@
                         </span>
                     </a>
                 </li>
+                {{/has_local_lumina_ai}}
             </ul>
         </div>
     </div>

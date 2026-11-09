@@ -1,7 +1,0 @@
-[submodule "public/local/moon"]
-    path = public/local/moon
-    url = https://github.com/templaza/moodle-local_moon.git
-
-[submodule "public/theme/moon"]
-    path = public/theme/moon
-    url = https://github.com/templaza/moodle-theme_moon.git

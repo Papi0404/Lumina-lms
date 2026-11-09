@@ -130,30 +130,43 @@ $totalformatted           = $luminadata['storage']['total_formatted'] ?? '50 MB'
 $useravatarhtml = $luminadata['user']['avatar_html'] ?? $OUTPUT->user_picture($USER, ['size' => 36, 'link' => false, 'class' => 'userpicture']);
 $currentpagepath = $PAGE->url ? $PAGE->url->get_path() : '';
 
-// Determine smart forum URL (first enrolled course or course 4)
-$forumcourseid = 4;
-if (!empty($enrolledcourses)) {
-    $forumcourseid = (int)array_key_first($enrolledcourses);
-}
-$forumcmid = $DB->get_field_sql(
-    "SELECT cm.id FROM {course_modules} cm
-     JOIN {modules} m ON m.id = cm.module
-     WHERE cm.course = ? AND m.name = 'forum' AND cm.deletioninprogress = 0",
-    [$forumcourseid]
-);
-if ($forumcmid) {
-    $forumurl = (new \core\url('/mod/forum/view.php', ['id' => $forumcmid]))->out(false);
+// Determine active or available course ID safely without hardcoding.
+$activecourseid = null;
+if (!empty($PAGE->course) && $PAGE->course->id > 1) {
+    $activecourseid = (int)$PAGE->course->id;
+} else if (!empty($enrolledcourses)) {
+    $activecourseid = (int)array_key_first($enrolledcourses);
 } else {
-    $forumurl = (new \core\url('/mod/forum/index.php', ['id' => $forumcourseid]))->out(false);
+    $firstrealcourse = $DB->get_field_sql("SELECT id FROM {course} WHERE id > 1 ORDER BY id ASC LIMIT 1");
+    if ($firstrealcourse) {
+        $activecourseid = (int)$firstrealcourse;
+    }
 }
 
-// Smart Grade URL (Grader report for admin/teacher, overview for student)
+// Determine Smart Forum URL
+if ($activecourseid) {
+    $forumcmid = $DB->get_field_sql(
+        "SELECT cm.id FROM {course_modules} cm
+         JOIN {modules} m ON m.id = cm.module
+         WHERE cm.course = ? AND m.name = 'forum' AND cm.deletioninprogress = 0",
+        [$activecourseid]
+    );
+    if ($forumcmid) {
+        $forumurl = (new \core\url('/mod/forum/view.php', ['id' => $forumcmid]))->out(false);
+    } else {
+        $forumurl = (new \core\url('/mod/forum/index.php', ['id' => $activecourseid]))->out(false);
+    }
+} else {
+    $forumurl = (new \core\url('/my/courses.php'))->out(false);
+}
+
+// Smart Grade URL (Grader report for admin/teacher if course exists, otherwise safe overview report)
 $isadminorteacher = is_siteadmin() || !empty(array_intersect(['manager', 'editingteacher', 'teacher'], $DB->get_fieldset_sql(
     "SELECT DISTINCT r.archetype FROM {role_assignments} ra JOIN {role} r ON r.id = ra.roleid WHERE ra.userid = ?",
     [$USER->id]
 )));
-if ($isadminorteacher) {
-    $gradesurl = (new \core\url('/grade/report/grader/index.php', ['id' => $forumcourseid]))->out(false);
+if ($isadminorteacher && $activecourseid) {
+    $gradesurl = (new \core\url('/grade/report/grader/index.php', ['id' => $activecourseid]))->out(false);
 } else {
     $gradesurl = (new \core\url('/grade/report/overview/index.php'))->out(false);
 }
@@ -162,13 +175,17 @@ if ($isadminorteacher) {
 $resourcesurl = (new \core\url('/contentbank/index.php'))->out(false);
 
 // Check if any BigBlueButton virtual class exists
-$bbbcmid = $DB->get_field_sql(
-    "SELECT cm.id FROM {course_modules} cm
-     JOIN {modules} m ON m.id = cm.module
-     WHERE cm.course = ? AND m.name = 'bigbluebuttonbn' AND cm.deletioninprogress = 0",
-    [$forumcourseid]
-);
-$hasbbb = !empty($bbbcmid);
+$hasbbb = false;
+$bbbcmid = null;
+if ($activecourseid) {
+    $bbbcmid = $DB->get_field_sql(
+        "SELECT cm.id FROM {course_modules} cm
+         JOIN {modules} m ON m.id = cm.module
+         WHERE cm.course = ? AND m.name = 'bigbluebuttonbn' AND cm.deletioninprogress = 0",
+        [$activecourseid]
+    );
+    $hasbbb = !empty($bbbcmid);
+}
 $virtualclassurl = $hasbbb ? (new \core\url('/mod/bigbluebuttonbn/view.php', ['id' => $bbbcmid]))->out(false) : $forumurl;
 $virtualclasstitle = $hasbbb ? 'Kelas Virtual' : 'Forum Diskusi';
 $virtualclasssub   = $hasbbb ? 'Ruang temu aktif' : 'Tanya jawab dosen & rekan';

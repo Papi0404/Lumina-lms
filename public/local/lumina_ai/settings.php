@@ -88,7 +88,6 @@ if ($hassiteconfig) {
         'openai'   => 'OpenAI GPT',
         'deepseek' => 'DeepSeek',
         'ollama'   => 'Ollama (Local)',
-        '9router'  => '9Router (Multi-model)',
         'fallback' => get_string('settings_provider_fallback', 'local_lumina_ai'),
     ];
     $settings->add(new admin_setting_configselect(

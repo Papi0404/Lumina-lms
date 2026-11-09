@@ -469,6 +469,67 @@ h1, h2, h3, h4, h5, h6,
     }
   }
 
+  // Lumina AI Assistant nav item special styling
+  .lumina-ai-nav-item {
+    position: relative;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(6, 182, 212, 0.04) 100%) !important;
+    border: 1px solid rgba(99, 102, 241, 0.12) !important;
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%) !important;
+      border-color: rgba(99, 102, 241, 0.25) !important;
+    }
+
+    .lumina-ai-nav-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+
+      svg {
+        display: block;
+      }
+    }
+  }
+
+  .lumina-ai-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.1) 100%);
+    color: #6366F1;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    letter-spacing: 0.03em;
+
+    .ai-badge-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 4px #10b981;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  // Prevent duplicate AI floating widgets in iframes, H5P embeds, popups
+  body.h5p-embed #luminaAiFab,
+  body.h5p-embed #luminaAiChatWindow,
+  body.pagelayout-embedded #luminaAiFab,
+  body.pagelayout-embedded #luminaAiChatWindow,
+  body.layout-embedded #luminaAiFab,
+  body.layout-embedded #luminaAiChatWindow,
+  body.pagelayout-popup #luminaAiFab,
+  body.pagelayout-popup #luminaAiChatWindow {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
   .sidebar-footer {
     padding: 0 1rem;
 
@@ -712,28 +773,28 @@ body.lumina-rail-collapsed {
   box-shadow: 0 4px 20px rgba(42, 20, 180, 0.15);
   margin-bottom: 2rem;
 
-  // Ambient glows
+  // Ambient glows — contained within banner
   &::before {
     content: '';
     position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 280px;
-    height: 280px;
+    top: -20px;
+    right: -20px;
+    width: 180px;
+    height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(87, 223, 254, 0.25) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(87, 223, 254, 0.2) 0%, transparent 70%);
     pointer-events: none;
   }
 
   &::after {
     content: '';
     position: absolute;
-    bottom: -60px;
-    right: 200px;
-    width: 240px;
-    height: 240px;
+    bottom: -30px;
+    right: 180px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(111, 251, 190, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(111, 251, 190, 0.15) 0%, transparent 70%);
     pointer-events: none;
   }
 

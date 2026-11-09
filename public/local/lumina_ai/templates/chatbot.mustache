@@ -9,7 +9,17 @@
 <div id="luminaAiFab" class="lumina-ai-fab d-print-none" role="button" aria-label="Tanya Lumina AI" title="Tanya Lumina AI (Academic Tutor)" tabindex="0">
     <div class="ai-fab-glow"></div>
     <div class="ai-fab-content">
-        <span class="material-symbols-outlined ai-fab-icon">psychology</span>
+        <svg class="ai-fab-logo" width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="url(#fab_grad)" opacity="0.2"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#ffffff"/>
+            <circle cx="9.5" cy="11" r="1.5" fill="#38bdf8"/>
+            <circle cx="14.5" cy="11" r="1.5" fill="#38bdf8"/>
+            <path d="M8.5 15s1.5 2.2 3.5 2.2S15.5 15 15.5 15" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="5" cy="12" r="0.8" fill="#818CF8"/>
+            <circle cx="19" cy="12" r="0.8" fill="#818CF8"/>
+            <path d="M12 2V0.5M12 23.5V22" stroke="#818CF8" stroke-width="1.2" stroke-linecap="round"/>
+            <defs><linearGradient id="fab_grad" x1="2" y1="2" x2="22" y2="22"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#6366F1"/></linearGradient></defs>
+        </svg>
     </div>
 </div>
 
@@ -95,20 +105,72 @@
 </div>
 
 <style>
-/* Lumina AI Chatbot Styles */
-:root {
-    --lumina-ai-primary: {{ chatbot_color }};
+/* CSS Force Kill Duplicate Chatbot Elements */
+#luminaAiFab ~ #luminaAiFab,
+#luminaAiChatWindow ~ #luminaAiChatWindow,
+.lumina-ai-fab ~ .lumina-ai-fab,
+.lumina-ai-chat-window ~ .lumina-ai-chat-window {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
 }
+
+/* Force hide in quiz pages */
+body.path-mod-quiz #luminaAiFab,
+body.path-mod-quiz #luminaAiChatWindow,
+body.path-mod-quiz .lumina-ai-fab,
+body.path-mod-quiz .lumina-ai-chat-window {
+    display: none !important;
+}
+
+/* Force hide in question bank pages */
+body.path-question #luminaAiFab,
+body.path-question #luminaAiChatWindow,
+body.path-question .lumina-ai-fab,
+body.path-question .lumina-ai-chat-window {
+    display: none !important;
+}
+
+/* Force hide in embedded iframes, H5P players, modals, and popups */
+body.h5p-embed #luminaAiFab,
+body.h5p-embed #luminaAiChatWindow,
+body.h5p-embed .lumina-ai-fab,
+body.h5p-embed .lumina-ai-chat-window,
+body.pagelayout-embedded #luminaAiFab,
+body.pagelayout-embedded #luminaAiChatWindow,
+body.pagelayout-embedded .lumina-ai-fab,
+body.pagelayout-embedded .lumina-ai-chat-window,
+body.layout-embedded #luminaAiFab,
+body.layout-embedded #luminaAiChatWindow,
+body.layout-embedded .lumina-ai-fab,
+body.layout-embedded .lumina-ai-chat-window,
+body.pagelayout-popup #luminaAiFab,
+body.pagelayout-popup #luminaAiChatWindow,
+body.pagelayout-popup .lumina-ai-fab,
+body.pagelayout-popup .lumina-ai-chat-window {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 .lumina-ai-fab {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 52px;
-    height: 52px;
-    z-index: 1040;
+    width: 54px;
+    height: 54px;
+    z-index: 99998;
     cursor: pointer;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    box-sizing: border-box;
 }
 .lumina-ai-fab:hover {
     transform: translateY(-3px) scale(1.08);
@@ -142,42 +204,76 @@
     box-shadow: 0 10px 25px -5px rgba(67, 56, 202, 0.5), 0 8px 10px -6px rgba(67, 56, 202, 0.4);
     border: 1.5px solid rgba(255, 255, 255, 0.25);
     padding: 0;
+    box-sizing: border-box;
 }
-.ai-fab-icon {
-    font-size: 26px;
-    color: #38bdf8;
+.ai-fab-logo {
     animation: luminaAiSparkle 2.5s infinite;
 }
 @keyframes luminaAiSparkle {
     0%, 100% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(15deg) scale(1.15); }
+    50% { transform: rotate(10deg) scale(1.1); }
 }
 
-/* Chat Window */
+/* Chat Window — Self-contained for ANY Moodle theme */
 .lumina-ai-chat-window {
     position: fixed;
-    bottom: 90px;
+    bottom: 88px;
     right: 24px;
-    width: 420px;
-    height: 600px;
+    width: 400px;
+    height: 580px;
     max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 120px);
+    max-height: calc(100vh - 110px);
     background: #ffffff;
     border-radius: 20px;
     box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8);
     display: flex;
     flex-direction: column;
-    z-index: 1045;
+    z-index: 99999;
     overflow: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(20px) scale(0.95);
-    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(16px) scale(0.96);
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    box-sizing: border-box;
+}
+.lumina-ai-chat-window * {
+    box-sizing: border-box;
+}
+.lumina-ai-chat-window .d-flex {
+    display: flex !important;
+}
+.lumina-ai-chat-window .align-items-center {
+    align-items: center !important;
+}
+.lumina-ai-chat-window .gap-1 {
+    gap: 4px !important;
+}
+.lumina-ai-chat-window .gap-2 {
+    gap: 8px !important;
 }
 .lumina-ai-chat-window.open {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0) scale(1);
+}
+
+@media (max-width: 480px) {
+    .lumina-ai-fab {
+        bottom: 16px;
+        right: 16px;
+        width: 48px;
+        height: 48px;
+    }
+    .lumina-ai-chat-window {
+        bottom: 72px;
+        right: 12px;
+        left: 12px;
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
+        height: calc(100vh - 90px);
+        max-height: calc(100vh - 90px);
+    }
 }
 
 /* Header */
@@ -448,7 +544,37 @@
 <script>
 (function() {
     function initLuminaAi() {
+        // 1. CRITICAL: Never run inside an iframe (H5P embed, interactive player, modal dialog)
+        if (window.self !== window.top) {
+            document.querySelectorAll('#luminaAiFab, #luminaAiChatWindow, .lumina-ai-fab, .lumina-ai-chat-window').forEach(function(el) {
+                el.remove();
+            });
+            return;
+        }
+
+        // 2. Skip pages where AI FAB should not appear
+        var bodyClasses = document.body.className || '';
+        if (/path-mod-quiz|path-question|h5p-embed|pagelayout-embedded|layout-embedded/.test(bodyClasses)) {
+            document.querySelectorAll('#luminaAiFab, #luminaAiChatWindow, .lumina-ai-fab, .lumina-ai-chat-window').forEach(function(el) {
+                el.remove();
+            });
+            return;
+        }
+
+        document.body.classList.add('has-lumina-ai-plugin');
+
+        // 3. DOM Aggressive Sweeper — remove any duplicate instances
+        function removeDuplicates() {
+            var fabs = document.querySelectorAll('#luminaAiFab, .lumina-ai-fab');
+            var wins = document.querySelectorAll('#luminaAiChatWindow, .lumina-ai-chat-window');
+            for (var i = 1; i < fabs.length; i++) fabs[i].remove();
+            for (var j = 1; j < wins.length; j++) wins[j].remove();
+        }
+        removeDuplicates();
+        setInterval(removeDuplicates, 1500);
+
         var fab = document.getElementById('luminaAiFab');
+
         var win = document.getElementById('luminaAiChatWindow');
         var closeBtn = document.getElementById('luminaAiCloseBtn');
         var clearBtn = document.getElementById('luminaAiClearBtn');

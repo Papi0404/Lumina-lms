@@ -45,10 +45,23 @@ class hook_callbacks {
             return;
         }
 
-        // Guard: skip admin install/upgrade pages.
+        // Guard: skip if running inside embedded iframe, popup, print, or maintenance layout.
+        $pagelayout = $PAGE->pagelayout ?? '';
+        $skiplayouts = ['embedded', 'popup', 'frametop', 'maintenance', 'print', 'redirect'];
+        if (in_array($pagelayout, $skiplayouts)) {
+            return;
+        }
+
+        // Guard: skip admin install/upgrade pages, quiz pages, and question bank pages.
         $pagetype = $PAGE->pagetype ?? '';
         $skippagetypes = ['admin-index', 'admin-cliupgrade', 'admin-upgradesettings', 'login-index'];
-        if (in_array($pagetype, $skippagetypes)) {
+        
+        $currenturl = $PAGE->url ? $PAGE->url->out() : '';
+        $isquizpage = (strpos($pagetype, 'mod-quiz-') === 0 || strpos($currenturl, '/mod/quiz/') !== false);
+        $isquestionbank = (strpos($pagetype, 'question-') === 0 || strpos($currenturl, '/question/') !== false);
+        $isembedpage = (strpos($currenturl, 'embed.php') !== false || strpos($pagetype, 'h5p-') === 0);
+        
+        if (in_array($pagetype, $skippagetypes) || $isquizpage || $isquestionbank || $isembedpage) {
             return;
         }
 

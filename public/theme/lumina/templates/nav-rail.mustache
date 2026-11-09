@@ -85,12 +85,25 @@
                 {{/lumina_user.is_siteadmin}}
                 {{#has_local_lumina_ai}}
                 <li>
-                    <a href="javascript:void(0)" id="luminaNavAiBtn" class="nav-link-item" role="button" aria-label="Tanya Lumina AI" title="Buka Asisten AI Akademik">
+                    <a href="javascript:void(0)" id="luminaNavAiBtn" class="nav-link-item lumina-ai-nav-item" role="button" aria-label="Tanya Lumina AI" title="Buka Asisten AI Akademik">
                         <div class="nav-item-content">
-                            <span class="material-symbols-outlined nav-icon" style="color: #6366F1;">psychology</span>
+                            <span class="lumina-ai-nav-icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="url(#ai_grad)" opacity="0.15"/>
+                                    <path d="M12 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="#818CF8" transform="translate(0 2)"/>
+                                    <path d="M9 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S11.33 13 10.5 13 9 12.33 9 11.5zM13.5 10c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z" fill="#6366F1"/>
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#6366F1"/>
+                                    <path d="M8.5 15.5s1.5 2 3.5 2 3.5-2 3.5-2" stroke="#6366F1" stroke-width="1.5" stroke-linecap="round"/>
+                                    <circle cx="5" cy="12" r="1" fill="#818CF8"/>
+                                    <circle cx="19" cy="12" r="1" fill="#818CF8"/>
+                                    <path d="M12 2V0M12 24v-2" stroke="#818CF8" stroke-width="1.5" stroke-linecap="round"/>
+                                    <defs><linearGradient id="ai_grad" x1="2" y1="2" x2="22" y2="22"><stop stop-color="#6366F1"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs>
+                                </svg>
+                            </span>
                             <span>Lumina AI Assistant</span>
                         </div>
-                        <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-0-5 font-semibold" style="font-size: 0.65rem;">
+                        <span class="lumina-ai-badge-pill">
+                            <span class="ai-badge-dot"></span>
                             AI 24/7
                         </span>
                     </a>

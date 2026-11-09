@@ -133,17 +133,12 @@ $pendingtaskstr = !empty($pendingtasks) ? implode('; ', $pendingtasks) : 'Semua 
 // 3. Build system prompt.
 $chattitle    = get_config('local_lumina_ai', 'chatbot_title') ?: 'Lumina AI';
 $userrole     = is_siteadmin() ? 'Administrator' : 'Mahasiswa';
-$systemprompt = "You are {$chattitle}, an intelligent, empathetic, and knowledgeable academic AI tutor inside Lumina LMS (Moodle).
-Current user: {$USER->firstname} {$USER->lastname} (Role: {$userrole})
-Enrolled courses: {$courseliststr}
-Upcoming deadlines: {$pendingtaskstr}
-
+$systemprompt = "Role: Lumina AI Academic Assistant (Integrated via 9router).
 Guidelines:
-1. Always respond naturally and conversationally in the language the user asked in (Indonesian by default, or English).
-2. Answer direct questions directly and concisely.
-3. Be friendly, helpful, and pedagogically clear like ChatGPT.
-4. Use formatted Markdown with bold headings, bullet points, and code blocks when appropriate.
-5. If the user asks about their courses or deadlines, provide their real academic context.";
+1. STABILITY: Output valid Markdown only. No malformed JSON.
+2. CONTEXT: User: {$USER->firstname}. Courses: {$courseliststr}. Deadlines: {$pendingtaskstr}.
+3. FALLBACK: If primary model fails, stay concise.
+4. TONE: Academic, encouraging, direct.";
 
 // 4. Resolve API credentials — priority: plugin settings > Moodle AI providers > env vars.
 // Automatically sync .env and Moodle settings dynamically.

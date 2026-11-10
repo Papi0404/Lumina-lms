@@ -32,10 +32,10 @@ use local_lumina_core\library_manager;
 
 require_login();
 
-$tab      = optional_param('tab', '', PARAM_ALPHA); // 'course', 'private', 'school'
+$tab      = optional_param('tab', '', PARAM_ALPHANUMEXT); // 'course', 'private', 'school'
 $courseid = optional_param('courseid', -999, PARAM_INT);
 $folderid = optional_param('folderid', 0, PARAM_INT);
-$action   = optional_param('action', '', PARAM_ALPHA);
+$action   = optional_param('action', '', PARAM_ALPHANUMEXT);
 
 $systemcontext = context_system::instance();
 $usercontext   = context_user::instance($USER->id);
@@ -144,7 +144,7 @@ if (data_submitted() && confirm_sesskey()) {
                 $usercontext->id,
                 'user',
                 'private',
-                0,
+                null,
                 '/',
                 $originalname
             )->out(false);
@@ -635,8 +635,9 @@ echo $OUTPUT->header();
 <div class="modal fade" id="uploadPrivateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3xl border-0 shadow">
-            <form method="post" action="library.php?tab=private&action=upload_private_file" enctype="multipart/form-data">
+            <form method="post" action="library.php?tab=private" enctype="multipart/form-data">
                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                <input type="hidden" name="action" value="upload_private_file">
                 <div class="modal-header border-bottom px-4 pt-4">
                     <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
                         <span class="material-symbols-outlined text-primary">lock</span>
@@ -668,8 +669,9 @@ echo $OUTPUT->header();
 <div class="modal fade" id="addPrivateLinkModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3xl border-0 shadow">
-            <form method="post" action="library.php?tab=private&action=add_private_link">
+            <form method="post" action="library.php?tab=private">
                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                <input type="hidden" name="action" value="add_private_link">
                 <div class="modal-header border-bottom px-4 pt-4">
                     <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
                         <span class="material-symbols-outlined text-primary">link</span>
@@ -718,8 +720,9 @@ function openH5pModal(title, url) {
 <div class="modal fade" id="createFolderModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3xl border-0 shadow">
-            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>&action=create_folder">
+            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>">
                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                <input type="hidden" name="action" value="create_folder">
                 <input type="hidden" name="parent_id" value="<?php echo $folderid; ?>">
                 <div class="modal-header border-bottom px-4 pt-4">
                     <h5 class="modal-title fw-bold"><?php echo $folderid > 0 ? 'Buat Subfolder Baru' : 'Buat Folder Baru'; ?></h5>
@@ -748,8 +751,9 @@ function openH5pModal(title, url) {
 <div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3xl border-0 shadow">
-            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>&action=add_item">
+            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>">
                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                <input type="hidden" name="action" value="add_item">
                 <div class="modal-header border-bottom px-4 pt-4">
                     <h5 class="modal-title fw-bold">Tambah Bahan Ajar ke Folder Ini</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

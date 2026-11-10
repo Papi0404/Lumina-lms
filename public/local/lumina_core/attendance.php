@@ -30,7 +30,7 @@ use local_lumina_core\attendance_manager;
 
 $id = required_param('id', PARAM_INT); // Course ID.
 $sessionid = optional_param('sessionid', 0, PARAM_INT);
-$action = optional_param('action', '', PARAM_ALPHA);
+$action = optional_param('action', '', PARAM_ALPHANUMEXT);
 
 $course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
 require_login($course);

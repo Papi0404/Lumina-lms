@@ -32,7 +32,7 @@ require_login();
 
 $courseid     = optional_param('courseid', 0, PARAM_INT);
 $discussionid = optional_param('discussionid', 0, PARAM_INT);
-$action       = optional_param('action', '', PARAM_ALPHA);
+$action       = optional_param('action', '', PARAM_ALPHANUMEXT);
 
 $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
 

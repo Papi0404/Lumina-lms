@@ -221,8 +221,7 @@ $virtualclasssub   = $hasbbb ? 'Ruang temu aktif' : 'Tanya jawab dosen & rekan';
 $virtualclassicon  = $hasbbb ? 'video_camera_front' : 'forum';
 
 $is_server_settings = (strpos($currentpagepath, '/admin/category.php') !== false && optional_param('category', '', PARAM_SAFEDIR) === 'server');
-$is_lumina_settings = (strpos($currentpagepath, '/admin/settings.php') !== false && optional_param('section', '', PARAM_SAFEDIR) === 'themesettinglumina');
-$is_admin_search = (strpos($currentpagepath, '/admin/search.php') !== false || (strpos($currentpagepath, '/admin') !== false && strpos($currentpagepath, '/admin/user.php') === false && !$is_server_settings && !$is_lumina_settings));
+$is_admin_search = (strpos($currentpagepath, '/admin/search.php') !== false || (strpos($currentpagepath, '/admin') !== false && strpos($currentpagepath, '/admin/user.php') === false && !$is_server_settings));
 
 $templatecontext = [
     'sitename' => format_string($SITE->shortname, true, ['context' => context_course::instance(SITEID), "escape" => false]),
@@ -294,7 +293,6 @@ $templatecontext = [
         'is_resources' => (strpos($currentpagepath, '/local/lumina_core/library.php') !== false || strpos($currentpagepath, '/contentbank') !== false || strpos($currentpagepath, '/user/files.php') !== false),
         'is_admin' => $is_admin_search,
         'is_server_settings' => $is_server_settings,
-        'is_lumina_settings' => $is_lumina_settings,
         'is_manage_users' => (strpos($currentpagepath, '/admin/user.php') !== false),
         'is_manage_courses' => (strpos($currentpagepath, '/course/management.php') !== false),
         'is_security_report' => (strpos($currentpagepath, '/report/security') !== false),

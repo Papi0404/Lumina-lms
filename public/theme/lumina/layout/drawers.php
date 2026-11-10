@@ -155,15 +155,26 @@ if (!$activecourseid) {
     }
 }
 
-// 1. Smart Forum URL (Course-bound, safe fallback)
+// 1. Smart Forum URL (Course-bound, prefers general discussion forum over news)
 $forumurl = (new \core\url('/my/courses.php'))->out(false);
 if ($activecourseid) {
     $forumcmid = $DB->get_field_sql(
         "SELECT cm.id FROM {course_modules} cm
          JOIN {modules} m ON m.id = cm.module
-         WHERE cm.course = ? AND m.name = 'forum' AND cm.deletioninprogress = 0",
+         JOIN {forum} f ON f.id = cm.instance
+         WHERE cm.course = ? AND m.name = 'forum' AND f.type = 'general' AND cm.deletioninprogress = 0
+         ORDER BY cm.id DESC LIMIT 1",
         [$activecourseid]
     );
+    if (!$forumcmid) {
+        $forumcmid = $DB->get_field_sql(
+            "SELECT cm.id FROM {course_modules} cm
+             JOIN {modules} m ON m.id = cm.module
+             WHERE cm.course = ? AND m.name = 'forum' AND cm.deletioninprogress = 0
+             ORDER BY cm.id ASC LIMIT 1",
+            [$activecourseid]
+        );
+    }
     if ($forumcmid) {
         $forumurl = (new \core\url('/mod/forum/view.php', ['id' => $forumcmid]))->out(false);
     } else {
@@ -183,28 +194,28 @@ if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {
 // Student: Per-Course Learning Materials Folder on Dashboard (#bahan-ajar)
 // Teacher: Course Resources index or course view
 if ($roleinfo['is_admin']) {
-    $resourcesurl = (new \core\url('/contentbank/index.php'))->out(false);
-    $resourceslabel = 'Content Bank Terpusat';
-    $resourcesicon  = 'local_library';
+    $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);
+    $resourceslabel = 'Perpustakaan Sumber Belajar';
+    $resourcesicon  = 'folder_special';
 } else if ($roleinfo['is_student']) {
-    $resourcesurl = (new \core\url('/my/', [], 'bahan-ajar'))->out(false);
-    $resourceslabel = 'Bahan Ajar & Modul';
+    $resourcesurl = (new \core\url('/local/lumina_core/library.php', $activecourseid ? ['courseid' => $activecourseid] : []))->out(false);
+    $resourceslabel = 'Perpustakaan Sumber Belajar';
     $resourcesicon  = 'folder_special';
 } else if ($activecourseid) {
-    $resourcesurl = (new \core\url('/course/resources.php', ['id' => $activecourseid]))->out(false);
-    $resourceslabel = 'Bahan Ajar & Modul';
+    $resourcesurl = (new \core\url('/local/lumina_core/library.php', ['courseid' => $activecourseid]))->out(false);
+    $resourceslabel = 'Perpustakaan Sumber Belajar';
     $resourcesicon  = 'folder_special';
 } else {
-    $resourcesurl = (new \core\url('/user/files.php'))->out(false);
-    $resourceslabel = 'File Pribadi Saya';
-    $resourcesicon  = 'folder_open';
+    $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);
+    $resourceslabel = 'Perpustakaan Sumber Belajar';
+    $resourcesicon  = 'folder_special';
 }
 
 // 4. Teacher-specific Action URLs (Strictly bound to assigned course)
 // Teacher does NOT create courses! Teacher manages modules inside their assigned course!
 if ($activecourseid) {
-    $teachermanagematerialurl = (new \core\url('/course/view.php', ['id' => $activecourseid, 'edit' => 1]))->out(false);
-    $teacherclasslisturl       = (new \core\url('/user/index.php', ['id' => $activecourseid]))->out(false);
+    $teachermanagematerialurl = (new \core\url('/course/view.php', ['id' => $activecourseid, 'edit' => 1, 'sesskey' => sesskey()]))->out(false);
+    $teacherclasslisturl       = (new \core\url('/local/lumina_core/attendance.php', ['id' => $activecourseid]))->out(false);
 } else {
     $teachermanagematerialurl = (new \core\url('/my/courses.php'))->out(false);
     $teacherclasslisturl       = (new \core\url('/my/courses.php'))->out(false);

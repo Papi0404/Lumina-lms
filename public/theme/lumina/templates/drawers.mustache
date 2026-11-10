@@ -190,30 +190,44 @@
                         <span class="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill px-3 py-1">Role: Administrator</span>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-3 col-sm-6">
+                        <div class="col-md-4 col-sm-6">
                             <a href="{{{ config.wwwroot }}}/admin/user.php" class="antigravity-action-tile">
                                 <span class="material-symbols-outlined tile-icon text-primary">manage_accounts</span>
                                 <span class="tile-title">Manajemen Akun</span>
-                                <span class="tile-desc">Tambah, edit, atau suspensi user</span>
+                                <span class="tile-desc">Tambah, edit, atau daftarkan user</span>
                             </a>
                         </div>
-                        <div class="col-md-3 col-sm-6">
+                        <div class="col-md-4 col-sm-6">
                             <a href="{{{ config.wwwroot }}}/course/management.php" class="antigravity-action-tile">
                                 <span class="material-symbols-outlined tile-icon text-indigo">menu_book</span>
                                 <span class="tile-title">Manajemen Course</span>
-                                <span class="tile-desc">Kategori, kuota, &amp; backup kursus</span>
+                                <span class="tile-desc">Buat kursus, kategori, &amp; assign guru</span>
                             </a>
                         </div>
-                        <div class="col-md-3 col-sm-6">
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/local/lumina_core/exam_review.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-danger">verified_user</span>
+                                <span class="tile-title">Audit Ujian Anti-Curang</span>
+                                <span class="tile-desc">Tinjau sesi ujian yang ditangguhkan</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/local/lumina_core/library.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-warning">folder_special</span>
+                                <span class="tile-title">Perpustakaan Digital</span>
+                                <span class="tile-desc">Kelola folder, berkas, &amp; H5P global</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
                             <a href="{{{ config.wwwroot }}}/admin/search.php" class="antigravity-action-tile">
                                 <span class="material-symbols-outlined tile-icon text-success">admin_panel_settings</span>
                                 <span class="tile-title">Site Administration</span>
                                 <span class="tile-desc">Pusat konfigurasi Moodle</span>
                             </a>
                         </div>
-                        <div class="col-md-3 col-sm-6">
+                        <div class="col-md-4 col-sm-6">
                             <a href="{{{ config.wwwroot }}}/report/security/index.php" class="antigravity-action-tile">
-                                <span class="material-symbols-outlined tile-icon text-danger">shield_lock</span>
+                                <span class="material-symbols-outlined tile-icon text-secondary">shield_lock</span>
                                 <span class="tile-title">Log Keamanan</span>
                                 <span class="tile-desc">Audit riwayat login &amp; akses</span>
                             </a>
@@ -319,9 +333,9 @@
                                     <p class="tile-desc mb-3">Lihat presensi kehadiran, riwayat keaktifan siswa, dan buku nilai.</p>
                                 </div>
                                 <div class="d-flex gap-2 flex-wrap pt-2 border-top">
-                                    <a href="{{{ classlist_url }}}" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 flex-fill text-center d-inline-flex align-items-center justify-content-center gap-1 shadow-xs" title="Buka Daftar Partisipan & Presensi Kehadiran">
-                                        <span class="material-symbols-outlined" style="font-size: 16px;">groups</span>
-                                        <span>Partisipan &amp; Presensi</span>
+                                    <a href="{{{ attendance_url }}}" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 flex-fill text-center d-inline-flex align-items-center justify-content-center gap-1 shadow-xs" title="Buka Presensi Kehadiran Kelas">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">how_to_reg</span>
+                                        <span>Presensi Kelas</span>
                                     </a>
                                     <a href="{{{ edit_url }}}" class="btn btn-sm btn-outline-secondary rounded-pill px-2-5 py-1-5 d-inline-flex align-items-center justify-content-center" title="Kelola Materi Modul">
                                         <span class="material-symbols-outlined" style="font-size: 16px;">post_add</span>

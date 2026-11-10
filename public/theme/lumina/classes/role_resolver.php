@@ -299,7 +299,8 @@ class theme_lumina_role_resolver {
                         'shortname'      => format_string($c->shortname),
                         'students_count' => $studentcount,
                         'view_url'       => (new \core\url('/course/view.php', ['id' => $c->id]))->out(false),
-                        'edit_url'       => (new \core\url('/course/view.php', ['id' => $c->id, 'edit' => 1]))->out(false),
+                        'edit_url'       => (new \core\url('/course/view.php', ['id' => $c->id, 'edit' => 1, 'sesskey' => sesskey()]))->out(false),
+                        'attendance_url' => (new \core\url('/local/lumina_core/attendance.php', ['id' => $c->id]))->out(false),
                         'classlist_url'  => (new \core\url('/user/index.php', ['id' => $c->id]))->out(false),
                         'grader_url'     => (new \core\url('/grade/report/grader/index.php', ['id' => $c->id]))->out(false),
                     ];

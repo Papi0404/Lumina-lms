@@ -815,6 +815,62 @@ document.addEventListener('DOMContentLoaded', function() {
     if (secBanner && !sessionStorage.getItem('lumina_sec_dismissed')) {
         secBanner.style.display = 'block';
     }
+
+    // Course Management Form Guard (Prevent "A required parameter movecategoriesto was missing" error)
+    const mgmtForm = document.getElementById('coursecat-management');
+    if (mgmtForm) {
+        // Guard 1: Move Categories
+        const moveCatBtn = mgmtForm.querySelector('input[name="bulkmovecategories"]');
+        const moveCatSelect = mgmtForm.querySelector('select[name="movecategoriesto"]');
+        if (moveCatBtn && moveCatSelect) {
+            moveCatBtn.addEventListener('click', function(e) {
+                const checkedCats = mgmtForm.querySelectorAll('input[name="bcat[]"]:checked');
+                if (checkedCats.length === 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    alert('Harap centang minimal satu kategori yang ingin dipindahkan.');
+                    return false;
+                }
+                if (!moveCatSelect.value || moveCatSelect.value === '' || moveCatSelect.value === '0') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    moveCatSelect.focus();
+                    moveCatSelect.style.borderColor = '#EF4444';
+                    moveCatSelect.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                    alert('Harap pilih kategori tujuan pemindahan terlebih dahulu pada menu dropdown.');
+                    return false;
+                }
+                moveCatSelect.style.borderColor = '';
+                moveCatSelect.style.boxShadow = '';
+            });
+        }
+
+        // Guard 2: Move Courses
+        const moveCourseBtn = mgmtForm.querySelector('input[name="bulkmovecourses"]');
+        const moveCourseSelect = mgmtForm.querySelector('select[name="movecoursesto"]');
+        if (moveCourseBtn && moveCourseSelect) {
+            moveCourseBtn.addEventListener('click', function(e) {
+                const checkedCourses = mgmtForm.querySelectorAll('input[name="bc[]"]:checked');
+                if (checkedCourses.length === 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    alert('Harap centang minimal satu mata kuliah yang ingin dipindahkan.');
+                    return false;
+                }
+                if (!moveCourseSelect.value || moveCourseSelect.value === '' || moveCourseSelect.value === '0') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    moveCourseSelect.focus();
+                    moveCourseSelect.style.borderColor = '#EF4444';
+                    moveCourseSelect.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                    alert('Harap pilih kategori tujuan pemindahan kursus terlebih dahulu pada menu dropdown.');
+                    return false;
+                }
+                moveCourseSelect.style.borderColor = '';
+                moveCourseSelect.style.boxShadow = '';
+            });
+        }
+    }
 });
 </script>
 

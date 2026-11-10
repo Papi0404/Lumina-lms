@@ -186,14 +186,12 @@ if ($roleinfo['is_admin']) {
     $resourcesicon  = 'folder_special';
 }
 
-// 4. Teacher-specific Action URLs (Strictly bound to assigned course)
-// Teacher does NOT create courses! Teacher manages modules inside their assigned course!
-$is_add_material = (optional_param('add_material', 0, PARAM_INT) == 1);
+// 4. Teacher-specific Action URLs (Dedicated Material & Module Builder)
 if ($activecourseid) {
-    $teachermanagematerialurl = (new \core\url('/course/view.php', ['id' => $activecourseid, 'edit' => 1, 'add_material' => 1, 'sesskey' => sesskey()]))->out(false);
+    $teachermanagematerialurl = (new \core\url('/local/lumina_core/create_material.php', ['courseid' => $activecourseid]))->out(false);
     $teacherclasslisturl       = (new \core\url('/local/lumina_core/attendance.php', ['id' => $activecourseid]))->out(false);
 } else {
-    $teachermanagematerialurl = (new \core\url('/my/courses.php'))->out(false);
+    $teachermanagematerialurl = (new \core\url('/local/lumina_core/create_material.php'))->out(false);
     $teacherclasslisturl       = (new \core\url('/my/courses.php'))->out(false);
 }
 
@@ -286,8 +284,8 @@ $templatecontext = [
     ],
     'lumina_nav' => [
         'is_dashboard' => (strpos($currentpagepath, '/my') !== false && strpos($currentpagepath, '/my/courses') === false),
-        'is_mycourses' => ((strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false) && !$is_add_material),
-        'is_manage_material' => $is_add_material,
+        'is_mycourses' => (strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false),
+        'is_manage_material' => (strpos($currentpagepath, '/local/lumina_core/create_material.php') !== false),
         'is_calendar' => (strpos($currentpagepath, '/calendar') !== false),
         'is_grades' => (strpos($currentpagepath, '/grade') !== false || strpos($currentpagepath, '/course/user.php') !== false),
         'is_resources' => (strpos($currentpagepath, '/local/lumina_core/library.php') !== false || strpos($currentpagepath, '/contentbank') !== false || strpos($currentpagepath, '/user/files.php') !== false),

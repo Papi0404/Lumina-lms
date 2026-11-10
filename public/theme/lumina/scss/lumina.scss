@@ -4554,3 +4554,288 @@ body.pagelayout-admin {
     }
   }
 }
+
+/* ============================================================
+   LUMINA LMS — COURSE MANAGEMENT & CATEGORY LISTING REDESIGN
+   ============================================================ */
+
+/* Fix top overlapping on Admin Course Management */
+body.path-course-management,
+body#page-course-management,
+body.path-course {
+    #page.drawers,
+    .lumina-main-viewport {
+        padding-top: calc(var(--lumina-header-height, 64px) + 1.25rem) !important;
+    }
+
+    .page-context-header,
+    #page-header {
+        margin-top: 0.5rem !important;
+        margin-bottom: 1.5rem !important;
+
+        h1, h2 {
+            font-family: var(--lumina-font-display, 'Plus Jakarta Sans'), sans-serif !important;
+            font-weight: 800 !important;
+            color: var(--lumina-text-headline, #0F172A) !important;
+            font-size: 1.65rem !important;
+            letter-spacing: -0.02em !important;
+        }
+    }
+}
+
+#course-category-listings {
+    gap: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+
+    /* Card Containers for Category Listing & Course Listing */
+    > .col-12,
+    > .col-sm,
+    > div {
+        > div {
+            background: #FFFFFF !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            border-radius: 1.25rem !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05) !important;
+            min-height: 480px;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s ease;
+
+            &:hover {
+                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
+            }
+        }
+    }
+
+    /* Column Headers (h3) */
+    h3 {
+        font-family: var(--lumina-font-display, 'Plus Jakarta Sans'), sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 1.25rem !important;
+        color: #0F172A !important;
+        padding: 0 0 1rem 0 !important;
+        margin-bottom: 1rem !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    h4 {
+        font-family: var(--lumina-font-display, 'Plus Jakarta Sans'), sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        color: #1E293B !important;
+        padding: 0 0 0.75rem 0 !important;
+        margin-top: 0.5rem !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+    }
+
+    /* Top Listing Action Buttons (Create new category, Create new course, etc.) */
+    .listing-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+        padding: 0.25rem 0 1rem 0 !important;
+        margin-bottom: 0.75rem !important;
+        text-align: left !important;
+
+        a.btn, .btn {
+            border-radius: 9999px !important;
+            padding: 0.45rem 1.1rem !important;
+            font-size: 0.8125rem !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .moodle-actionmenu {
+            display: inline-flex !important;
+            margin: 0 !important;
+        }
+    }
+
+    /* Category & Course Lists (ul.ml) */
+    ul.ml {
+        list-style: none !important;
+        padding-left: 0 !important;
+        margin: 0.5rem 0 1.5rem 0 !important;
+        flex-grow: 1;
+
+        .listitem {
+            margin-bottom: 0.65rem !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 1rem !important;
+            background: #FFFFFF !important;
+            transition: all 0.2s ease !important;
+            overflow: hidden;
+
+            > div {
+                padding: 0.85rem 1rem !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            &:hover {
+                border-color: #CBD5E1 !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+                background-color: #F8FAFC !important;
+            }
+
+            &[data-selected='1'] {
+                border-color: #6366F1 !important;
+                background-color: rgba(99, 102, 241, 0.04) !important;
+                box-shadow: 0 0 0 1px #6366F1, 0 4px 12px rgba(99, 102, 241, 0.08) !important;
+            }
+
+            /* Category / Course Name Link */
+            .coursename,
+            .categoryname,
+            a.float-start {
+                font-weight: 600 !important;
+                font-size: 0.925rem !important;
+                color: #1E293B !important;
+                text-decoration: none !important;
+
+                &:hover {
+                    color: var(--lumina-primary, #4338CA) !important;
+                }
+            }
+
+            /* Item Actions Toolbar (Edit, Delete, Eye, Move) */
+            .item-actions {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 0.35rem !important;
+                margin: 0 !important;
+
+                a {
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 32px !important;
+                    height: 32px !important;
+                    border-radius: 8px !important;
+                    color: #64748B !important;
+                    transition: all 0.15s ease !important;
+
+                    &:hover {
+                        background: rgba(99, 102, 241, 0.1) !important;
+                        color: #4F46E5 !important;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Bulk Actions & Detail-Pair Redesign (Sorting & Move) */
+    .category-bulk-actions,
+    .course-bulk-actions {
+        margin-top: auto !important;
+        padding-top: 1.25rem !important;
+        border-top: 1px solid #F1F5F9 !important;
+    }
+
+    .detail-pair {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        margin: 0.75rem 0 !important;
+        padding: 0.85rem 1rem !important;
+        background: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 0.875rem !important;
+        gap: 0.5rem !important;
+
+        > * {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+            padding: 0 !important;
+        }
+
+        .pair-key {
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+            color: #64748B !important;
+            white-space: normal !important;
+            word-break: normal !important;
+            line-height: 1.4 !important;
+            margin-bottom: 0.25rem !important;
+
+            span {
+                display: inline !important;
+                margin-right: 0 !important;
+            }
+        }
+
+        .pair-value {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+
+            form,
+            .d-flex {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+
+            select.form-select,
+            select {
+                flex: 1 1 200px !important;
+                min-width: 160px !important;
+                max-width: 100% !important;
+                height: 38px !important;
+                border-radius: 10px !important;
+                border: 1px solid #CBD5E1 !important;
+                background-color: #FFFFFF !important;
+                font-size: 0.85rem !important;
+                color: #1E293B !important;
+                padding: 0.35rem 0.75rem !important;
+
+                &:focus {
+                    border-color: var(--lumina-primary, #4338CA) !important;
+                    box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15) !important;
+                    outline: none !important;
+                }
+            }
+
+            input[type="submit"],
+            button[type="submit"] {
+                flex: 0 0 auto !important;
+                height: 38px !important;
+                padding: 0 1.25rem !important;
+                border-radius: 10px !important;
+                font-size: 0.85rem !important;
+                font-weight: 600 !important;
+                background: var(--lumina-primary, #4338CA) !important;
+                color: #FFFFFF !important;
+                border: none !important;
+                box-shadow: 0 2px 6px rgba(67, 56, 202, 0.2) !important;
+                cursor: pointer !important;
+                transition: all 0.15s ease !important;
+
+                &:hover {
+                    background: #3730A3 !important;
+                    box-shadow: 0 4px 10px rgba(67, 56, 202, 0.3) !important;
+                    transform: translateY(-1px) !important;
+                }
+            }
+        }
+    }
+}

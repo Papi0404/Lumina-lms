@@ -4510,3 +4510,47 @@ body.pagelayout-admin {
   color: #DC2626 !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
+
+
+/* Student Learning Materials Folder Card */
+.course-materials-folder-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #E2E8F0;
+  border-radius: 1.25rem;
+  transition: all 0.25s ease;
+
+  &:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
+
+  .material-item-row {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #FFFFFF;
+      border-color: #6366F1;
+      transform: translateX(3px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+
+      .material-title {
+        color: #4F46E5 !important;
+      }
+    }
+
+    .material-icon-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 0.6rem;
+      background: rgba(99, 102, 241, 0.1);
+      color: #4F46E5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+  }
+}

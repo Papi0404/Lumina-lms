@@ -117,6 +117,7 @@ $teacherdata = $roleinfo['is_teacher'] ? theme_lumina_role_resolver::get_teacher
 
 // Derived convenience variables (keep backward-compat with existing templatecontext keys).
 $enrolledcourses          = isloggedin() && !isguestuser() ? enrol_get_all_users_courses($USER->id, true) : [];
+$studentmaterials         = $roleinfo['is_student'] ? theme_lumina_role_resolver::get_student_learning_library($USER, $enrolledcourses) : [];
 $enrolledcoursescount     = $luminadata['stats']['enrolled_courses_count'] ?? 0;
 $unreadmessagescount      = $luminadata['stats']['unread_messages'] ?? 0;
 $unreadnotificationscount = $luminadata['notifications_count'] ?? 0;
@@ -179,12 +180,16 @@ if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {
 
 // 3. Smart Resource Library URL (Role & Course-isolated)
 // Admin: Central Content Bank
-// Teacher / Student: Course Resources index (modules, PDFs, books in assigned course)
-// Fallback if no course: User private files
+// Student: Per-Course Learning Materials Folder on Dashboard (#bahan-ajar)
+// Teacher: Course Resources index or course view
 if ($roleinfo['is_admin']) {
     $resourcesurl = (new \core\url('/contentbank/index.php'))->out(false);
     $resourceslabel = 'Content Bank Terpusat';
     $resourcesicon  = 'local_library';
+} else if ($roleinfo['is_student']) {
+    $resourcesurl = (new \core\url('/my/', [], 'bahan-ajar'))->out(false);
+    $resourceslabel = 'Bahan Ajar & Modul';
+    $resourcesicon  = 'folder_special';
 } else if ($activecourseid) {
     $resourcesurl = (new \core\url('/course/resources.php', ['id' => $activecourseid]))->out(false);
     $resourceslabel = 'Bahan Ajar & Modul';
@@ -321,6 +326,8 @@ $templatecontext = [
     'lumina_grade_items'         => $luminadata['grade_items'] ?? [],
     'has_grade_items'            => !empty($luminadata['grade_items']),
     'lumina_security'            => $luminadata['security'] ?? [],
+    'lumina_student_materials'   => $studentmaterials,
+    'has_student_materials'      => !empty($studentmaterials),
     'has_local_lumina_ai'        => (\core_plugin_manager::instance()->get_plugin_info('local_lumina_ai') !== null && !empty(get_config('local_lumina_ai', 'enabled'))),
 ];
 

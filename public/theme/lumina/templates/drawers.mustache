@@ -520,6 +520,81 @@
                     </a>
                 </div>
 
+                <!-- Bahan Ajar & Modul Pembelajaran (Per-Course Hybrid Folder Library) -->
+                <div id="bahan-ajar" class="antigravity-glass-card rounded-3xl p-4 mb-4">
+                    <div class="section-card-header mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary" style="font-size: 24px;">folder_special</span>
+                            <span class="section-title fw-bold">Bahan Ajar &amp; Modul Pembelajaran</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 ms-2 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">Perpustakaan Kursus</span>
+                        </div>
+                        <span class="text-muted small">Materi terdaftar di mata kuliah Anda</span>
+                    </div>
+
+                    {{#has_student_materials}}
+                    <div class="row g-4">
+                        {{#lumina_student_materials}}
+                        <div class="col-lg-6">
+                            <div class="course-materials-folder-card p-3 rounded-2xl border bg-white h-100 d-flex flex-column justify-content-between shadow-xs">
+                                <div>
+                                    <!-- Course Folder Header -->
+                                    <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="material-symbols-outlined text-warning" style="font-size: 28px;">folder</span>
+                                            <div>
+                                                <h5 class="course-folder-title mb-0 font-bold" style="font-size: 0.95rem;">{{ course_fullname }}</h5>
+                                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0-5" style="font-size: 0.68rem;">{{ course_shortname }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="text-muted small font-semibold">{{ materials_count }} Materi</span>
+                                    </div>
+
+                                    <!-- Sub-modules List inside this Course Folder -->
+                                    <div class="materials-sublist d-flex flex-column gap-2 my-2">
+                                        {{#materials}}
+                                        <a href="{{{ url }}}" class="material-item-row d-flex align-items-center justify-content-between p-2 rounded-xl border text-decoration-none transition-all">
+                                            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                                <div class="material-icon-bubble">
+                                                    <span class="material-symbols-outlined" style="font-size: 18px;">{{ icon }}</span>
+                                                </div>
+                                                <div class="text-truncate">
+                                                    <span class="material-title text-dark fw-semibold d-block text-truncate" style="font-size: 0.85rem;">{{ name }}</span>
+                                                    <span class="material-type text-muted" style="font-size: 0.72rem;">{{ type_label }}</span>
+                                                </div>
+                                            </div>
+                                            <span class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 ms-2 flex-shrink-0" style="font-size: 0.7rem;">Buka &rarr;</span>
+                                        </a>
+                                        {{/materials}}
+
+                                        {{^has_materials}}
+                                        <div class="text-center py-3 text-muted small">
+                                            <span class="material-symbols-outlined text-muted" style="font-size: 24px;">draft</span>
+                                            <p class="mb-0 mt-1">Belum ada bahan ajar yang diunggah untuk kelas ini.</p>
+                                        </div>
+                                        {{/has_materials}}
+                                    </div>
+                                </div>
+
+                                <div class="pt-2 border-top text-end">
+                                    <a href="{{{ view_course_url }}}" class="btn btn-sm btn-light border rounded-pill px-3 py-1 font-semibold text-primary" style="font-size: 0.78rem;">
+                                        Buka Seluruh Topik Kursus &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {{/lumina_student_materials}}
+                    </div>
+                    {{/has_student_materials}}
+
+                    {{^has_student_materials}}
+                    <div class="empty-state-box text-center py-4">
+                        <span class="material-symbols-outlined text-muted" style="font-size: 42px;">folder_off</span>
+                        <h6 class="mt-2 mb-1 fw-bold">Belum Ada Materi Pembelajaran</h6>
+                        <p class="text-muted small mb-0">Anda belum terdaftar dalam kelas yang memiliki bahan ajar. Hubungi guru pengampu untuk materi kelas.</p>
+                    </div>
+                    {{/has_student_materials}}
+                </div>
+
                 <!-- Lumina Dashboard Cards: Deadlines Only with Anti-Gravity UI -->
                 <div class="lumina-dashboard-cards d-print-none mb-4">
                     <div class="lumina-section-card antigravity-glass-card rounded-3xl p-4" style="grid-column: 1 / -1;">

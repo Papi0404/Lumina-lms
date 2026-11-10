@@ -347,6 +347,84 @@ class theme_lumina_role_resolver {
     }
 
     /**
+     * Compile structured learning materials / resource library for student,
+     * organized as folders per enrolled course.
+     *
+     * @param stdClass $user
+     * @param array $enrolledcourses
+     * @return array
+     */
+    public static function get_student_learning_library($user, array $enrolledcourses): array {
+        global $DB, $CFG;
+
+        if (empty($enrolledcourses) && is_siteadmin($user->id)) {
+            // In admin preview mode, load courses so preview shows the real library.
+            $enrolledcourses = $DB->get_records_select('course', 'id > 1', null, 'id ASC', '*', 0, 5);
+        }
+
+        $library = [];
+        if (empty($enrolledcourses)) {
+            return $library;
+        }
+
+        foreach ($enrolledcourses as $c) {
+            $courseid = (int)$c->id;
+            $materials = [];
+
+            try {
+                $modinfo = get_fast_modinfo($courseid, $user->id);
+                foreach ($modinfo->cms as $cm) {
+                    if (!$cm->uservisible) {
+                        continue;
+                    }
+
+                    // Only include learning materials (page, resource/file, folder, book, url).
+                    if (in_array($cm->modname, ['page', 'resource', 'folder', 'book', 'url'], true)) {
+                        $iconmap = [
+                            'page'     => 'menu_book',
+                            'resource' => 'description',
+                            'folder'   => 'folder',
+                            'book'     => 'auto_stories',
+                            'url'      => 'link',
+                        ];
+
+                        $typemap = [
+                            'page'     => 'Modul Pembelajaran',
+                            'resource' => 'Dokumen / File',
+                            'folder'   => 'Folder Berkas',
+                            'book'     => 'Buku Digital',
+                            'url'      => 'Tautan Web',
+                        ];
+
+                        $materials[] = [
+                            'id'         => $cm->id,
+                            'name'       => format_string($cm->name),
+                            'modname'    => $cm->modname,
+                            'type_label' => $typemap[$cm->modname] ?? 'Materi Modul',
+                            'icon'       => $iconmap[$cm->modname] ?? 'article',
+                            'url'        => $cm->url ? $cm->url->out(false) : '#',
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Silently skip if modinfo fails.
+            }
+
+            $library[] = [
+                'course_id'       => $courseid,
+                'course_fullname' => format_string($c->fullname),
+                'course_shortname'=> format_string($c->shortname),
+                'materials'       => $materials,
+                'materials_count' => count($materials),
+                'has_materials'   => !empty($materials),
+                'view_course_url' => (new \core\url('/course/view.php', ['id' => $courseid]))->out(false),
+            ];
+        }
+
+        return $library;
+    }
+
+    /**
      * Format timestamp to human readable relative time in Indonesian.
      *
      * @param int $timestamp

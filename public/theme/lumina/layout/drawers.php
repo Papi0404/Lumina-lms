@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/behat/lib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/theme/lumina/classes/lumina_data.php');
+require_once($CFG->dirroot . '/theme/lumina/classes/role_resolver.php');
 
 $addblockbutton = $OUTPUT->addblockbutton();
 
@@ -109,6 +110,11 @@ global $USER, $DB;
 // Fetch all Lumina data via the dedicated helper class.
 $luminadata = theme_lumina_data::get_all($USER, $PAGE, $OUTPUT, $CFG, $DB);
 
+// Resolve Multi-Role context (Admin, Guru, Murid) via Lumina Role Resolver.
+$roleinfo = theme_lumina_role_resolver::resolve_role($USER);
+$admindata = $roleinfo['is_admin'] ? theme_lumina_role_resolver::get_admin_dashboard_data() : [];
+$teacherdata = $roleinfo['is_teacher'] ? theme_lumina_role_resolver::get_teacher_dashboard_data($USER) : [];
+
 // Derived convenience variables (keep backward-compat with existing templatecontext keys).
 $enrolledcourses          = isloggedin() && !isguestuser() ? enrol_get_all_users_courses($USER->id, true) : [];
 $enrolledcoursescount     = $luminadata['stats']['enrolled_courses_count'] ?? 0;
@@ -130,20 +136,26 @@ $totalformatted           = $luminadata['storage']['total_formatted'] ?? '50 MB'
 $useravatarhtml = $luminadata['user']['avatar_html'] ?? $OUTPUT->user_picture($USER, ['size' => 36, 'link' => false, 'class' => 'userpicture']);
 $currentpagepath = $PAGE->url ? $PAGE->url->get_path() : '';
 
-// Determine active or available course ID safely without hardcoding.
+// Determine active course ID strictly based on role and enrollment isolation.
 $activecourseid = null;
 if (!empty($PAGE->course) && $PAGE->course->id > 1) {
-    $activecourseid = (int)$PAGE->course->id;
-} else if (!empty($enrolledcourses)) {
-    $activecourseid = (int)array_key_first($enrolledcourses);
-} else {
-    $firstrealcourse = $DB->get_field_sql("SELECT id FROM {course} WHERE id > 1 ORDER BY id ASC LIMIT 1");
-    if ($firstrealcourse) {
-        $activecourseid = (int)$firstrealcourse;
+    if ($roleinfo['is_admin'] || is_enrolled(context_course::instance($PAGE->course->id), $USER, '', true)) {
+        $activecourseid = (int)$PAGE->course->id;
+    }
+}
+if (!$activecourseid) {
+    if (!empty($enrolledcourses)) {
+        $activecourseid = (int)array_key_first($enrolledcourses);
+    } else if ($roleinfo['is_admin']) {
+        $firstrealcourse = $DB->get_field_sql("SELECT id FROM {course} WHERE id > 1 ORDER BY id ASC LIMIT 1");
+        if ($firstrealcourse) {
+            $activecourseid = (int)$firstrealcourse;
+        }
     }
 }
 
-// Determine Smart Forum URL
+// 1. Smart Forum URL (Course-bound, safe fallback)
+$forumurl = (new \core\url('/my/courses.php'))->out(false);
 if ($activecourseid) {
     $forumcmid = $DB->get_field_sql(
         "SELECT cm.id FROM {course_modules} cm
@@ -156,23 +168,48 @@ if ($activecourseid) {
     } else {
         $forumurl = (new \core\url('/mod/forum/index.php', ['id' => $activecourseid]))->out(false);
     }
-} else {
-    $forumurl = (new \core\url('/my/courses.php'))->out(false);
 }
 
-// Smart Grade URL (Grader report for admin/teacher if course exists, otherwise safe overview report)
-$isadminorteacher = is_siteadmin() || !empty(array_intersect(['manager', 'editingteacher', 'teacher'], $DB->get_fieldset_sql(
-    "SELECT DISTINCT r.archetype FROM {role_assignments} ra JOIN {role} r ON r.id = ra.roleid WHERE ra.userid = ?",
-    [$USER->id]
-)));
-if ($isadminorteacher && $activecourseid) {
+// 2. Smart Grade URL — safe for all roles
+if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {
     $gradesurl = (new \core\url('/grade/report/grader/index.php', ['id' => $activecourseid]))->out(false);
 } else {
     $gradesurl = (new \core\url('/grade/report/overview/index.php'))->out(false);
 }
 
-// Resource Library URL (Central Content Bank)
-$resourcesurl = (new \core\url('/contentbank/index.php'))->out(false);
+// 3. Smart Resource Library URL (Role & Course-isolated)
+// Admin: Central Content Bank
+// Teacher / Student: Course Resources index (modules, PDFs, books in assigned course)
+// Fallback if no course: User private files
+if ($roleinfo['is_admin']) {
+    $resourcesurl = (new \core\url('/contentbank/index.php'))->out(false);
+    $resourceslabel = 'Content Bank Terpusat';
+    $resourcesicon  = 'local_library';
+} else if ($activecourseid) {
+    $resourcesurl = (new \core\url('/course/resources.php', ['id' => $activecourseid]))->out(false);
+    $resourceslabel = 'Bahan Ajar & Modul';
+    $resourcesicon  = 'folder_special';
+} else {
+    $resourcesurl = (new \core\url('/user/files.php'))->out(false);
+    $resourceslabel = 'File Pribadi Saya';
+    $resourcesicon  = 'folder_open';
+}
+
+// 4. Teacher-specific Action URLs (Strictly bound to assigned course)
+// Teacher does NOT create courses! Teacher manages modules inside their assigned course!
+if ($activecourseid) {
+    $teachermanagematerialurl = (new \core\url('/course/view.php', ['id' => $activecourseid, 'edit' => 1]))->out(false);
+    $teacherclasslisturl       = (new \core\url('/user/index.php', ['id' => $activecourseid]))->out(false);
+} else {
+    $teachermanagematerialurl = (new \core\url('/my/courses.php'))->out(false);
+    $teacherclasslisturl       = (new \core\url('/my/courses.php'))->out(false);
+}
+
+// 5. Admin-only Global Course Creation URL
+$firstcategoryid = $DB->get_field_sql("SELECT id FROM {course_categories} ORDER BY sortorder ASC, id ASC LIMIT 1");
+$admincreatecourseurl = $firstcategoryid
+    ? (new \core\url('/course/edit.php', ['category' => $firstcategoryid]))->out(false)
+    : (new \core\url('/course/management.php'))->out(false);
 
 // Check if any BigBlueButton virtual class exists
 $hasbbb = false;
@@ -214,12 +251,24 @@ $templatecontext = [
     'headercontent' => $headercontent,
     'addblockbutton' => $addblockbutton,
     // Lumina LMS custom contexts:
+    'lumina_role' => $roleinfo,
+    'lumina_admin' => $admindata,
+    'lumina_teacher' => $teacherdata,
     'lumina_user' => [
         'fullname' => fullname($USER),
+        'email' => $USER->email ?? '',
         'avatar_html' => $useravatarhtml,
-        'role_label' => $userrolelabel,
+        'role_label' => $roleinfo['role_label'],
+        'role_badge_class' => $roleinfo['role_badge_class'],
+        'role_key' => $roleinfo['role_key'],
         'is_logged_in' => isloggedin() && !isguestuser(),
         'is_siteadmin' => is_siteadmin(),
+        'is_admin_role' => $roleinfo['is_admin'],
+        'is_teacher_role' => $roleinfo['is_teacher'],
+        'is_student_role' => $roleinfo['is_student'],
+        'can_switch_preview' => $roleinfo['can_switch_preview'],
+        'active_preview_role' => $roleinfo['active_preview_role'],
+        'is_preview_active' => $roleinfo['is_preview_active'],
         'enrolled_count' => $enrolledcoursescount,
         'unread_messages' => $unreadmessagescount,
         'unread_notifications' => $unreadnotificationscount,
@@ -251,6 +300,13 @@ $templatecontext = [
         'forum_url' => $forumurl,
         'grades_url' => $gradesurl,
         'resources_url' => $resourcesurl,
+        'resources_label' => $resourceslabel,
+        'resources_icon' => $resourcesicon,
+        'teacher_manage_material_url' => $teachermanagematerialurl,
+        'class_list_url' => $teacherclasslisturl,
+        'admin_create_course_url' => $admincreatecourseurl,
+        'admin_manage_courses_url' => (new \core\url('/course/management.php'))->out(false),
+        'createcourse_url' => $admincreatecourseurl,
         'virtualclass_url' => $virtualclassurl,
         'virtualclass_title' => $virtualclasstitle,
         'virtualclass_subtitle' => $virtualclasssub,

@@ -4137,3 +4137,376 @@ body.pagelayout-admin {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
 }
+
+
+/* ==========================================================================
+   LUMINA LMS - ANTI-GRAVITY UI & MULTI-ROLE SYSTEM
+   ========================================================================== */
+
+/* Role Badges in Sidebar Header */
+.role-indicator-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  display: inline-block;
+  line-height: 1.2;
+
+  &.role-admin {
+    background: rgba(239, 68, 68, 0.12);
+    color: #DC2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  &.role-teacher {
+    background: rgba(245, 158, 11, 0.12);
+    color: #D97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  &.role-student {
+    background: rgba(99, 102, 241, 0.12);
+    color: #4F46E5;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* Role Preview Quick-Switcher for Administrators */
+.lumina-role-preview-bar {
+  margin: 0.75rem 0.85rem 1rem 0.85rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid #E2E8F0;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  .preview-bar-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748B;
+  }
+
+  .preview-pills-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    .preview-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      color: #475569;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      text-decoration: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #F8FAFC;
+        color: #1E293B;
+      }
+
+      &.active {
+        background: #4F46E5;
+        color: #FFFFFF;
+        border-color: #4F46E5;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+      }
+
+      &.reset {
+        color: #EF4444;
+        border-color: rgba(239, 68, 68, 0.3);
+        padding: 0.15rem 0.4rem;
+        &:hover {
+          background: #FEF2F2;
+        }
+      }
+    }
+  }
+}
+
+/* Anti-Gravity UI Glassmorphism Cards */
+.antigravity-glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.05),
+              inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.float-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(79, 70, 229, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* Anti-Gravity KPI Grid */
+.lumina-antigravity-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+
+  .stat-card {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+
+    .stat-icon-bubble {
+      width: 52px;
+      height: 52px;
+      border-radius: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      .material-symbols-outlined {
+        font-size: 26px;
+      }
+
+      &.indigo {
+        background: rgba(99, 102, 241, 0.12);
+        color: #4F46E5;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+      }
+      &.cyan {
+        background: rgba(6, 182, 212, 0.12);
+        color: #0891B2;
+        border: 1px solid rgba(6, 182, 212, 0.25);
+      }
+      &.emerald {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+      }
+      &.amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #D97706;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+      }
+    }
+
+    .stat-details {
+      flex: 1;
+      overflow: hidden;
+
+      .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: block;
+      }
+
+      .stat-value {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #0F172A;
+        margin: 0.15rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        letter-spacing: -0.02em;
+
+        .stat-subbadge {
+          font-size: 0.65rem;
+          font-weight: 700;
+          padding: 0.15rem 0.5rem;
+          border-radius: 999px;
+          background: rgba(99, 102, 241, 0.1);
+          color: #4F46E5;
+
+          &.optimal {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+          }
+          &.urgent {
+            background: rgba(239, 68, 68, 0.1);
+            color: #DC2626;
+          }
+        }
+      }
+
+      .stat-caption {
+        font-size: 0.72rem;
+        color: #94A3B8;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+/* Administrative Action Tiles */
+.antigravity-action-tile {
+  display: block;
+  padding: 1.25rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 1.25rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+
+  .tile-icon {
+    font-size: 28px;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  .tile-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1E293B;
+    display: block;
+  }
+
+  .tile-desc {
+    font-size: 0.75rem;
+    color: #64748B;
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: #6366F1;
+    box-shadow: 0 12px 24px -6px rgba(99, 102, 241, 0.15);
+  }
+}
+
+/* Teacher Queue & Schedule Styles */
+.teacher-grading-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .queue-item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.15rem;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #CBD5E1;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .queue-student-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .queue-avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(99, 102, 241, 0.1);
+        color: #4F46E5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .student-name {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #1E293B;
+      }
+
+      .assignment-meta {
+        font-size: 0.75rem;
+        color: #64748B;
+      }
+    }
+
+    .queue-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .submission-time {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+.teacher-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .schedule-timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1rem;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+
+    &.live {
+      background: rgba(16, 185, 129, 0.06);
+      border-color: rgba(16, 185, 129, 0.3);
+
+      .schedule-time-badge {
+        background: #10B981;
+        color: #FFFFFF;
+      }
+    }
+
+    .schedule-time-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.6rem;
+      background: #E2E8F0;
+      color: #334155;
+    }
+
+    .schedule-body {
+      flex: 1;
+
+      .schedule-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1E293B;
+      }
+
+      .live-status-pill {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #059669;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+  }
+}
+
+.nav-count-badge.urgent {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #DC2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}

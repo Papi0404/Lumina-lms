@@ -816,10 +816,18 @@ document.addEventListener('DOMContentLoaded', function() {
         secBanner.style.display = 'block';
     }
 
-    // Course Management Form Guard (Prevent "A required parameter movecategoriesto was missing" error)
+    // Course Management Form Guard (Prevent "A required parameter movecategoriesto / resortcategoriesby was missing")
     const mgmtForm = document.getElementById('coursecat-management');
     if (mgmtForm) {
-        // Guard 1: Move Categories
+        // Universal guard on submit: ensure all form controls inside #coursecat-management
+        // are enabled right before submit so the browser includes them in the POST payload.
+        mgmtForm.addEventListener('submit', function() {
+            mgmtForm.querySelectorAll('select[disabled], input[disabled]').forEach(function(el) {
+                el.removeAttribute('disabled');
+            });
+        });
+
+        // Guard 1: Move Categories (bulkmovecategories)
         const moveCatBtn = mgmtForm.querySelector('input[name="bulkmovecategories"]');
         const moveCatSelect = mgmtForm.querySelector('select[name="movecategoriesto"]');
         if (moveCatBtn && moveCatSelect) {
@@ -831,7 +839,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Harap centang minimal satu kategori yang ingin dipindahkan.');
                     return false;
                 }
-                if (!moveCatSelect.value || moveCatSelect.value === '' || moveCatSelect.value === '0') {
+                // '0' represents 'Top' category, so only empty string is invalid
+                if (moveCatSelect.value === '' || moveCatSelect.value === null || moveCatSelect.value === undefined) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     moveCatSelect.focus();
@@ -840,12 +849,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Harap pilih kategori tujuan pemindahan terlebih dahulu pada menu dropdown.');
                     return false;
                 }
+                moveCatSelect.removeAttribute('disabled');
                 moveCatSelect.style.borderColor = '';
                 moveCatSelect.style.boxShadow = '';
             });
         }
 
-        // Guard 2: Move Courses
+        // Guard 2: Move Courses (bulkmovecourses)
         const moveCourseBtn = mgmtForm.querySelector('input[name="bulkmovecourses"]');
         const moveCourseSelect = mgmtForm.querySelector('select[name="movecoursesto"]');
         if (moveCourseBtn && moveCourseSelect) {
@@ -857,7 +867,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Harap centang minimal satu mata kuliah yang ingin dipindahkan.');
                     return false;
                 }
-                if (!moveCourseSelect.value || moveCourseSelect.value === '' || moveCourseSelect.value === '0') {
+                if (moveCourseSelect.value === '' || moveCourseSelect.value === null || moveCourseSelect.value === undefined) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     moveCourseSelect.focus();
@@ -866,8 +876,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Harap pilih kategori tujuan pemindahan kursus terlebih dahulu pada menu dropdown.');
                     return false;
                 }
+                moveCourseSelect.removeAttribute('disabled');
                 moveCourseSelect.style.borderColor = '';
                 moveCourseSelect.style.boxShadow = '';
+            });
+        }
+
+        // Guard 3: Sort Categories & Courses (bulksort)
+        const sortBtn = mgmtForm.querySelector('input[name="bulksort"]');
+        const sortCatSelect = mgmtForm.querySelector('select[name="resortcategoriesby"]');
+        const sortCourseSelect = mgmtForm.querySelector('select[name="resortcoursesby"]');
+        const selectSortBy = mgmtForm.querySelector('select[name="selectsortby"]');
+        if (sortBtn) {
+            sortBtn.addEventListener('click', function(e) {
+                if (selectSortBy && selectSortBy.value === 'selectedcategories') {
+                    const checkedCats = mgmtForm.querySelectorAll('input[name="bcat[]"]:checked');
+                    if (checkedCats.length === 0) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        alert('Harap centang minimal satu kategori yang ingin diurutkan, atau pilih opsi "All categories" / "Semua kategori".');
+                        return false;
+                    }
+                }
+                // Ensure dropdowns are enabled so the browser transmits their values in POST
+                if (selectSortBy) selectSortBy.removeAttribute('disabled');
+                if (sortCatSelect) {
+                    sortCatSelect.removeAttribute('disabled');
+                    if (!sortCatSelect.value) sortCatSelect.value = 'name';
+                }
+                if (sortCourseSelect) {
+                    sortCourseSelect.removeAttribute('disabled');
+                    if (!sortCourseSelect.value) sortCourseSelect.value = 'fullname';
+                }
             });
         }
     }

@@ -188,8 +188,9 @@ if ($roleinfo['is_admin']) {
 
 // 4. Teacher-specific Action URLs (Strictly bound to assigned course)
 // Teacher does NOT create courses! Teacher manages modules inside their assigned course!
+$is_add_material = (optional_param('add_material', 0, PARAM_INT) == 1);
 if ($activecourseid) {
-    $teachermanagematerialurl = (new \core\url('/course/view.php', ['id' => $activecourseid, 'edit' => 1, 'sesskey' => sesskey()]))->out(false);
+    $teachermanagematerialurl = (new \core\url('/course/view.php', ['id' => $activecourseid, 'edit' => 1, 'add_material' => 1, 'sesskey' => sesskey()]))->out(false);
     $teacherclasslisturl       = (new \core\url('/local/lumina_core/attendance.php', ['id' => $activecourseid]))->out(false);
 } else {
     $teachermanagematerialurl = (new \core\url('/my/courses.php'))->out(false);
@@ -218,6 +219,10 @@ $virtualclassurl = $hasbbb ? (new \core\url('/mod/bigbluebuttonbn/view.php', ['i
 $virtualclasstitle = $hasbbb ? 'Kelas Virtual' : 'Forum Diskusi';
 $virtualclasssub   = $hasbbb ? 'Ruang temu aktif' : 'Tanya jawab dosen & rekan';
 $virtualclassicon  = $hasbbb ? 'video_camera_front' : 'forum';
+
+$is_server_settings = (strpos($currentpagepath, '/admin/category.php') !== false && optional_param('category', '', PARAM_SAFEDIR) === 'server');
+$is_lumina_settings = (strpos($currentpagepath, '/admin/settings.php') !== false && optional_param('section', '', PARAM_SAFEDIR) === 'themesettinglumina');
+$is_admin_search = (strpos($currentpagepath, '/admin/search.php') !== false || (strpos($currentpagepath, '/admin') !== false && strpos($currentpagepath, '/admin/user.php') === false && !$is_server_settings && !$is_lumina_settings));
 
 $templatecontext = [
     'sitename' => format_string($SITE->shortname, true, ['context' => context_course::instance(SITEID), "escape" => false]),
@@ -282,11 +287,14 @@ $templatecontext = [
     ],
     'lumina_nav' => [
         'is_dashboard' => (strpos($currentpagepath, '/my') !== false && strpos($currentpagepath, '/my/courses') === false),
-        'is_mycourses' => (strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false),
+        'is_mycourses' => ((strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false) && !$is_add_material),
+        'is_manage_material' => $is_add_material,
         'is_calendar' => (strpos($currentpagepath, '/calendar') !== false),
         'is_grades' => (strpos($currentpagepath, '/grade') !== false || strpos($currentpagepath, '/course/user.php') !== false),
         'is_resources' => (strpos($currentpagepath, '/local/lumina_core/library.php') !== false || strpos($currentpagepath, '/contentbank') !== false || strpos($currentpagepath, '/user/files.php') !== false),
-        'is_admin' => (strpos($currentpagepath, '/admin/search.php') !== false || (strpos($currentpagepath, '/admin') !== false && strpos($currentpagepath, '/admin/user.php') === false)),
+        'is_admin' => $is_admin_search,
+        'is_server_settings' => $is_server_settings,
+        'is_lumina_settings' => $is_lumina_settings,
         'is_manage_users' => (strpos($currentpagepath, '/admin/user.php') !== false),
         'is_manage_courses' => (strpos($currentpagepath, '/course/management.php') !== false),
         'is_security_report' => (strpos($currentpagepath, '/report/security') !== false),

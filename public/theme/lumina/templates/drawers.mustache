@@ -911,6 +911,62 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    // Teacher: Auto-trigger Activity/Resource Chooser when clicking "Buat Materi/Modul" (add_material=1)
+    if (window.location.search.indexOf('add_material=1') !== -1) {
+        const courseRegion = document.getElementById('region-main') || document.querySelector('.course-content');
+        if (courseRegion && !document.getElementById('lumina-add-material-banner')) {
+            const banner = document.createElement('div');
+            banner.id = 'lumina-add-material-banner';
+            banner.className = 'alert d-flex align-items-center justify-content-between p-3 mb-4 rounded-3 border-0 shadow-sm';
+            banner.style.cssText = 'background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-left: 5px solid #4338CA !important;';
+            banner.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <span class="material-symbols-outlined fs-2" style="color: #4338CA;">post_add</span>
+                    <div>
+                        <h6 class="mb-0 fw-bold" style="color: #312E81;">Mode Buat Materi & Modul Aktif</h6>
+                        <p class="mb-0 small" style="color: #4B5563;">Pilih modul (Berkas PDF/PPT, Tugas, Kuis, Halaman Materi, URL, dll.) dari jendela pemilih aktivitas atau klik tombol <em>+ Add content</em> di topik yang diinginkan.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm text-white rounded-pill px-3 py-2 fw-semibold shadow-xs" id="lumina-open-chooser-action" style="background: #4338CA; border: none; cursor: pointer;">
+                    + Buka Menu Modul
+                </button>
+            `;
+            courseRegion.prepend(banner);
+
+            const triggerBtn = document.getElementById('lumina-open-chooser-action');
+            if (triggerBtn) {
+                triggerBtn.addEventListener('click', function() {
+                    const btn = document.querySelector('button[data-action="open-chooser"]') ||
+                                document.querySelector('.section-modchooser-link') ||
+                                document.querySelector('.activity-add');
+                    if (btn) {
+                        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        btn.click();
+                    }
+                });
+            }
+        }
+
+        // Automatically trigger the first chooser modal after content is ready
+        let attempts = 0;
+        const autoOpenInterval = setInterval(function() {
+            attempts++;
+            const chooserBtn = document.querySelector('button[data-action="open-chooser"]') ||
+                               document.querySelector('.section-modchooser-link') ||
+                               document.querySelector('.activity-add');
+            if (chooserBtn) {
+                clearInterval(autoOpenInterval);
+                setTimeout(function() {
+                    chooserBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    chooserBtn.click();
+                }, 400);
+            }
+            if (attempts > 25) {
+                clearInterval(autoOpenInterval);
+            }
+        }, 200);
+    }
 });
 </script>
 

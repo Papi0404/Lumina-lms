@@ -65,10 +65,18 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ config.wwwroot }}}/admin/search.php#linkserver" class="nav-link-item">
+                    <a href="{{{ config.wwwroot }}}/admin/category.php?category=server" class="nav-link-item {{#lumina_nav.is_server_settings}}active{{/lumina_nav.is_server_settings}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">tune</span>
                             <span>Pengaturan Sistem</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/admin/settings.php?section=themesettinglumina" class="nav-link-item {{#lumina_nav.is_lumina_settings}}active{{/lumina_nav.is_lumina_settings}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">palette</span>
+                            <span>Pengaturan Lumina LMS</span>
                         </div>
                     </a>
                 </li>
@@ -155,7 +163,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ lumina_nav.teacher_manage_material_url }}}" class="nav-link-item">
+                    <a href="{{{ lumina_nav.teacher_manage_material_url }}}" class="nav-link-item {{#lumina_nav.is_manage_material}}active{{/lumina_nav.is_manage_material}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">post_add</span>
                             <span>Buat Materi/Modul</span>

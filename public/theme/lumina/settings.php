@@ -24,9 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-if ($ADMIN->fulltree) {
+if ($settings) {
     $settings->hidden = false;
+}
 
+if ($ADMIN->fulltree) {
     // Semester label setting.
     $name = 'theme_lumina/semester_label';
     $title = get_string('semester_label_setting', 'theme_lumina');

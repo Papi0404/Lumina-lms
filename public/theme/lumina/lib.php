@@ -140,7 +140,7 @@ function theme_lumina_user_preferences(): array {
         'drawer-open-index' => [
             'type' => PARAM_BOOL,
             'null' => NULL_NOT_ALLOWED,
-            'default' => true,
+            'default' => false,
             'permissioncallback' => [core_user::class, 'is_current_user'],
         ],
         'lumina-rail-collapsed' => [

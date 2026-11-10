@@ -32,8 +32,8 @@ require_once($CFG->dirroot . '/theme/lumina/classes/role_resolver.php');
 $addblockbutton = $OUTPUT->addblockbutton();
 
 if (isloggedin() && !isguestuser()) {
-    $courseindexopen = (get_user_preferences('drawer-open-index', true) == true);
-    $blockdraweropen = (get_user_preferences('drawer-open-block') == true);
+    $courseindexopen = false; // Never auto-open course index; only open when explicitly clicked by user.
+    $blockdraweropen = (get_user_preferences('drawer-open-block', false) == true);
     $railcollapsed = (get_user_preferences('lumina-rail-collapsed', false) == true);
 } else {
     $courseindexopen = false;

@@ -316,3 +316,4 @@ class forum_manager {
         return floor($diff / 86400) . ' hari lalu';
     }
 }
+

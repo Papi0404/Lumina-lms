@@ -166,15 +166,14 @@ if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {
 }
 
 // 3. Smart Resource Library URL (Role & Course-isolated)
-// Admin: Central Content Bank
-// Student: Per-Course Learning Materials Folder on Dashboard (#bahan-ajar)
-// Teacher: Course Resources index or course view
 if ($roleinfo['is_admin']) {
     $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);
     $resourceslabel = 'Perpustakaan Sumber Belajar';
     $resourcesicon  = 'folder_special';
 } else if ($roleinfo['is_student']) {
-    $resourcesurl = (new \core\url('/local/lumina_core/library.php', $activecourseid ? ['courseid' => $activecourseid] : []))->out(false);
+    $firstcourseid = !empty($enrolledcourses) ? (int)array_key_first($enrolledcourses) : 0;
+    $targetcid = $activecourseid ?: $firstcourseid;
+    $resourcesurl = (new \core\url('/local/lumina_core/library.php', $targetcid ? ['courseid' => $targetcid] : []))->out(false);
     $resourceslabel = 'Perpustakaan Sumber Belajar';
     $resourcesicon  = 'folder_special';
 } else if ($activecourseid) {
@@ -286,9 +285,10 @@ $templatecontext = [
         'is_mycourses' => (strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false),
         'is_calendar' => (strpos($currentpagepath, '/calendar') !== false),
         'is_grades' => (strpos($currentpagepath, '/grade') !== false || strpos($currentpagepath, '/course/user.php') !== false),
-        'is_resources' => (strpos($currentpagepath, '/contentbank') !== false || strpos($currentpagepath, '/user/files.php') !== false),
+        'is_resources' => (strpos($currentpagepath, '/local/lumina_core/library.php') !== false || strpos($currentpagepath, '/contentbank') !== false || strpos($currentpagepath, '/user/files.php') !== false),
         'is_admin' => (strpos($currentpagepath, '/admin') !== false),
-        'is_forum' => (strpos($currentpagepath, '/mod/forum') !== false),
+        'is_forum' => (strpos($currentpagepath, '/local/lumina_core/forum.php') !== false || strpos($currentpagepath, '/mod/forum') !== false),
+        'is_classlist' => (strpos($currentpagepath, '/local/lumina_core/attendance.php') !== false),
         'forum_url' => $forumurl,
         'grades_url' => $gradesurl,
         'resources_url' => $resourcesurl,

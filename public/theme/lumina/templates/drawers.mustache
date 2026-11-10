@@ -291,6 +291,60 @@
                     </div>
                 </div>
 
+                <!-- Daftar Kelas & Kehadiran Siswa Panel -->
+                <div id="daftar-kelas" class="antigravity-glass-card rounded-3xl p-4 mb-4">
+                    <div class="section-card-header mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary" style="font-size: 24px;">groups</span>
+                            <span class="section-title fw-bold">Daftar Kelas &amp; Kehadiran Siswa</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 ms-2 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">Kelas yang Anda Ampu</span>
+                        </div>
+                        <span class="text-muted small">Total: <strong>{{ lumina_teacher.courses_count }}</strong> Kelas</span>
+                    </div>
+
+                    {{#lumina_teacher.has_courses}}
+                    <div class="row g-3">
+                        {{#lumina_teacher.courses}}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="antigravity-action-tile h-100 p-3 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.7rem;">{{ shortname }}</span>
+                                        <span class="text-muted small d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined" style="font-size: 16px;">person</span>
+                                            <strong>{{ students_count }}</strong> Siswa
+                                        </span>
+                                    </div>
+                                    <h5 class="tile-title mb-1" style="font-size: 1rem;">{{ fullname }}</h5>
+                                    <p class="tile-desc mb-3">Lihat presensi kehadiran, riwayat keaktifan siswa, dan buku nilai.</p>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap pt-2 border-top">
+                                    <a href="{{{ classlist_url }}}" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 flex-fill text-center d-inline-flex align-items-center justify-content-center gap-1 shadow-xs" title="Buka Daftar Partisipan & Presensi Kehadiran">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">groups</span>
+                                        <span>Partisipan &amp; Presensi</span>
+                                    </a>
+                                    <a href="{{{ edit_url }}}" class="btn btn-sm btn-outline-secondary rounded-pill px-2-5 py-1-5 d-inline-flex align-items-center justify-content-center" title="Kelola Materi Modul">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">post_add</span>
+                                    </a>
+                                    <a href="{{{ grader_url }}}" class="btn btn-sm btn-outline-secondary rounded-pill px-2-5 py-1-5 d-inline-flex align-items-center justify-content-center" title="Buku Nilai">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">grade</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {{/lumina_teacher.courses}}
+                    </div>
+                    {{/lumina_teacher.has_courses}}
+
+                    {{^lumina_teacher.has_courses}}
+                    <div class="empty-state-box text-center py-4">
+                        <span class="material-symbols-outlined text-muted" style="font-size: 42px;">school</span>
+                        <h6 class="mt-2 mb-1 fw-bold">Belum Ada Kelas yang Ditugaskan</h6>
+                        <p class="text-muted small mb-0">Sesuai alur sekolah, Administrator yang membuat kursus dan menugaskan guru pengampu. Hubungi Admin untuk ditugaskan ke kelas Anda.</p>
+                    </div>
+                    {{/lumina_teacher.has_courses}}
+                </div>
+
                 <!-- Main 2-Column Responsive Layout for Teacher -->
                 <div class="row g-4 mb-4">
                     <!-- Left: Pending Grading Queue -->

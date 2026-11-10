@@ -284,11 +284,24 @@ class theme_lumina_role_resolver {
                 }
 
                 foreach ($courses as $c) {
+                    $studentcount = (int)$DB->count_records_sql(
+                        "SELECT COUNT(DISTINCT ra.userid)
+                           FROM {role_assignments} ra
+                           JOIN {context} ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+                           JOIN {role} r ON r.id = ra.roleid
+                          WHERE ctx.instanceid = ? AND r.archetype = 'student'",
+                        [$c->id]
+                    );
+
                     $teachercourses[] = [
-                        'id'        => $c->id,
-                        'fullname'  => format_string($c->fullname),
-                        'shortname' => format_string($c->shortname),
-                        'view_url'  => (new \core\url('/course/view.php', ['id' => $c->id]))->out(false),
+                        'id'             => $c->id,
+                        'fullname'       => format_string($c->fullname),
+                        'shortname'      => format_string($c->shortname),
+                        'students_count' => $studentcount,
+                        'view_url'       => (new \core\url('/course/view.php', ['id' => $c->id]))->out(false),
+                        'edit_url'       => (new \core\url('/course/view.php', ['id' => $c->id, 'edit' => 1]))->out(false),
+                        'classlist_url'  => (new \core\url('/user/index.php', ['id' => $c->id]))->out(false),
+                        'grader_url'     => (new \core\url('/grade/report/grader/index.php', ['id' => $c->id]))->out(false),
                     ];
                 }
             }
@@ -323,6 +336,7 @@ class theme_lumina_role_resolver {
         return [
             'courses'                => $teachercourses,
             'courses_count'          => count($teachercourses),
+            'has_courses'            => !empty($teachercourses),
             'total_students_guided'  => $totalstudentsguided,
             'pending_grading_count'  => $pendinggradingcount,
             'pending_submissions'    => $pendingsubmissions,

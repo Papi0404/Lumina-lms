@@ -146,7 +146,7 @@ if (!empty($PAGE->course) && $PAGE->course->id > 1) {
 if (!$activecourseid) {
     if (!empty($enrolledcourses)) {
         $activecourseid = (int)array_key_first($enrolledcourses);
-    } else if ($roleinfo['is_admin']) {
+    } else if (is_siteadmin($USER->id) || $roleinfo['is_admin']) {
         $firstrealcourse = $DB->get_field_sql("SELECT id FROM {course} WHERE id > 1 ORDER BY id ASC LIMIT 1");
         if ($firstrealcourse) {
             $activecourseid = (int)$firstrealcourse;

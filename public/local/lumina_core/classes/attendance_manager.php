@@ -252,6 +252,125 @@ class attendance_manager {
         return $labels[$status] ?? 'Belum Ditandai';
     }
 
+    public static function status_short_code(string $status): string {
+        $codes = [
+            'present'   => 'H',
+            'sick'      => 'S',
+            'permitted' => 'I',
+            'absent'    => 'A',
+        ];
+        return $codes[$status] ?? '-';
+    }
+
+    /**
+     * Get complete attendance matrix and summary for all students in a course.
+     *
+     * @param int $courseid
+     * @return array
+     */
+    public static function get_course_recap(int $courseid): array {
+        global $DB;
+
+        $context = context_course::instance($courseid);
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.email, u.idnumber
+                  FROM {user} u
+                  JOIN {role_assignments} ra ON ra.userid = u.id
+                  JOIN {role} r ON r.id = ra.roleid
+                 WHERE ra.contextid = ? AND r.archetype = 'student' AND u.deleted = 0
+              ORDER BY u.lastname ASC, u.firstname ASC";
+        $students = $DB->get_records_sql($sql, [$context->id]);
+
+        $sessions = $DB->get_records('local_lumina_att_sessions', ['courseid' => $courseid], 'sessiondate ASC, id ASC');
+        $sessionids = !empty($sessions) ? array_keys($sessions) : [];
+
+        $allrecords = [];
+        if (!empty($sessionids)) {
+            list($insql, $inparams) = $DB->get_in_or_equal($sessionids);
+            $recs = $DB->get_records_select('local_lumina_attendance', "sessionid $insql", $inparams);
+            foreach ($recs as $r) {
+                $allrecords[$r->userid][$r->sessionid] = $r;
+            }
+        }
+
+        $totalsessions = count($sessions);
+        $studentrecaps = [];
+        $totalpctsum = 0;
+        $eligiblecount = 0;
+        $atriskcount = 0;
+
+        foreach ($students as $s) {
+            $h = 0; // present
+            $s_count = 0; // sick
+            $i = 0; // permitted
+            $a = 0; // absent
+            $sessionmarks = [];
+
+            foreach ($sessions as $sess) {
+                $att = $allrecords[$s->id][$sess->id] ?? null;
+                $status = $att ? $att->status : 'absent';
+
+                if ($status === 'present') {
+                    $h++;
+                } else if ($status === 'sick') {
+                    $s_count++;
+                } else if ($status === 'permitted') {
+                    $i++;
+                } else {
+                    $a++;
+                }
+
+                $sessionmarks[$sess->id] = [
+                    'sessionid'    => $sess->id,
+                    'session_name' => $sess->name,
+                    'session_date' => userdate($sess->sessiondate, '%d/%m/%Y'),
+                    'status'       => $status,
+                    'short_code'   => self::status_short_code($status),
+                    'badge_class'  => self::status_badge_class($status),
+                    'remarks'      => $att ? $att->remarks : '',
+                ];
+            }
+
+            $effective = $h + ($s_count * 0.8) + ($i * 0.8);
+            $pct = ($totalsessions > 0) ? round(($effective / $totalsessions) * 100) : 100;
+            $pct = min(100, max(0, $pct));
+            $is_eligible = ($pct >= 75);
+
+            if ($is_eligible) {
+                $eligiblecount++;
+            } else {
+                $atriskcount++;
+            }
+            $totalpctsum += $pct;
+
+            $studentrecaps[] = [
+                'userid'       => $s->id,
+                'fullname'     => fullname($s),
+                'email'        => $s->email,
+                'idnumber'     => $s->idnumber ?: '-',
+                'present'      => $h,
+                'sick'         => $s_count,
+                'permitted'    => $i,
+                'absent'       => $a,
+                'percent'      => $pct,
+                'is_eligible'  => $is_eligible,
+                'sessions'     => $sessionmarks,
+            ];
+        }
+
+        $studentcount = count($students);
+        $avgpct = ($studentcount > 0) ? round($totalpctsum / $studentcount) : 0;
+
+        return [
+            'sessions'        => array_values($sessions),
+            'total_sessions'  => $totalsessions,
+            'students'        => $studentrecaps,
+            'total_students'  => $studentcount,
+            'average_percent' => $avgpct,
+            'eligible_count'  => $eligiblecount,
+            'at_risk_count'   => $atriskcount,
+        ];
+    }
+
     public static function status_badge_class(string $status): string {
         $classes = [
             'present'   => 'bg-success text-success bg-opacity-15 border border-success border-opacity-25',

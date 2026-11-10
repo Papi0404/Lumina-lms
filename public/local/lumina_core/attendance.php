@@ -31,6 +31,7 @@ use local_lumina_core\attendance_manager;
 $id = required_param('id', PARAM_INT); // Course ID.
 $sessionid = optional_param('sessionid', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);
+$tab = optional_param('tab', 'session', PARAM_ALPHA);
 
 $course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
 require_login($course);
@@ -38,6 +39,59 @@ require_login($course);
 $context = context_course::instance($course->id);
 $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
 $canmanage = $roleinfo['is_admin'] || has_capability('moodle/course:update', $context) || has_capability('local/lumina_core:manageattendance', $context);
+
+// Export CSV handler for Teachers and Admins
+if ($canmanage && $action === 'export_csv') {
+    $recap = attendance_manager::get_course_recap($course->id);
+    $filename = 'rekap_presensi_' . clean_filename($course->shortname) . '_' . date('Ymd_His') . '.csv';
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    $out = fopen('php://output', 'w');
+    // UTF-8 BOM for Microsoft Excel compatibility
+    fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+
+    $headers = ['No', 'NIM / ID', 'Nama Mahasiswa / Siswa', 'Email'];
+    $pnum = 1;
+    foreach ($recap['sessions'] as $sess) {
+        $headers[] = 'P' . $pnum++ . ' (' . userdate($sess->sessiondate, '%d/%m/%y') . ')';
+    }
+    $headers[] = 'Hadir (H)';
+    $headers[] = 'Sakit (S)';
+    $headers[] = 'Izin (I)';
+    $headers[] = 'Alpa (A)';
+    $headers[] = 'Kehadiran (%)';
+    $headers[] = 'Status Kelayakan';
+
+    fputcsv($out, $headers);
+
+    $no = 1;
+    foreach ($recap['students'] as $st) {
+        $row = [
+            $no++,
+            $st['idnumber'],
+            $st['fullname'],
+            $st['email'],
+        ];
+        foreach ($st['sessions'] as $smark) {
+            $row[] = $smark['short_code'];
+        }
+        $row[] = $st['present'];
+        $row[] = $st['sick'];
+        $row[] = $st['permitted'];
+        $row[] = $st['absent'];
+        $row[] = $st['percent'] . '%';
+        $row[] = $st['is_eligible'] ? 'Layak Ujian' : 'Tidak Memenuhi Syarat (<75%)';
+
+        fputcsv($out, $row);
+    }
+
+    fclose($out);
+    exit;
+}
 
 $PAGE->set_url('/local/lumina_core/attendance.php', ['id' => $course->id]);
 $PAGE->set_context($context);
@@ -143,9 +197,164 @@ echo $OUTPUT->header();
     <?php endif; ?>
 
     <?php if ($canmanage): ?>
-        <!-- ================================================================= -->
-        <!-- GURU / ADMIN VIEW: SESSION SELECTOR & ROSTER MANAGEMENT           -->
-        <!-- ================================================================= -->
+        <!-- Teacher Tabs: Input Per Sesi vs Rekapitulasi Kehadiran Kelas -->
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+            <div class="bg-light p-1 rounded-pill d-inline-flex border">
+                <a href="attendance.php?id=<?php echo $course->id; ?>&tab=session" class="btn btn-sm rounded-pill px-4 py-2 font-semibold <?php echo ($tab !== 'recap') ? 'btn-primary shadow-xs' : 'text-secondary'; ?>">
+                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -2px;">checklist</span>
+                    Input Presensi Per Sesi
+                </a>
+                <a href="attendance.php?id=<?php echo $course->id; ?>&tab=recap" class="btn btn-sm rounded-pill px-4 py-2 font-semibold <?php echo ($tab === 'recap') ? 'btn-primary shadow-xs' : 'text-secondary'; ?>">
+                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -2px;">table_chart</span>
+                    Rekapitulasi Kehadiran Kelas
+                </a>
+            </div>
+
+            <?php if ($tab === 'recap'): ?>
+            <div class="d-flex align-items-center gap-2">
+                <a href="attendance.php?id=<?php echo $course->id; ?>&action=export_csv" class="btn btn-sm btn-outline-success rounded-pill px-3 py-2 font-semibold d-inline-flex align-items-center gap-1 shadow-xs">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                    Unduh Rekap CSV / Excel
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 py-2 font-semibold d-inline-flex align-items-center gap-1" onclick="window.print()">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">print</span>
+                    Cetak Dokumen Rekap
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($tab === 'recap'): ?>
+            <!-- ================================================================= -->
+            <!-- GURU / ADMIN: REKAPITULASI KEHADIRAN KELAS                        -->
+            <!-- ================================================================= -->
+            <?php $recap = attendance_manager::get_course_recap($course->id); ?>
+            <div class="row g-4 mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="antigravity-glass-card rounded-3xl p-4 text-center">
+                        <span class="text-muted small font-semibold text-uppercase d-block mb-1">Rata-rata Kelas</span>
+                        <h2 class="fw-bold text-primary mb-0"><?php echo $recap['average_percent']; ?>%</h2>
+                        <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-1 mt-2 font-semibold">
+                            <?php echo $recap['total_students']; ?> Total Mahasiswa
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="antigravity-glass-card rounded-3xl p-4 text-center">
+                        <span class="text-muted small font-semibold text-uppercase d-block mb-1">Total Pertemuan</span>
+                        <h2 class="fw-bold text-dark mb-0"><?php echo $recap['total_sessions']; ?></h2>
+                        <span class="text-muted small mt-2 d-block">Sesi terlaksana semester ini</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="antigravity-glass-card rounded-3xl p-4 text-center">
+                        <span class="text-muted small font-semibold text-uppercase d-block mb-1">Layak Mengikuti Ujian</span>
+                        <h2 class="fw-bold text-success mb-0"><?php echo $recap['eligible_count']; ?></h2>
+                        <span class="text-success small mt-2 d-block font-semibold">&ge; 75% Kehadiran Minimum</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="antigravity-glass-card rounded-3xl p-4 text-center">
+                        <span class="text-muted small font-semibold text-uppercase d-block mb-1">Berisiko / Peringatan</span>
+                        <h2 class="fw-bold <?php echo ($recap['at_risk_count'] > 0) ? 'text-danger' : 'text-muted'; ?> mb-0"><?php echo $recap['at_risk_count']; ?></h2>
+                        <span class="text-danger small mt-2 d-block font-semibold">&lt; 75% Kehadiran</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="antigravity-glass-card rounded-3xl p-4 mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-1">Matriks Rekapitulasi Presensi Mahasiswa</h5>
+                        <span class="text-muted small">Akumulasi presensi seluruh pertemuan semester untuk mata kuliah ini.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 font-semibold small flex-wrap">
+                        <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2 py-1">H: Hadir</span>
+                        <span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 px-2 py-1">S: Sakit</span>
+                        <span class="badge bg-info bg-opacity-15 text-info border border-info border-opacity-25 px-2 py-1">I: Izin</span>
+                        <span class="badge bg-danger bg-opacity-15 text-danger border border-danger border-opacity-25 px-2 py-1">A: Alpa</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0 text-center" style="font-size: 0.82rem;">
+                        <thead class="table-light">
+                            <tr>
+                                <th rowspan="2" class="align-middle text-start" style="min-width: 220px;">Mahasiswa / Siswa</th>
+                                <?php if (!empty($recap['sessions'])): ?>
+                                <th colspan="<?php echo count($recap['sessions']); ?>" class="text-center">Sesi Pertemuan</th>
+                                <?php endif; ?>
+                                <th colspan="4" class="text-center">Total Akumulasi</th>
+                                <th rowspan="2" class="align-middle text-center" style="width: 110px;">% Kehadiran</th>
+                                <th rowspan="2" class="align-middle text-center" style="min-width: 140px;">Status</th>
+                            </tr>
+                            <tr>
+                                <?php $pnum = 1; foreach ($recap['sessions'] as $sess): ?>
+                                    <th class="p-1" title="<?php echo s($sess->name); ?> (<?php echo userdate($sess->sessiondate, '%d %b %Y'); ?>)">
+                                        <span class="d-block font-semibold">P<?php echo $pnum++; ?></span>
+                                        <span class="text-muted" style="font-size: 0.68rem; font-weight: normal;"><?php echo userdate($sess->sessiondate, '%d/%m'); ?></span>
+                                    </th>
+                                <?php endforeach; ?>
+                                <th class="bg-success bg-opacity-10 text-success fw-bold">H</th>
+                                <th class="bg-warning bg-opacity-10 text-warning fw-bold">S</th>
+                                <th class="bg-info bg-opacity-10 text-info fw-bold">I</th>
+                                <th class="bg-danger bg-opacity-10 text-danger fw-bold">A</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recap['students'] as $idx => $st): ?>
+                            <tr>
+                                <td class="text-start">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.75rem;">
+                                            <?php echo strtoupper(substr($st['fullname'], 0, 1)); ?>
+                                        </div>
+                                        <div>
+                                            <span class="fw-semibold d-block text-dark" style="font-size: 0.85rem;"><?php echo $st['fullname']; ?></span>
+                                            <span class="text-muted small" style="font-size: 0.72rem;"><?php echo $st['email']; ?></span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <?php foreach ($st['sessions'] as $smark): ?>
+                                <td class="p-1">
+                                    <span class="badge rounded-circle p-1 d-inline-flex align-items-center justify-content-center fw-bold <?php echo $smark['badge_class']; ?>" style="width: 26px; height: 26px; font-size: 0.75rem;" title="<?php echo s($smark['session_name']); ?>: <?php echo attendance_manager::status_label($smark['status']); ?><?php echo $smark['remarks'] ? ' (' . s($smark['remarks']) . ')' : ''; ?>">
+                                        <?php echo $smark['short_code']; ?>
+                                    </span>
+                                </td>
+                                <?php endforeach; ?>
+                                <td class="fw-bold text-success"><?php echo $st['present']; ?></td>
+                                <td class="fw-bold text-warning"><?php echo $st['sick']; ?></td>
+                                <td class="fw-bold text-info"><?php echo $st['permitted']; ?></td>
+                                <td class="fw-bold text-danger"><?php echo $st['absent']; ?></td>
+                                <td>
+                                    <span class="fw-bold <?php echo $st['is_eligible'] ? 'text-success' : 'text-danger'; ?>"><?php echo $st['percent']; ?>%</span>
+                                </td>
+                                <td>
+                                    <?php if ($st['is_eligible']): ?>
+                                    <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 font-semibold" style="font-size: 0.75rem;">
+                                        Layak Ujian
+                                    </span>
+                                    <?php else: ?>
+                                    <span class="badge bg-danger bg-opacity-15 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1 font-semibold" style="font-size: 0.75rem;">
+                                        Peringatan (&lt;75%)
+                                    </span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+
+                            <?php if (empty($recap['students'])): ?>
+                            <tr>
+                                <td colspan="<?php echo 7 + count($recap['sessions']); ?>" class="text-center py-4 text-muted">
+                                    Belum ada data mahasiswa terdaftar di kelas ini.
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <?php else: ?>
         <div class="row g-4">
             <!-- Sidebar: Sessions List -->
             <div class="col-lg-4">
@@ -277,6 +486,7 @@ echo $OUTPUT->header();
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Modal Buat Sesi Baru -->
         <div class="modal fade" id="createSessionModal" tabindex="-1" aria-labelledby="createSessionModalLabel" aria-hidden="true">
@@ -403,6 +613,36 @@ echo $OUTPUT->header();
         </div>
     <?php endif; ?>
 </div>
+
+<style>
+@media print {
+    .lumina-topbar, .lumina-rail, .nav, .nav-pills, .btn, .alert, .modal, footer, #page-header, .drawer-toggles, .d-print-none {
+        display: none !important;
+    }
+    body, #page, .main-inner, .lumina-attendance-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #fff !important;
+    }
+    .antigravity-glass-card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        background: #fff !important;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+    .table th, .table td {
+        border: 1px solid #444 !important;
+        font-size: 8pt !important;
+        padding: 4px !important;
+    }
+}
+</style>
 
 <?php
 echo $OUTPUT->footer();

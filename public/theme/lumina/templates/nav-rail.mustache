@@ -49,7 +49,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ config.wwwroot }}}/admin/user.php" class="nav-link-item">
+                    <a href="{{{ config.wwwroot }}}/admin/user.php" class="nav-link-item {{#lumina_nav.is_manage_users}}active{{/lumina_nav.is_manage_users}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">manage_accounts</span>
                             <span>Manajemen Pengguna</span>
@@ -73,7 +73,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ config.wwwroot }}}/report/security/index.php" class="nav-link-item">
+                    <a href="{{{ config.wwwroot }}}/report/security/index.php" class="nav-link-item {{#lumina_nav.is_security_report}}active{{/lumina_nav.is_security_report}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">shield_with_heart</span>
                             <span>Log Keamanan</span>
@@ -81,7 +81,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ config.wwwroot }}}/local/lumina_core/exam_review.php" class="nav-link-item">
+                    <a href="{{{ config.wwwroot }}}/local/lumina_core/exam_review.php" class="nav-link-item {{#lumina_nav.is_exam_review}}active{{/lumina_nav.is_exam_review}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">verified_user</span>
                             <span>Audit Ujian Anti-Curang</span>
@@ -95,7 +95,7 @@
             <div class="nav-section-title">MANAJEMEN KURSUS</div>
             <ul class="nav-list">
                 <li>
-                    <a href="{{{ config.wwwroot }}}/course/management.php" class="nav-link-item">
+                    <a href="{{{ config.wwwroot }}}/course/management.php" class="nav-link-item {{#lumina_nav.is_manage_courses}}active{{/lumina_nav.is_manage_courses}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">auto_stories</span>
                             <span>Kelola Kursus & Kategori</span>
@@ -103,7 +103,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item">
+                    <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item {{#lumina_nav.is_resources}}active{{/lumina_nav.is_resources}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">folder_special</span>
                             <span>Perpustakaan Sumber Belajar</span>
@@ -136,7 +136,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ lumina_nav.class_list_url }}}" class="nav-link-item">
+                    <a href="{{{ lumina_nav.class_list_url }}}" class="nav-link-item {{#lumina_nav.is_classlist}}active{{/lumina_nav.is_classlist}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">groups</span>
                             <span>Daftar Kelas & Kehadiran</span>
@@ -177,7 +177,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item">
+                    <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item {{#lumina_nav.is_resources}}active{{/lumina_nav.is_resources}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">{{ lumina_nav.resources_icon }}</span>
                             <span>{{ lumina_nav.resources_label }}</span>

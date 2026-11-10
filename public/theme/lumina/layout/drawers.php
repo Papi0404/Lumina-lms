@@ -155,32 +155,8 @@ if (!$activecourseid) {
     }
 }
 
-// 1. Smart Forum URL (Course-bound, prefers general discussion forum over news)
-$forumurl = (new \core\url('/my/courses.php'))->out(false);
-if ($activecourseid) {
-    $forumcmid = $DB->get_field_sql(
-        "SELECT cm.id FROM {course_modules} cm
-         JOIN {modules} m ON m.id = cm.module
-         JOIN {forum} f ON f.id = cm.instance
-         WHERE cm.course = ? AND m.name = 'forum' AND f.type = 'general' AND cm.deletioninprogress = 0
-         ORDER BY cm.id DESC LIMIT 1",
-        [$activecourseid]
-    );
-    if (!$forumcmid) {
-        $forumcmid = $DB->get_field_sql(
-            "SELECT cm.id FROM {course_modules} cm
-             JOIN {modules} m ON m.id = cm.module
-             WHERE cm.course = ? AND m.name = 'forum' AND cm.deletioninprogress = 0
-             ORDER BY cm.id ASC LIMIT 1",
-            [$activecourseid]
-        );
-    }
-    if ($forumcmid) {
-        $forumurl = (new \core\url('/mod/forum/view.php', ['id' => $forumcmid]))->out(false);
-    } else {
-        $forumurl = (new \core\url('/mod/forum/index.php', ['id' => $activecourseid]))->out(false);
-    }
-}
+// 1. Smart Forum URL (Points to Secure Lumina Forum Discussion Hub)
+$forumurl = (new \core\url('/local/lumina_core/forum.php', $activecourseid ? ['courseid' => $activecourseid] : []))->out(false);
 
 // 2. Smart Grade URL — safe for all roles
 if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {

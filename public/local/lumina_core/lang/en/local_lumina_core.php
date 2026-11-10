@@ -48,3 +48,4 @@ $string['exammonitortitle'] = 'Anti-Cheat Exam Proctoring';
 $string['warning1_title'] = 'Exam Alert (Warning 1 of 3)';
 $string['warning2_title'] = 'Severe Violation (Warning 2 of 3)';
 $string['warning3_title'] = 'Exam Suspended (Warning 3 of 3)';
+

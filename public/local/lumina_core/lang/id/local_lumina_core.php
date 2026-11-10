@@ -48,3 +48,4 @@ $string['exammonitortitle'] = 'Pemantauan Ujian Anti-Curang';
 $string['warning1_title'] = 'Peringatan Ujian (Peringatan 1 dari 3)';
 $string['warning2_title'] = 'Pelanggaran Serius (Peringatan 2 dari 3)';
 $string['warning3_title'] = 'Ujian Ditangguhkan (Peringatan 3 dari 3)';
+

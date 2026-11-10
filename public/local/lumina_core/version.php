@@ -29,3 +29,4 @@ $plugin->requires  = 2023100900;
 $plugin->component = 'local_lumina_core';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->release   = 'v1.0.0 (Build: 20261110)';
+

@@ -262,3 +262,4 @@ class attendance_manager {
         return $classes[$status] ?? 'bg-secondary text-secondary bg-opacity-15 border';
     }
 }
+

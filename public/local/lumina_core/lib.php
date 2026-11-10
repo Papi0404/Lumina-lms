@@ -34,3 +34,4 @@ function local_lumina_core_is_installed(): bool {
     $dbman = $DB->get_manager();
     return $dbman->table_exists('local_lumina_attendance');
 }
+

@@ -402,3 +402,4 @@ function openH5pModal(title, url) {
 
 <?php
 echo $OUTPUT->footer();
+

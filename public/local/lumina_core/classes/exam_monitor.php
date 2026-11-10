@@ -213,3 +213,4 @@ class exam_monitor {
         return $DB->update_record('local_lumina_exam_sessions', $session);
     }
 }
+

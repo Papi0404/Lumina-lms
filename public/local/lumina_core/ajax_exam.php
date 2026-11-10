@@ -34,10 +34,25 @@ require_sesskey();
 header('Content-Type: application/json; charset=utf-8');
 
 $sessionid = required_param('sessionid', PARAM_INT);
-$eventtype = required_param('eventtype', PARAM_ALPHAEXT);
-$metadata  = optional_param('metadata', '', PARAM_TEXT);
+$action    = optional_param('action', 'violation', PARAM_ALPHAEXT);
 
 try {
+    if ($action === 'submit_exam') {
+        $answersraw = optional_param('answers', '', PARAM_RAW);
+        $answers = json_decode($answersraw, true);
+        if (!is_array($answers)) {
+            $answers = [];
+        }
+
+        $result = exam_monitor::submit_exam_attempt($sessionid, $USER->id, $answers);
+        echo json_encode($result);
+        exit;
+    }
+
+    // Default: record proctoring violation beacon
+    $eventtype = required_param('eventtype', PARAM_ALPHAEXT);
+    $metadata  = optional_param('metadata', '', PARAM_TEXT);
+
     $result = exam_monitor::record_violation($sessionid, $USER->id, $eventtype, $metadata);
     echo json_encode([
         'success'       => true,

@@ -45,6 +45,16 @@ if (defined('BEHAT_SITE_RUNNING') && get_user_preferences('behat_keep_drawer_clo
     $blockdraweropen = true;
 }
 
+// Auto-routing for Proctored Anti-Cheat CBT Exams.
+if (!empty($PAGE->cm) && ($PAGE->cm->id == 26 || strpos($PAGE->cm->name, 'Anti-Curang') !== false || strpos($PAGE->cm->name, 'Live Proctoring') !== false)) {
+    $resolvedrole = \theme_lumina\role_resolver::get_active_role();
+    $isstudent = ($resolvedrole === 'student' || !has_capability('moodle/course:manageactivities', $PAGE->context));
+    $isaction = optional_param('action', '', PARAM_ALPHA);
+    if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
+        redirect(new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $PAGE->cm->id]));
+    }
+}
+
 $extraclasses = ['uses-drawers', 'lumina-layout'];
 if (!empty($PAGE->pagelayout)) {
     $extraclasses[] = 'layout-' . $PAGE->pagelayout;

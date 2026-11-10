@@ -517,7 +517,7 @@ h1, h2, h3, h4, h5, h6,
     }
   }
 
-  // Prevent duplicate AI floating widgets in iframes, H5P embeds, popups
+  // Prevent duplicate AI floating widgets in iframes, H5P embeds, popups, and during exams
   body.h5p-embed #luminaAiFab,
   body.h5p-embed #luminaAiChatWindow,
   body.pagelayout-embedded #luminaAiFab,
@@ -525,7 +525,19 @@ h1, h2, h3, h4, h5, h6,
   body.layout-embedded #luminaAiFab,
   body.layout-embedded #luminaAiChatWindow,
   body.pagelayout-popup #luminaAiFab,
-  body.pagelayout-popup #luminaAiChatWindow {
+  body.pagelayout-popup #luminaAiChatWindow,
+  body.pagelayout-secure #luminaAiFab,
+  body.pagelayout-secure #luminaAiChatWindow,
+  body.path-mod-h5pactivity #luminaAiFab,
+  body.path-mod-h5pactivity #luminaAiChatWindow,
+  body.path-mod-quiz #luminaAiFab,
+  body.path-mod-quiz #luminaAiChatWindow,
+  body.path-local-lumina_core #luminaAiFab,
+  body.path-local-lumina_core #luminaAiChatWindow,
+  .lumina-exam-view #luminaAiFab,
+  .lumina-exam-view #luminaAiChatWindow,
+  #examGuardViewport #luminaAiFab,
+  #examGuardViewport #luminaAiChatWindow {
     display: none !important;
     visibility: hidden !important;
   }

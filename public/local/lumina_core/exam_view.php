@@ -70,6 +70,17 @@ echo $OUTPUT->header();
         </div>
     </div>
 
+    <!-- Floating Warning Toast Banner (Non-blocking) -->
+    <div id="examWarningToast" class="exam-warning-toast" style="display: none;">
+        <div class="d-flex align-items-center gap-3">
+            <span class="material-symbols-outlined fs-2 text-warning">warning</span>
+            <div>
+                <h6 class="mb-0 fw-bold" id="examWarningTitle" style="color: #F59E0B;">PERINGATAN 1 / 3</h6>
+                <p class="mb-0 small" id="examWarningDesc">Terdeteksi meninggalkan layar ujian.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Active Exam Container -->
     <div class="exam-content-box p-3" style="min-height: calc(100vh - 60px);">
         <iframe id="examFrame" src="<?php echo $CFG->wwwroot; ?>/mod/<?php echo $cm->modname; ?>/view.php?id=<?php echo $cm->id; ?>" width="100%" height="800" frameborder="0"></iframe>
@@ -125,6 +136,25 @@ echo $OUTPUT->header();
     background: #EF4444;
     box-shadow: 0 0 8px #EF4444;
 }
+.exam-warning-toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99998;
+    background: #1E1B4B;
+    color: #FFFFFF;
+    border: 2px solid #F59E0B;
+    border-radius: 1rem;
+    padding: 1rem 1.75rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(245, 158, 11, 0.4);
+    animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 90%;
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
 .exam-suspension-overlay {
     display: none;
     position: fixed;
@@ -149,11 +179,30 @@ echo $OUTPUT->header();
     let currentWarnCount = <?php echo (int)$session->warningcount; ?>;
     let isSuspended = <?php echo ($session->status === 'under_review') ? 'true' : 'false'; ?>;
     let cooldown = false;
+    let toastTimeout = null;
+
+    function showWarningToast(level, message) {
+        const toast = document.getElementById('examWarningToast');
+        const title = document.getElementById('examWarningTitle');
+        const desc = document.getElementById('examWarningDesc');
+        if (!toast) return;
+
+        title.textContent = 'PERINGATAN ' + level + ' / 3: TERDETEKSI PELANGGARAN';
+        title.style.color = (level >= 2) ? '#EF4444' : '#F59E0B';
+        desc.textContent = message;
+        toast.style.borderColor = (level >= 2) ? '#EF4444' : '#F59E0B';
+        toast.style.display = 'block';
+
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.style.display = 'none';
+        }, 5000);
+    }
 
     function reportViolation(eventType, meta) {
         if (isSuspended || cooldown) return;
         cooldown = true;
-        setTimeout(() => { cooldown = false; }, 3000); // 3-second cooldown to prevent spam
+        setTimeout(() => { cooldown = false; }, 2500); // 2.5s cooldown to prevent flood
 
         const formData = new FormData();
         formData.append('sessionid', sessionId);
@@ -175,7 +224,7 @@ echo $OUTPUT->header();
                     isSuspended = true;
                     document.getElementById('suspensionOverlay').classList.add('show');
                 } else {
-                    alert(data.message);
+                    showWarningToast(data.warning_level, data.message);
                 }
             }
         })
@@ -197,24 +246,38 @@ echo $OUTPUT->header();
         if (b) b.textContent = count + ' / 3';
     }
 
-    // 1. Detect Window Blur / Switching Away
+    // 1. Detect Window Blur (Switching Application / Alt+Tab / Developer Tools)
     window.addEventListener('blur', function() {
-        reportViolation('blur', 'Jendela browser kehilangan fokus / switch window');
+        if (document.activeElement && document.activeElement === document.getElementById('examFrame')) {
+            return; // Normal student interaction inside exam iframe
+        }
+        reportViolation('blur', 'Jendela browser kehilangan fokus / berpindah aplikasi');
     });
 
-    // 2. Detect Tab Visibility Change (Tab switching or minimize)
+    // 2. Detect Tab Visibility Change (Tab switching or browser minimize)
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
-            reportViolation('visibility_hidden', 'Tab disembunyikan atau berganti tab');
+            reportViolation('visibility_hidden', 'Tab disembunyikan atau berpindah tab peramban');
         }
     });
 
-    // 3. Detect Cursor Leaving Viewport
-    document.addEventListener('mouseleave', function() {
-        reportViolation('mouseleave', 'Kursor keluar dari batas layar ujian');
+    // 3. Detect Cursor Leaving Viewport Boundary
+    document.addEventListener('mouseleave', function(e) {
+        if (e.clientY <= 0 || e.clientX <= 0 || (e.clientX >= window.innerWidth) || (e.clientY >= window.innerHeight)) {
+            reportViolation('mouseleave', 'Kursor keluar dari batas layar peramban');
+        }
     });
 
-    // 4. Fullscreen Enforcement
+    // 4. Prevent Right-Click & Copy Attempt
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    document.addEventListener('copy', function(e) {
+        e.preventDefault();
+        reportViolation('clipboard_copy', 'Percobaan menyalin teks / pintasan copy-paste');
+    });
+
+    // 5. Fullscreen Enforcement
     window.toggleFullscreen = function() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -227,7 +290,7 @@ echo $OUTPUT->header();
 
     document.addEventListener('fullscreenchange', function() {
         if (!document.fullscreenElement && !isSuspended) {
-            reportViolation('fullscreen_exit', 'Siswa keluar dari mode fullscreen');
+            reportViolation('fullscreen_exit', 'Siswa keluar dari mode fullscreen (layar penuh)');
         }
     });
 
@@ -243,4 +306,3 @@ echo $OUTPUT->header();
 
 <?php
 echo $OUTPUT->footer();
-

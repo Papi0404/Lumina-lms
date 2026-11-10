@@ -46,12 +46,23 @@ if (defined('BEHAT_SITE_RUNNING') && get_user_preferences('behat_keep_drawer_clo
 }
 
 // Auto-routing for Proctored Anti-Cheat CBT Exams.
-if (!empty($PAGE->cm) && ($PAGE->cm->id == 26 || strpos($PAGE->cm->name, 'Anti-Curang') !== false || strpos($PAGE->cm->name, 'Live Proctoring') !== false)) {
-    $resolvedrole = \theme_lumina\role_resolver::get_active_role();
-    $isstudent = ($resolvedrole === 'student' || !has_capability('moodle/course:manageactivities', $PAGE->context));
-    $isaction = optional_param('action', '', PARAM_ALPHA);
-    if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
-        redirect(new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $PAGE->cm->id]));
+$h5pcmid = optional_param('id', 0, PARAM_INT);
+$pagetype = $PAGE->pagetype ?? '';
+$urlpath = $PAGE->url ? $PAGE->url->get_path() : '';
+
+if (($pagetype === 'mod-h5pactivity-view' || strpos($urlpath, 'mod/h5pactivity/view.php') !== false) && $h5pcmid) {
+    $proctorcm = get_coursemodule_from_id('h5pactivity', $h5pcmid, 0, false, IGNORE_MISSING);
+    if ($proctorcm && ($proctorcm->id == 26 || strpos($proctorcm->name, 'Anti-Curang') !== false || strpos($proctorcm->name, 'Live Proctoring') !== false)) {
+        global $USER;
+        $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
+        $isstudent = (!empty($roleinfo['is_student']) || !has_capability('moodle/course:manageactivities', $PAGE->context));
+        $isaction = optional_param('action', '', PARAM_ALPHA);
+        if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
+            $examurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+            echo "<script>window.location.replace('" . $examurl . "');</script>";
+            echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
+            exit;
+        }
     }
 }
 

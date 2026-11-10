@@ -191,7 +191,7 @@ echo $OUTPUT->header();
             </div>
             <?php if ($course): ?>
             <div>
-                <a href="<?php echo (new moodle_url('/course/view.php', ['id' => $course->id, 'edit' => 1]))->out(false); ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-semibold shadow-xs">
+                <a href="<?php echo (new moodle_url('/course/view.php', ['id' => $course->id, 'edit' => 1, 'sesskey' => sesskey()]))->out(false); ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-semibold shadow-xs">
                     <span class="material-symbols-outlined align-middle fs-6 me-1">tune</span>
                     Atur Tata Letak di Ruang Kelas
                 </a>
@@ -419,3 +419,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <?php
 echo $OUTPUT->footer();
+

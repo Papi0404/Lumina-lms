@@ -206,6 +206,150 @@ if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {
     $gradesurl = (new \core\url('/grade/report/overview/index.php'))->out(false);
 }
 
+// 2.1 Grader Report helper banner & pending submissions hub for Teachers/Admins
+$isgraderreport = ($PAGE->pagetype === 'gradereport_grader-index' || strpos($currentpagepath, '/grade/report/grader') !== false);
+if ($isgraderreport && ($roleinfo['is_teacher'] || $roleinfo['is_admin']) && $activecourseid) {
+    // Query pending submissions for this course
+    $pendingsql = "SELECT s.id AS subid, s.assignment, s.userid, s.timemodified,
+                          a.name AS assignmentname, u.firstname, u.lastname, u.email,
+                          cm.id AS cmid, gi.id AS gradeitemid
+                     FROM {assign_submission} s
+                     JOIN {assign} a ON a.id = s.assignment
+                     JOIN {course_modules} cm ON cm.instance = a.id AND cm.course = a.course
+                     JOIN {modules} m ON m.id = cm.module AND m.name = 'assign'
+                     JOIN {grade_items} gi ON gi.courseid = a.course AND gi.itemtype = 'mod' AND gi.itemmodule = 'assign' AND gi.iteminstance = a.id
+                     JOIN {user} u ON u.id = s.userid
+                LEFT JOIN {assign_grades} g ON g.assignment = s.assignment AND g.userid = s.userid AND g.attemptnumber = s.attemptnumber
+                    WHERE a.course = ?
+                      AND s.status = 'submitted'
+                      AND s.latest = 1
+                      AND (g.grade IS NULL OR g.grade < 0)
+                 ORDER BY s.timemodified DESC";
+    $pendingsubs = $DB->get_records_sql($pendingsql, [$activecourseid]);
+    $fs = get_file_storage();
+
+    if (!empty($pendingsubs)) {
+        $subcards = '';
+        $scriptmappings = [];
+        $firstcmid = null;
+        foreach ($pendingsubs as $ps) {
+            if (!$firstcmid) {
+                $firstcmid = $ps->cmid;
+            }
+            $context = context_module::instance($ps->cmid);
+            $files = $fs->get_area_files($context->id, 'assignsubmission_file', 'submission_files', $ps->subid, 'id', false);
+            $fileitems = [];
+            foreach ($files as $f) {
+                $filesize_kb = round($f->get_filesize() / 1024, 1);
+                $fileitems[] = '<span class="badge bg-light text-primary border border-primary-subtle py-1 px-2 d-inline-flex align-items-center gap-1 font-monospace"><i class="fa fa-file-pdf-o"></i> ' . s($f->get_filename()) . ' (' . $filesize_kb . ' KB)</span>';
+            }
+            $filehtml = !empty($fileitems) ? implode(' ', $fileitems) : '<span class="text-muted small">Tidak ada lampiran berkas fisik</span>';
+
+            $gradeurl = (new \core\url('/mod/assign/view.php', ['id' => $ps->cmid, 'action' => 'grader', 'userid' => $ps->userid]))->out(false);
+            $gradingurl = (new \core\url('/mod/assign/view.php', ['id' => $ps->cmid, 'action' => 'grading']))->out(false);
+
+            $fullname = s($ps->firstname . ' ' . $ps->lastname);
+            $initials = strtoupper(substr($ps->firstname, 0, 1) . substr($ps->lastname, 0, 1));
+
+            $subcards .= '
+            <div class="p-3 mb-2 bg-white rounded-3 border border-slate-200 d-flex align-items-center justify-content-between flex-wrap gap-3 shadow-2xs">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 44px; height: 44px; min-width: 44px; border: 1px solid rgba(67, 56, 202, 0.2); font-size: 0.9rem;">
+                        ' . $initials . '
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-dark fs-6">' . $fullname . '</span>
+                            <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.7rem; font-weight: 600;">Menunggu Penilaian</span>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            <strong>Tugas:</strong> ' . s($ps->assignmentname) . '
+                        </div>
+                        <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
+                            ' . $filehtml . '
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="' . $gradeurl . '" class="btn btn-primary btn-sm px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" style="background: #4338CA; border-color: #4338CA; border-radius: 8px;">
+                        <i class="fa fa-pencil-square-o"></i> Beri Nilai &amp; Buka Berkas ' . $fullname . ' &rarr;
+                    </a>
+                    <a href="' . $gradingurl . '" class="btn btn-outline-secondary btn-sm px-2 py-2 fw-semibold" style="border-radius: 8px;" title="Lihat daftar pengumpulan kelas">
+                        <i class="fa fa-list"></i>
+                    </a>
+                </div>
+            </div>';
+
+            $scriptmappings[] = [
+                'userid' => (int)$ps->userid,
+                'gradeitemid' => (int)$ps->gradeitemid,
+                'studentname' => $fullname,
+                'gradeurl' => $gradeurl,
+            ];
+        }
+
+        $allgradingurl = $firstcmid ? (new \core\url('/mod/assign/view.php', ['id' => $firstcmid, 'action' => 'grading']))->out(false) : '#';
+
+        $quizguidehtml .= '
+        <div class="lumina-gradebook-guide card border-0 mb-4 shadow-sm" style="border-radius: 16px; background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%); border: 1px solid #C7D2FE !important;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px; min-width: 48px; background: #4338CA; color: #FFFFFF;">
+                        <span class="material-symbols-outlined" style="font-size: 26px;">assignment_turned_in</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                Berkas Tugas Siswa yang Siap Dinilai
+                                <span class="badge bg-danger rounded-pill px-2 py-1 fs-6" style="font-size: 0.75rem !important;">' . count($pendingsubs) . ' Berkas Masuk</span>
+                            </h5>
+                            <a href="' . $allgradingurl . '" class="btn btn-sm btn-outline-primary fw-semibold" style="border-radius: 8px;">
+                                <i class="fa fa-folder-open me-1"></i> Buka Semua Pengumpulan
+                            </a>
+                        </div>
+                        <p class="text-muted small mb-3">
+                            <strong>Panduan Guru:</strong> Tabel di bawah adalah <strong>Buku Nilai (Matriks Rekapitulasi Angka)</strong>. Berkas asli (PDF/Word) yang diunggah siswa dibaca dan dinilai langsung melalui tombol penilai berikut:
+                        </p>
+                        <div class="pending-list">
+                            ' . $subcards . '
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var mappings = ' . json_encode($scriptmappings) . ';
+            if (!mappings || !mappings.length) return;
+            setTimeout(function() {
+                var table = document.querySelector("#user-grades");
+                if (!table) return;
+                mappings.forEach(function(m) {
+                    var cell = table.querySelector("td.cell[data-itemid=\"" + m.gradeitemid + "\"]");
+                    if (cell && !cell.querySelector(".lumina-grade-action-btn")) {
+                        var btn = document.createElement("a");
+                        btn.className = "lumina-grade-action-btn btn btn-sm btn-warning text-dark fw-bold d-inline-flex align-items-center gap-1 my-1";
+                        btn.style.cssText = "border-radius: 6px; font-size: 0.725rem; padding: 2px 7px; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1);";
+                        btn.href = m.gradeurl;
+                        btn.title = "Buka Berkas & Beri Nilai " + m.studentname;
+                        btn.innerHTML = "<i class=\"fa fa-file-pdf-o\"></i> Periksa Berkas (Nilai)";
+                        cell.appendChild(btn);
+                    }
+                });
+            }, 300);
+        });
+        </script>';
+    } else {
+        $quizguidehtml .= '
+        <div class="alert alert-light border border-slate-200 rounded-3 p-3 mb-4 shadow-2xs d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2 text-muted small">
+                <span class="material-symbols-outlined text-primary fs-5">info</span>
+                <span><strong>Informasi Buku Nilai:</strong> Matriks di bawah menyajikan rekapitulasi nilai angka kelas. Untuk melihat dan mengunduh berkas tugas mahasiswa, klik tautan nama tugas pada judul kolom tabel.</span>
+            </div>
+        </div>';
+    }
+}
+
 // 3. Smart Resource Library URL (Role & Course-isolated)
 if ($roleinfo['is_admin']) {
     $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);

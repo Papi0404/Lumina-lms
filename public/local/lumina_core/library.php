@@ -210,8 +210,12 @@ if (data_submitted() && confirm_sesskey()) {
         $isprivate = true;
         $courseid = -1;
     } else if ($canmanage) {
-        // Teacher / Admin Actions for Course or School Library
-        if ($action === 'create_folder') {
+        // Teacher / Admin Actions for Course or School Library.
+        // SECURITY CHECK: School Library (courseid = 0) CAN ONLY BE MANAGED BY ADMIN!
+        if ($courseid === 0 && !$roleinfo['is_admin']) {
+            $notice = 'Akses ditolak: Hanya Administrator Sekolah yang berhak menambah, mengubah, atau menghapus materi di Perpustakaan Sekolah.';
+            $noticetype = 'danger';
+        } else if ($action === 'create_folder') {
             $foldername = required_param('folder_name', PARAM_TEXT);
             $folderdesc = optional_param('folder_desc', '', PARAM_TEXT);
             $parent = optional_param('parent_id', 0, PARAM_INT);
@@ -230,19 +234,105 @@ if (data_submitted() && confirm_sesskey()) {
             $DB->insert_record('local_lumina_lib_folders', $f);
             $notice = 'Folder berhasil dibuat!';
             $noticetype = 'success';
+        } else if ($action === 'edit_folder') {
+            $editfolderid = required_param('edit_folder_id', PARAM_INT);
+            $editname     = required_param('edit_folder_name', PARAM_TEXT);
+            $editdesc     = optional_param('edit_folder_desc', '', PARAM_TEXT);
+
+            if (library_manager::update_folder($editfolderid, $editname, $editdesc)) {
+                $notice = 'Folder perpustakaan berhasil diperbarui!';
+                $noticetype = 'success';
+            } else {
+                $notice = 'Gagal memperbarui folder.';
+                $noticetype = 'danger';
+            }
+        } else if ($action === 'delete_folder') {
+            $delfolderid = optional_param('delete_folder_id', 0, PARAM_INT);
+            if (!$delfolderid) {
+                $delfolderid = optional_param('folderid', 0, PARAM_INT);
+            }
+
+            if ($delfolderid > 0 && library_manager::delete_folder($delfolderid)) {
+                $notice = 'Folder beserta seluruh isinya berhasil dihapus!';
+                $noticetype = 'success';
+                // If the user was inside the deleted folder, jump back to root
+                if ($folderid == $delfolderid) {
+                    $folderid = 0;
+                }
+            } else {
+                $notice = 'Gagal menghapus folder.';
+                $noticetype = 'danger';
+            }
         } else if ($action === 'add_item' && $folderid > 0) {
             $title = required_param('item_title', PARAM_TEXT);
             $type = required_param('item_type', PARAM_ALPHA);
-            $url = required_param('item_url', PARAM_URL);
+            $source = optional_param('item_source', 'url', PARAM_ALPHA); // 'file' or 'url'
+
+            $fileurl = '';
+            $fileid = 0;
+            $filesize = 0;
+
+            if ($source === 'file' && !empty($_FILES['item_file']['name']) && is_uploaded_file($_FILES['item_file']['tmp_name'])) {
+                $originalname = clean_param($_FILES['item_file']['name'], PARAM_FILE);
+                $ext = strtolower(pathinfo($originalname, PATHINFO_EXTENSION));
+
+                $typemap = [
+                    'pdf'  => 'pdf',
+                    'doc'  => 'doc',
+                    'docx' => 'doc',
+                    'ppt'  => 'doc',
+                    'pptx' => 'doc',
+                    'zip'  => 'doc',
+                    'txt'  => 'doc',
+                    'png'  => 'doc',
+                    'jpg'  => 'doc',
+                    'jpeg' => 'doc',
+                ];
+                $type = $typemap[$ext] ?? 'doc';
+
+                $fileinfo = [
+                    'contextid' => $coursecontext->id,
+                    'component' => 'local_lumina_core',
+                    'filearea'  => 'library',
+                    'itemid'    => $folderid,
+                    'filepath'  => '/',
+                    'filename'  => $originalname,
+                    'userid'    => $USER->id,
+                ];
+
+                // Remove existing if conflict
+                $existing = $fs->get_file($coursecontext->id, 'local_lumina_core', 'library', $folderid, '/', $originalname);
+                if ($existing) {
+                    $existing->delete();
+                }
+
+                $storedfile = $fs->create_file_from_pathname($fileinfo, $_FILES['item_file']['tmp_name']);
+                $fileurl = moodle_url::make_pluginfile_url(
+                    $coursecontext->id,
+                    'local_lumina_core',
+                    'library',
+                    $folderid,
+                    '/',
+                    $originalname
+                )->out(false);
+
+                $fileid = $storedfile->get_id();
+                $filesize = $storedfile->get_filesize();
+            } else {
+                $fileurl = optional_param('item_url', '', PARAM_URL);
+                if (empty($fileurl)) {
+                    $fileurl = '#';
+                }
+            }
 
             $it = new stdClass();
             $it->folderid = $folderid;
             $it->courseid = $courseid;
             $it->title = clean_text($title);
             $it->itemtype = in_array($type, ['h5p', 'pdf', 'page', 'doc', 'link'], true) ? $type : 'link';
-            $it->contentref = clean_text($url);
-            $it->fileid = 0;
-            $it->filesize = 1048576;
+            $it->contentref = clean_text($fileurl);
+            $it->fileid = $fileid;
+            $it->filesize = $filesize ?: 1048576;
             $it->createdby = $USER->id;
             $it->timecreated = time();
             $it->timemodified = time();
@@ -250,6 +340,32 @@ if (data_submitted() && confirm_sesskey()) {
             $DB->insert_record('local_lumina_lib_items', $it);
             $notice = 'Bahan ajar berhasil ditambahkan ke dalam folder!';
             $noticetype = 'success';
+        } else if ($action === 'edit_item') {
+            $edititemid = required_param('edit_item_id', PARAM_INT);
+            $edittitle  = required_param('edit_item_title', PARAM_TEXT);
+            $edittype   = required_param('edit_item_type', PARAM_ALPHA);
+            $editurl    = optional_param('edit_item_url', '', PARAM_URL);
+
+            if (library_manager::update_item($edititemid, $edittitle, $edittype, $editurl)) {
+                $notice = 'Materi berhasil diperbarui!';
+                $noticetype = 'success';
+            } else {
+                $notice = 'Gagal memperbarui materi.';
+                $noticetype = 'danger';
+            }
+        } else if ($action === 'delete_item') {
+            $delitemid = optional_param('delete_item_id', 0, PARAM_INT);
+            if (!$delitemid) {
+                $delitemid = optional_param('item_id', 0, PARAM_INT);
+            }
+
+            if ($delitemid > 0 && library_manager::delete_item($delitemid)) {
+                $notice = 'Materi berhasil dihapus dari perpustakaan!';
+                $noticetype = 'success';
+            } else {
+                $notice = 'Gagal menghapus materi.';
+                $noticetype = 'danger';
+            }
         }
     }
 }
@@ -503,23 +619,74 @@ echo $OUTPUT->header();
         <!-- ================================================================= -->
         <!-- COURSE / SCHOOL LIBRARY VIEW (HIERARCHICAL FOLDERS & SUBFOLDERS)  -->
         <!-- ================================================================= -->
-        <!-- Breadcrumb Hierarchy Path -->
-        <div class="antigravity-glass-card rounded-2xl px-4 py-2-5 mb-4 d-flex align-items-center gap-2 small">
-            <a href="library.php?courseid=<?php echo $courseid; ?>&folderid=0" class="text-decoration-none fw-semibold text-primary d-inline-flex align-items-center gap-1">
-                <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
-                Root Folder
-            </a>
+        <?php if ($courseid === 0): ?>
+            <?php if ($roleinfo['is_admin']): ?>
+            <div class="alert alert-primary rounded-3xl p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2 border-0 bg-primary bg-opacity-10 text-dark">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-2 bg-primary text-white d-flex align-items-center justify-content-center">
+                        <span class="material-symbols-outlined" style="font-size: 24px;">admin_panel_settings</span>
+                    </div>
+                    <div>
+                        <strong class="text-primary d-block">Mode Administrator &bull; Perpustakaan Umum Sekolah</strong>
+                        <div class="small text-muted">Hanya Administrator yang memiliki hak akses penuh untuk <strong>menambah folder/berkas, mengedit, dan menghapus</strong> materi sekolah. Pengajar dan siswa hanya memiliki izin baca &amp; unduh.</div>
+                    </div>
+                </div>
+                <span class="badge bg-primary rounded-pill px-3 py-1 font-semibold">Wewenang Administrator</span>
+            </div>
+            <?php else: ?>
+            <div class="alert alert-light border rounded-3xl p-3 mb-4 d-flex align-items-center gap-3 text-secondary shadow-xs">
+                <div class="rounded-circle p-2 bg-indigo bg-opacity-10 text-indigo d-flex align-items-center justify-content-center">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">local_library</span>
+                </div>
+                <div class="small">
+                    <strong class="text-dark d-block">Perpustakaan Umum Sekolah (Mode Baca &amp; Unduh)</strong>
+                    Koleksi buku panduan, jurnal, dan modul akademik publik dikelola secara terpusat oleh <strong>Administrator Sekolah</strong>. Anda dapat membaca dan mengunduh seluruh materi yang tersedia.
+                </div>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
 
-            <?php foreach ($breadcrumbs as $crumb): ?>
-                <span class="text-muted">&rsaquo;</span>
-                <?php if ($crumb['id'] == $folderid): ?>
-                    <span class="fw-bold text-dark"><?php echo $crumb['name']; ?></span>
-                <?php else: ?>
-                    <a href="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $crumb['id']; ?>" class="text-decoration-none text-primary fw-semibold">
-                        <?php echo $crumb['name']; ?>
-                    </a>
-                <?php endif; ?>
-            <?php endforeach; ?>
+        <!-- Breadcrumb Hierarchy Path -->
+        <div class="antigravity-glass-card rounded-2xl px-4 py-2-5 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2 small">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="library.php?courseid=<?php echo $courseid; ?>&folderid=0" class="text-decoration-none fw-semibold text-primary d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
+                    Root Folder
+                </a>
+
+                <?php foreach ($breadcrumbs as $crumb): ?>
+                    <span class="text-muted">&rsaquo;</span>
+                    <?php if ($crumb['id'] == $folderid): ?>
+                        <span class="fw-bold text-dark"><?php echo $crumb['name']; ?></span>
+                    <?php else: ?>
+                        <a href="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $crumb['id']; ?>" class="text-decoration-none text-primary fw-semibold">
+                            <?php echo $crumb['name']; ?>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if ($canmanage && $folderid > 0): ?>
+            <?php 
+                $curf = $DB->get_record('local_lumina_lib_folders', ['id' => $folderid]);
+                $parentid = $curf ? (int)$curf->parentid : 0;
+            ?>
+            <div class="d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-xs btn-light border rounded-pill px-2-5 py-1 text-secondary" title="Edit Folder Ini" onclick="openEditFolderModal(<?php echo $folderid; ?>, '<?php echo $curf ? s($curf->name) : ''; ?>', '<?php echo $curf ? s($curf->description) : ''; ?>')">
+                    <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: -2px;">edit</span>
+                    <span class="small font-semibold">Edit Folder Ini</span>
+                </button>
+                <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $parentid; ?>" onsubmit="return confirm('Apakah Anda yakin ingin menghapus folder ini beserta seluruh isinya? Tindakan ini permanen.');" class="d-inline">
+                    <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                    <input type="hidden" name="action" value="delete_folder">
+                    <input type="hidden" name="delete_folder_id" value="<?php echo $folderid; ?>">
+                    <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2-5 py-1" title="Hapus Folder Ini">
+                        <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: -2px;">delete</span>
+                        <span class="small font-semibold">Hapus Folder Ini</span>
+                    </button>
+                </form>
+            </div>
+            <?php endif; ?>
         </div>
 
         <!-- Folders Grid -->
@@ -529,8 +696,8 @@ echo $OUTPUT->header();
             <div class="row g-3">
                 <?php foreach ($folders as $f): ?>
                 <div class="col-md-4 col-sm-6">
-                    <a href="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $f['id']; ?>" class="text-decoration-none">
-                        <div class="antigravity-glass-card rounded-2xl p-3 h-100 transition-all hover-shadow-md border">
+                    <div class="antigravity-glass-card rounded-2xl p-3 h-100 transition-all hover-shadow-md border d-flex flex-column justify-content-between">
+                        <a href="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $f['id']; ?>" class="text-decoration-none">
                             <div class="d-flex align-items-start gap-3">
                                 <div class="rounded-2xl p-2-5 bg-warning bg-opacity-15 text-warning d-flex align-items-center justify-content-center">
                                     <span class="material-symbols-outlined" style="font-size: 28px;">folder</span>
@@ -545,20 +712,62 @@ echo $OUTPUT->header();
                                     </span>
                                 </div>
                             </div>
+                        </a>
+
+                        <?php if ($canmanage): ?>
+                        <div class="d-flex align-items-center justify-content-end gap-1 mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2-5 py-1 text-secondary" title="Edit Folder" onclick="openEditFolderModal(<?php echo $f['id']; ?>, '<?php echo s($f['name']); ?>', '<?php echo s($f['description']); ?>')">
+                                <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: -2px;">edit</span>
+                                <span class="small font-semibold">Edit</span>
+                            </button>
+                            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>" onsubmit="return confirm('Apakah Anda yakin ingin menghapus folder \'<?php echo s($f['name']); ?>\' beserta seluruh isinya? Tindakan ini permanen.');" class="d-inline">
+                                <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                                <input type="hidden" name="action" value="delete_folder">
+                                <input type="hidden" name="delete_folder_id" value="<?php echo $f['id']; ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2-5 py-1" title="Hapus Folder">
+                                    <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: -2px;">delete</span>
+                                    <span class="small font-semibold">Hapus</span>
+                                </button>
+                            </form>
                         </div>
-                    </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php else: ?>
+            <?php if ($folderid === 0): ?>
+            <div class="antigravity-glass-card rounded-3xl p-5 mb-4 text-center">
+                <div class="mx-auto rounded-circle bg-light d-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                    <span class="material-symbols-outlined text-muted" style="font-size: 32px;">folder_off</span>
+                </div>
+                <h6 class="fw-bold mb-1">Belum Ada Folder</h6>
+                <p class="text-muted small mb-3">Perpustakaan ini masih kosong. Silakan buat folder baru untuk mengorganisir bahan ajar dan modul.</p>
+                <?php if ($canmanage): ?>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 py-2 font-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#createFolderModal">
+                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -2px;">create_new_folder</span>
+                    Buat Folder Pertama
+                </button>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <!-- Items Inside Active Folder -->
         <?php if ($folderid > 0): ?>
         <div class="antigravity-glass-card rounded-3xl p-4 mb-4">
-            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                <h5 class="fw-bold mb-0">Bahan Ajar &amp; Berkas Perkuliahan</h5>
-                <span class="text-muted small">Total: <strong><?php echo count($items); ?></strong> Berkas</span>
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-0">Bahan Ajar &amp; Berkas</h5>
+                    <span class="text-muted small">Total: <strong><?php echo count($items); ?></strong> Berkas di folder ini</span>
+                </div>
+                <?php if ($canmanage): ?>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 font-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -2px;">upload_file</span>
+                    Tambah Berkas / Materi
+                </button>
+                <?php endif; ?>
             </div>
 
             <?php if (!empty($items)): ?>
@@ -582,7 +791,7 @@ echo $OUTPUT->header();
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
                         <?php if ($it['is_h5p']): ?>
                         <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 font-semibold shadow-xs" onclick="openH5pModal('<?php echo s($it['title']); ?>', '<?php echo s($it['url']); ?>')">
                             <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -3px;">play_arrow</span>
@@ -594,6 +803,21 @@ echo $OUTPUT->header();
                             Buka / Unduh
                         </a>
                         <?php endif; ?>
+
+                        <?php if ($canmanage): ?>
+                        <button type="button" class="btn btn-sm btn-light border rounded-pill px-2-5 py-1 text-secondary" title="Edit Materi" onclick="openEditItemModal(<?php echo $it['id']; ?>, '<?php echo s($it['title']); ?>', '<?php echo $it['itemtype']; ?>', '<?php echo s($it['url']); ?>')">
+                            <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: -2px;">edit</span>
+                            <span class="small font-semibold">Edit</span>
+                        </button>
+                        <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>" onsubmit="return confirm('Hapus berkas materi ini dari perpustakaan?');" class="d-inline">
+                            <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                            <input type="hidden" name="action" value="delete_item">
+                            <input type="hidden" name="delete_item_id" value="<?php echo $it['id']; ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2-5 py-1" title="Hapus Berkas">
+                                <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: -2px;">delete</span>
+                            </button>
+                        </form>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -602,6 +826,11 @@ echo $OUTPUT->header();
             <div class="text-center py-4 text-muted">
                 <span class="material-symbols-outlined" style="font-size: 40px;">draft</span>
                 <p class="mb-0 mt-2 small">Belum ada bahan ajar yang diunggah ke dalam folder ini.</p>
+                <?php if ($canmanage): ?>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 py-2 mt-2 font-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    Unggah Berkas Pertama
+                </button>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         </div>
@@ -713,10 +942,46 @@ function openH5pModal(title, url) {
     const modal = new bootstrap.Modal(document.getElementById('h5pModal'));
     modal.show();
 }
+
+function openEditFolderModal(id, name, desc) {
+    document.getElementById('editFolderId').value = id;
+    document.getElementById('editFolderName').value = name;
+    document.getElementById('editFolderDesc').value = desc;
+    const modal = new bootstrap.Modal(document.getElementById('editFolderModal'));
+    modal.show();
+}
+
+function openEditItemModal(id, title, type, url) {
+    document.getElementById('editItemId').value = id;
+    document.getElementById('editItemTitle').value = title;
+    document.getElementById('editItemType').value = type;
+    document.getElementById('editItemUrl').value = url;
+    const modal = new bootstrap.Modal(document.getElementById('editItemModal'));
+    modal.show();
+}
+
+function toggleItemSource(mode) {
+    const fileGroup = document.getElementById('itemFileGroup');
+    const urlGroup = document.getElementById('itemUrlGroup');
+    const fileInput = document.getElementById('itemFileInput');
+    const urlInput = document.getElementById('itemUrlInput');
+
+    if (mode === 'file') {
+        fileGroup.classList.remove('d-none');
+        urlGroup.classList.add('d-none');
+        fileInput.setAttribute('required', 'required');
+        urlInput.removeAttribute('required');
+    } else {
+        fileGroup.classList.add('d-none');
+        urlGroup.classList.remove('d-none');
+        urlInput.setAttribute('required', 'required');
+        fileInput.removeAttribute('required');
+    }
+}
 </script>
 
 <?php if ($canmanage): ?>
-<!-- Modal Buat Folder / Subfolder Kursus -->
+<!-- Modal Buat Folder / Subfolder -->
 <div class="modal fade" id="createFolderModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3xl border-0 shadow">
@@ -725,13 +990,13 @@ function openH5pModal(title, url) {
                 <input type="hidden" name="action" value="create_folder">
                 <input type="hidden" name="parent_id" value="<?php echo $folderid; ?>">
                 <div class="modal-header border-bottom px-4 pt-4">
-                    <h5 class="modal-title fw-bold"><?php echo $folderid > 0 ? 'Buat Subfolder Baru' : 'Buat Folder Baru'; ?></h5>
+                    <h5 class="modal-title fw-bold"><?php echo $folderid > 0 ? 'Buat Subfolder Baru' : ($courseid === 0 ? 'Tambah Folder Sekolah Baru' : 'Buat Folder Baru'); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-muted">Nama Folder</label>
-                        <input type="text" name="folder_name" class="form-control rounded-2xl" placeholder="Contoh: Bab 2: Query SQL Kompleks" required>
+                        <input type="text" name="folder_name" class="form-control rounded-2xl" placeholder="Contoh: Modul Kurikulum 2026 atau Bab 1: Pengantar" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-muted">Deskripsi Singkat</label>
@@ -747,39 +1012,137 @@ function openH5pModal(title, url) {
     </div>
 </div>
 
-<!-- Modal Tambah Materi ke Folder Kursus -->
-<div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Edit Folder -->
+<div class="modal fade" id="editFolderModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3xl border-0 shadow">
             <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>">
                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                <input type="hidden" name="action" value="edit_folder">
+                <input type="hidden" name="edit_folder_id" id="editFolderId" value="">
+                <div class="modal-header border-bottom px-4 pt-4">
+                    <h5 class="modal-title fw-bold">Ubah Informasi Folder</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Nama Folder</label>
+                        <input type="text" name="edit_folder_name" id="editFolderName" class="form-control rounded-2xl" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Deskripsi Folder</label>
+                        <textarea name="edit_folder_desc" id="editFolderDesc" class="form-control rounded-2xl" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 font-semibold shadow-xs">Perbarui Folder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Materi ke Folder -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow">
+            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>" enctype="multipart/form-data">
+                <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
                 <input type="hidden" name="action" value="add_item">
                 <div class="modal-header border-bottom px-4 pt-4">
-                    <h5 class="modal-title fw-bold">Tambah Bahan Ajar ke Folder Ini</h5>
+                    <h5 class="modal-title fw-bold">Tambah Materi ke Folder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-muted">Judul Materi</label>
-                        <input type="text" name="item_title" class="form-control rounded-2xl" placeholder="Contoh: Diktat Praktikum JavaScript DOM (PDF)" required>
+                        <input type="text" name="item_title" class="form-control rounded-2xl" placeholder="Contoh: Diktat Pemrograman Web Lengkap (PDF)" required>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small text-muted">Tipe Konten</label>
-                        <select name="item_type" class="form-select rounded-2xl">
-                            <option value="pdf">Dokumen PDF (.pdf)</option>
-                            <option value="h5p">Modul Interaktif H5P</option>
-                            <option value="doc">Dokumen / Presentasi (.docx, .pptx)</option>
-                            <option value="link">Tautan Web / Referensi Luar</option>
-                        </select>
+                        <label class="form-label fw-semibold small text-muted d-block">Sumber Materi</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="item_source" id="sourceFile" value="file" checked onchange="toggleItemSource('file')">
+                            <label class="btn btn-outline-primary rounded-start-pill py-2 font-semibold" for="sourceFile">
+                                <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -2px;">upload_file</span>
+                                Unggah File Komputer
+                            </label>
+
+                            <input type="radio" class="btn-check" name="item_source" id="sourceUrl" value="url" onchange="toggleItemSource('url')">
+                            <label class="btn btn-outline-primary rounded-end-pill py-2 font-semibold" for="sourceUrl">
+                                <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: -2px;">link</span>
+                                Tautan / URL / H5P
+                            </label>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-muted">URL Berkas / Embed Link</label>
-                        <input type="url" name="item_url" class="form-control rounded-2xl" placeholder="https://..." required>
+
+                    <div class="mb-3" id="itemFileGroup">
+                        <label class="form-label fw-semibold small text-muted">Pilih Berkas</label>
+                        <input type="file" name="item_file" id="itemFileInput" class="form-control rounded-2xl" required>
+                        <span class="form-text text-muted small" style="font-size: 0.72rem;">Mendukung PDF, Word, PowerPoint, TXT, ZIP, dan Gambar.</span>
+                    </div>
+
+                    <div class="mb-3 d-none" id="itemUrlGroup">
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold small text-muted">Tipe Konten Tautan</label>
+                            <select name="item_type" class="form-select rounded-2xl">
+                                <option value="pdf">Dokumen PDF (.pdf)</option>
+                                <option value="h5p">Modul Interaktif H5P Embed</option>
+                                <option value="doc">Dokumen / Presentasi Luar</option>
+                                <option value="link">Tautan Web / Referensi Umum</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label fw-semibold small text-muted">URL Tautan / Embed</label>
+                            <input type="url" name="item_url" id="itemUrlInput" class="form-control rounded-2xl" placeholder="https://...">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 font-semibold shadow-xs">Tambahkan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Materi -->
+<div class="modal fade" id="editItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow">
+            <form method="post" action="library.php?courseid=<?php echo $courseid; ?>&folderid=<?php echo $folderid; ?>">
+                <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                <input type="hidden" name="action" value="edit_item">
+                <input type="hidden" name="edit_item_id" id="editItemId" value="">
+                <div class="modal-header border-bottom px-4 pt-4">
+                    <h5 class="modal-title fw-bold">Ubah Rincian Materi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Judul Materi</label>
+                        <input type="text" name="edit_item_title" id="editItemTitle" class="form-control rounded-2xl" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Tipe Konten</label>
+                        <select name="edit_item_type" id="editItemType" class="form-select rounded-2xl">
+                            <option value="pdf">Dokumen PDF</option>
+                            <option value="h5p">Modul Interaktif H5P</option>
+                            <option value="doc">Dokumen / Berkas (.doc, .ppt)</option>
+                            <option value="link">Tautan Web Luar</option>
+                            <option value="page">Halaman Modul</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">URL Tautan / Ref (Kosongkan jika menggunakan berkas tersimpan)</label>
+                        <input type="text" name="edit_item_url" id="editItemUrl" class="form-control rounded-2xl">
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 font-semibold shadow-xs">Simpan Perubahan</button>
                 </div>
             </form>
         </div>

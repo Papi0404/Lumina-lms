@@ -371,14 +371,14 @@ class theme_lumina_role_resolver {
         }
 
         return [
-            'courses'                => $teachercourses,
+            'courses'                => array_values($teachercourses),
             'courses_count'          => count($teachercourses),
             'has_courses'            => !empty($teachercourses),
             'total_students_guided'  => $totalstudentsguided,
             'pending_grading_count'  => $pendinggradingcount,
-            'pending_submissions'    => $pendingsubmissions,
+            'pending_submissions'    => array_values($pendingsubmissions),
             'has_pending_grading'    => !empty($pendingsubmissions),
-            'today_schedule'         => $todayschedule,
+            'today_schedule'         => array_values($todayschedule),
             'has_today_schedule'     => !empty($todayschedule),
         ];
     }

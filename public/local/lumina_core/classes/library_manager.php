@@ -42,10 +42,20 @@ class library_manager {
     public static function ensure_default_structure(int $courseid, int $userid): void {
         global $DB;
 
-        $count = $DB->count_records('local_lumina_lib_folders', ['courseid' => $courseid]);
-        if ($count > 0) {
+        // Persistent check: never re-seed if this course/school library was already seeded!
+        $seedkey = 'seeded_lib_' . $courseid;
+        if (get_config('local_lumina_core', $seedkey)) {
             return;
         }
+
+        $count = $DB->count_records('local_lumina_lib_folders', ['courseid' => $courseid]);
+        if ($count > 0) {
+            set_config($seedkey, 1, 'local_lumina_core');
+            return;
+        }
+
+        // Mark as seeded first so concurrent requests or intentional deletions won't re-seed.
+        set_config($seedkey, 1, 'local_lumina_core');
 
         $now = time();
 
@@ -266,5 +276,142 @@ class library_manager {
         }
 
         return $crumbs;
+    }
+
+    /**
+     * Delete a folder and all its contents (recursive).
+     *
+     * @param int $folderid
+     * @return bool
+     */
+    public static function delete_folder(int $folderid): bool {
+        global $DB;
+
+        try {
+            $folder = $DB->get_record('local_lumina_lib_folders', ['id' => $folderid]);
+            if (!$folder) {
+                // If folder doesn't exist, treat as success (already deleted).
+                return true;
+            }
+
+            // Recursively delete subfolders.
+            $subfolders = $DB->get_records('local_lumina_lib_folders', ['parentid' => $folderid]);
+            if (!empty($subfolders)) {
+                foreach ($subfolders as $sub) {
+                    self::delete_folder((int)$sub->id);
+                }
+            }
+
+            // Delete items in this folder.
+            $items = $DB->get_records('local_lumina_lib_items', ['folderid' => $folderid]);
+            if (!empty($items)) {
+                foreach ($items as $it) {
+                    self::delete_item((int)$it->id);
+                }
+            }
+
+            // Delete the folder itself.
+            $DB->delete_records('local_lumina_lib_folders', ['id' => $folderid]);
+            return true;
+        } catch (\Throwable $e) {
+            debugging('Error deleting folder ' . $folderid . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
+            return false;
+        }
+    }
+
+    /**
+     * Delete a single item.
+     *
+     * @param int $itemid
+     * @return bool
+     */
+    public static function delete_item(int $itemid): bool {
+        global $DB;
+
+        try {
+            $it = $DB->get_record('local_lumina_lib_items', ['id' => $itemid]);
+            if (!$it) {
+                // If item doesn't exist, treat as success (already deleted).
+                return true;
+            }
+
+            if (!empty($it->fileid)) {
+                try {
+                    $fs = get_file_storage();
+                    $file = $fs->get_file_by_id($it->fileid);
+                    if ($file) {
+                        $file->delete();
+                    }
+                } catch (\Throwable $fe) {
+                    // Ignore missing file storage record.
+                }
+            }
+
+            $DB->delete_records('local_lumina_lib_items', ['id' => $itemid]);
+            return true;
+        } catch (\Throwable $e) {
+            debugging('Error deleting item ' . $itemid . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
+            return false;
+        }
+    }
+
+    /**
+     * Update folder details.
+     *
+     * @param int $folderid
+     * @param string $name
+     * @param string $desc
+     * @return bool
+     */
+    public static function update_folder(int $folderid, string $name, string $desc = ''): bool {
+        global $DB;
+
+        try {
+            $f = $DB->get_record('local_lumina_lib_folders', ['id' => $folderid]);
+            if (!$f) {
+                return false;
+            }
+
+            $f->name = clean_text($name);
+            $f->description = clean_text($desc);
+            $f->timemodified = time();
+
+            return $DB->update_record('local_lumina_lib_folders', $f);
+        } catch (\Throwable $e) {
+            debugging('Error updating folder ' . $folderid . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
+            return false;
+        }
+    }
+
+    /**
+     * Update item details.
+     *
+     * @param int $itemid
+     * @param string $title
+     * @param string $type
+     * @param string $url
+     * @return bool
+     */
+    public static function update_item(int $itemid, string $title, string $type, string $url): bool {
+        global $DB;
+
+        try {
+            $it = $DB->get_record('local_lumina_lib_items', ['id' => $itemid]);
+            if (!$it) {
+                return false;
+            }
+
+            $it->title = clean_text($title);
+            $it->itemtype = in_array($type, ['pdf', 'h5p', 'doc', 'link', 'page'], true) ? $type : 'link';
+            if (!empty($url)) {
+                $it->contentref = clean_text($url);
+            }
+            $it->timemodified = time();
+
+            return $DB->update_record('local_lumina_lib_items', $it);
+        } catch (\Throwable $e) {
+            debugging('Error updating item ' . $itemid . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
+            return false;
+        }
     }
 }

@@ -66,6 +66,9 @@ class theme_lumina_data {
         $enrolledcourses = enrol_get_all_users_courses($USER->id, true);
         $result['enrolled_courses']     = self::build_enrolled_courses($enrolledcourses);
         $result['upcoming_assignments'] = self::get_upcoming_assignments($USER, $enrolledcourses, $DB);
+        $result['completed_activities'] = self::get_student_completed_activities($USER, $DB);
+        $result['lumina_completed_activities'] = $result['completed_activities'];
+        $result['has_completed_activities'] = !empty($result['completed_activities']);
         $result['grades']               = self::get_grades($USER, $enrolledcourses);
         $result['grade_items']          = self::get_grade_items_per_course($USER, $enrolledcourses);
         $result['upcoming_events']      = self::get_upcoming_events($USER, $enrolledcourses, $DB);
@@ -315,8 +318,70 @@ class theme_lumina_data {
             $paramsquiz['lookahead2'] = $lookahead;
             $quizrows = $DB->get_records_sql($sqlquiz, $paramsquiz);
 
+            // 3. Fetch H5P CBT Exam Activities with scheduled completion deadline or date restriction
+            list($insqlh, $inparamsh) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'ch');
+            $sqlh5p = "SELECT h.id, h.name,
+                              COALESCE(NULLIF(cm.completionexpected, 0), 0) AS duedate,
+                              cm.availability,
+                              h.course, 'cbt' AS activitytype,
+                              c.fullname AS coursefullname,
+                              cm.id AS cmid,
+                              (SELECT COUNT(*)
+                                 FROM {local_lumina_exam_sessions} les
+                                WHERE les.activityid = cm.id
+                                  AND les.userid     = :useridh
+                                  AND les.status     IN ('completed', 'approved')) AS is_submitted
+                         FROM {h5pactivity} h
+                         JOIN {course} c  ON c.id = h.course
+                         JOIN {modules} m ON m.name = 'h5pactivity'
+                         JOIN {course_modules} cm ON cm.course = h.course
+                                                  AND cm.instance = h.id
+                                                  AND cm.module   = m.id
+                                                  AND cm.deletioninprogress = 0
+                        WHERE h.course $insqlh";
+            $paramsh5p = $inparamsh;
+            $paramsh5p['useridh'] = $USER->id;
+            $h5prows = $DB->get_records_sql($sqlh5p, $paramsh5p);
+
+            // Check if there are any calendar events for h5pactivity
+            $eventmap = [];
+            try {
+                $events = $DB->get_records_select('event', 'modulename = ? AND timestart >= ?', ['h5pactivity', $now - (14 * DAYSECS)]);
+                foreach ($events as $ev) {
+                    $eventmap[$ev->instance] = (int)$ev->timestart;
+                }
+            } catch (\Throwable $eve) {
+                // Ignore if query fails.
+            }
+
+            $filteredh5p = [];
+            foreach ($h5prows as $hr) {
+                if ($hr->duedate == 0 && isset($eventmap[$hr->id])) {
+                    $hr->duedate = (int)$eventmap[$hr->id];
+                }
+
+                // If completionexpected is 0, check if availability JSON has a date constraint
+                if ($hr->duedate == 0 && !empty($hr->availability)) {
+                    $avail = json_decode($hr->availability, true);
+                    if (!empty($avail['c'])) {
+                        foreach ($avail['c'] as $cond) {
+                            if (($cond['type'] ?? '') === 'date' && !empty($cond['t'])) {
+                                $hr->duedate = (int)$cond['t'];
+                                if (($cond['d'] ?? '') === '<') {
+                                    break; // Prefer deadline / closing date
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($hr->duedate > 0 && $hr->duedate < $lookahead && $hr->duedate > ($now - (14 * DAYSECS))) {
+                    $filteredh5p[] = $hr;
+                }
+            }
+
             // Merge & sort by duedate
-            $allrows = array_merge(array_values($assignrows), array_values($quizrows));
+            $allrows = array_merge(array_values($assignrows), array_values($quizrows), array_values($filteredh5p));
             usort($allrows, function($a, $b) {
                 return $a->duedate <=> $b->duedate;
             });
@@ -328,7 +393,7 @@ class theme_lumina_data {
                 $daysleft    = (int)ceil(($row->duedate - $now) / DAYSECS);
 
                 if ($issubmitted) {
-                    $statuslabel = ($row->activitytype === 'quiz') ? 'Selesai' : 'Dikumpulkan';
+                    $statuslabel = in_array($row->activitytype, ['quiz', 'cbt'], true) ? 'Selesai' : 'Dikumpulkan';
                     $statusclass = 'submitted';
                 } elseif ($isoverdue) {
                     $statuslabel = 'Terlambat';
@@ -351,8 +416,19 @@ class theme_lumina_data {
                     $duelabel = $daysleft . ' hari lagi';
                 }
 
-                $modpath = ($row->activitytype === 'quiz') ? '/mod/quiz/view.php' : '/mod/assign/view.php';
-                $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
+                if ($row->activitytype === 'quiz') {
+                    $modpath = '/mod/quiz/view.php';
+                    $typeicon = 'quiz';
+                    $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
+                } elseif ($row->activitytype === 'cbt') {
+                    $modpath = '/local/lumina_core/exam_view.php';
+                    $typeicon = 'timer';
+                    $cmurl = (new \core\url($modpath, ['cmid' => $row->cmid]))->out(false);
+                } else {
+                    $modpath = '/mod/assign/view.php';
+                    $typeicon = 'assignment';
+                    $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
+                }
 
                 $result[] = [
                     'name'         => format_string($row->name),
@@ -375,6 +451,140 @@ class theme_lumina_data {
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    /**
+     * Map numeric score (0-100) to Indonesian academic letter grade (A-E).
+     *
+     * @param float|null $score
+     * @return string
+     */
+    public static function grade_to_letter(?float $score): string {
+        if ($score === null) {
+            return '-';
+        }
+        if ($score >= 85) {
+            return 'A';
+        }
+        if ($score >= 70) {
+            return 'B';
+        }
+        if ($score >= 55) {
+            return 'C';
+        }
+        if ($score >= 40) {
+            return 'D';
+        }
+        return 'E';
+    }
+
+    /**
+     * Get real-time completed activities (assignments and exams) submitted by student.
+     * Automatically adds a new entry whenever a student completes a task in any course.
+     *
+     * @param stdClass $user
+     * @param moodle_database $DB
+     * @return array
+     */
+    public static function get_student_completed_activities($user, $DB): array {
+        if (empty($user) || empty($user->id)) {
+            return [];
+        }
+
+        $list = [];
+
+        try {
+            // 1. Assignments submitted by student
+            $sqlassign = "SELECT s.id AS subid, s.assignment, s.timemodified, a.name AS activityname,
+                                 c.id AS courseid, c.fullname AS coursename, c.shortname AS courseshortname,
+                                 cm.id AS cmid, g.grade, g.timemodified AS gradedtime
+                            FROM {assign_submission} s
+                            JOIN {assign} a ON a.id = s.assignment
+                            JOIN {course} c ON c.id = a.course
+                            JOIN {course_modules} cm ON cm.instance = a.id AND cm.course = a.course
+                            JOIN {modules} m ON m.id = cm.module AND m.name = 'assign'
+                       LEFT JOIN {assign_grades} g ON g.assignment = s.assignment AND g.userid = s.userid AND g.attemptnumber = s.attemptnumber
+                           WHERE s.userid = ? AND s.status = 'submitted'
+                        ORDER BY s.timemodified DESC";
+            $assigns = $DB->get_records_sql($sqlassign, [$user->id]);
+
+            foreach ($assigns as $as) {
+                $hasgrade = ($as->grade !== null && (float)$as->grade >= 0);
+                $gradenum = $hasgrade ? (float)$as->grade : null;
+                $letter = $hasgrade ? self::grade_to_letter($gradenum) : '-';
+
+                $list[] = [
+                    'id'               => 'assign_' . $as->subid,
+                    'course_name'      => format_string($as->coursename),
+                    'course_shortname' => format_string($as->courseshortname),
+                    'course_id'        => (int)$as->courseid,
+                    'activity_name'    => format_string($as->activityname),
+                    'section_label'    => 'Tugas & Praktikum',
+                    'type_badge'       => 'Tugas Praktikum',
+                    'type_class'       => 'primary',
+                    'type_icon'        => 'assignment',
+                    'timestamp'        => (int)$as->timemodified,
+                    'completed_time'   => userdate($as->timemodified, '%d %b %Y, %H:%M WIB'),
+                    'has_grade'        => $hasgrade,
+                    'grade_formatted'  => $hasgrade ? number_format($gradenum, 1) : 'Menunggu Penilaian',
+                    'letter_grade'     => $letter,
+                    'badge_class'      => $hasgrade ? ($gradenum >= 70 ? 'success' : 'warning') : 'secondary',
+                    'status_label'     => $hasgrade ? 'Tuntas & Dinilai' : 'Menunggu Penilaian',
+                    'view_url'         => (new \core\url('/mod/assign/view.php', ['id' => $as->cmid]))->out(false),
+                    'action_label'     => 'Lihat Pengumpulan',
+                ];
+            }
+
+            // 2. CBT Exam Sessions completed or approved
+            $sqlcbt = "SELECT les.id AS sessionid, les.activityid AS cmid, les.score, les.timefinish, les.status,
+                              c.id AS courseid, c.fullname AS coursename, c.shortname AS courseshortname,
+                              COALESCE(h.name, q.name, 'Ujian Interaktif CBT') AS activityname,
+                              m.name AS modname
+                         FROM {local_lumina_exam_sessions} les
+                         JOIN {course_modules} cm ON cm.id = les.activityid
+                         JOIN {modules} m ON m.id = cm.module
+                         JOIN {course} c ON c.id = cm.course
+                    LEFT JOIN {h5pactivity} h ON h.id = cm.instance AND m.name = 'h5pactivity'
+                    LEFT JOIN {quiz} q ON q.id = cm.instance AND m.name = 'quiz'
+                        WHERE les.userid = ? AND les.status IN ('completed', 'approved')
+                     ORDER BY les.timefinish DESC";
+            $cbts = $DB->get_records_sql($sqlcbt, [$user->id]);
+
+            foreach ($cbts as $cb) {
+                $hasgrade = ($cb->score !== null);
+                $gradenum = $hasgrade ? (float)$cb->score : null;
+                $letter = $hasgrade ? self::grade_to_letter($gradenum) : '-';
+
+                $list[] = [
+                    'id'               => 'cbt_' . $cb->sessionid,
+                    'course_name'      => format_string($cb->coursename),
+                    'course_shortname' => format_string($cb->courseshortname),
+                    'course_id'        => (int)$cb->courseid,
+                    'activity_name'    => format_string($cb->activityname),
+                    'section_label'    => 'Ujian CBT Terpantau',
+                    'type_badge'       => 'Ujian CBT',
+                    'type_class'       => 'danger',
+                    'type_icon'        => 'verified_user',
+                    'timestamp'        => (int)$cb->timefinish,
+                    'completed_time'   => $cb->timefinish ? userdate($cb->timefinish, '%d %b %Y, %H:%M WIB') : 'Selesai',
+                    'has_grade'        => $hasgrade,
+                    'grade_formatted'  => $hasgrade ? number_format($gradenum, 1) : '-',
+                    'letter_grade'     => $letter,
+                    'badge_class'      => 'success',
+                    'status_label'     => $cb->status === 'approved' ? '✅ Sah & Disetujui' : 'Tuntas',
+                    'view_url'         => (new \core\url('/local/lumina_core/exam_view.php', ['cmid' => $cb->cmid]))->out(false),
+                    'action_label'     => 'Review Hasil Ujian',
+                ];
+            }
+
+            // Sort all by timestamp descending
+            usort($list, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']);
+
+        } catch (\Throwable $e) {
+            // Silently fallback to empty array
+        }
+
+        return $list;
     }
 
     // -------------------------------------------------------------------------
@@ -669,30 +879,53 @@ class theme_lumina_data {
      * @return array
      */
     private static function format_event_row($row): array {
-        global $DB;
+        global $DB, $USER;
         $typeicon = self::event_type_icon($row->eventtype ?? '');
         $url = '';
+        $iscompleted = false;
         if (!empty($row->modulename) && !empty($row->instance)) {
             try {
                 // $row->instance is the module-table row ID; we need the CM id.
                 $cmid = $DB->get_field('course_modules', 'id', [
-                    'course'  => $row->courseid,
-                    'module'  => $DB->get_field('modules', 'id', ['name' => $row->modulename]),
+                    'course'   => $row->courseid,
+                    'module'   => $DB->get_field('modules', 'id', ['name' => $row->modulename]),
                     'instance' => $row->instance,
                 ]);
                 if ($cmid) {
                     $url = (new \core\url('/mod/' . $row->modulename . '/view.php', ['id' => $cmid]))->out(false);
                 }
+                if ($USER && !empty($USER->id)) {
+                    if ($row->modulename === 'assign') {
+                        $iscompleted = $DB->record_exists('assign_submission', [
+                            'assignment' => $row->instance,
+                            'userid'     => $USER->id,
+                            'status'     => 'submitted',
+                        ]);
+                    } else if ($row->modulename === 'h5pactivity') {
+                        $iscompleted = $DB->record_exists_select('local_lumina_exam_sessions',
+                            'userid = ? AND activityid = ? AND status IN (?, ?)',
+                            [$USER->id, $cmid ?: 0, 'completed', 'approved']);
+                    } else if ($row->modulename === 'quiz') {
+                        $iscompleted = $DB->record_exists('quiz_attempts', [
+                            'quiz'   => $row->instance,
+                            'userid' => $USER->id,
+                            'state'  => 'finished',
+                        ]);
+                    }
+                }
             } catch (\Throwable $e) { }
         }
         return [
-            'name'       => format_string($row->name),
-            'timestart'  => (int)$row->timestart,
-            'date_label' => userdate($row->timestart, get_string('strftimedatetimeshort', 'langconfig')),
-            'coursename' => !empty($row->coursefullname) ? format_string($row->coursefullname) : '',
-            'type'       => $row->eventtype ?? '',
-            'type_icon'  => $typeicon,
-            'url'        => $url,
+            'name'         => format_string($row->name),
+            'timestart'    => (int)$row->timestart,
+            'date_label'   => userdate($row->timestart, get_string('strftimedatetimeshort', 'langconfig')),
+            'coursename'   => !empty($row->coursefullname) ? format_string($row->coursefullname) : '',
+            'type'         => $row->eventtype ?? '',
+            'type_icon'    => $typeicon,
+            'url'          => $url,
+            'is_completed' => $iscompleted,
+            'status_label' => $iscompleted ? 'Sudah Dikerjakan' : 'Belum Dikerjakan',
+            'badge_class'  => $iscompleted ? 'success' : 'warning',
         ];
     }
 
@@ -856,26 +1089,64 @@ class theme_lumina_data {
         $elapsed       = max(0, time() - $earlieststart);
         $currentweek   = max(1, min(16, (int)ceil($elapsed / (7 * DAYSECS))));
 
-        // Pending tasks count — assign AND quiz with upcoming due dates.
+        // Pending tasks count — assign, quiz, and CBT with upcoming due dates that this user has NOT submitted yet.
         $pendingtasks = 0;
         if (!empty($enrolledcourses)) {
             try {
                 $courseids = array_keys($enrolledcourses);
-                // Assign count.
+                // Assign count: only tasks not yet submitted by current student.
                 list($insql, $params) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'x');
                 $params['nowtime'] = time();
+                $params['curuserid'] = $USER->id;
                 $assigncount = (int)$DB->count_records_sql(
-                    "SELECT COUNT(*) FROM {assign} WHERE course $insql AND duedate > :nowtime",
+                    "SELECT COUNT(*) FROM {assign} a
+                      WHERE a.course $insql
+                        AND a.duedate > :nowtime
+                        AND NOT EXISTS (
+                            SELECT 1 FROM {assign_submission} sub
+                             WHERE sub.assignment = a.id
+                               AND sub.userid = :curuserid
+                               AND sub.status = 'submitted'
+                        )",
                     $params
                 );
-                // Quiz count — separate param set to avoid name collision.
+
+                // Quiz count: only quizzes not yet finished by current student.
                 list($insqlq, $paramsq) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'xq');
                 $paramsq['nowtimeq'] = time();
+                $paramsq['curuseridq'] = $USER->id;
                 $quizcount = (int)$DB->count_records_sql(
-                    "SELECT COUNT(*) FROM {quiz} WHERE course $insqlq AND timeclose > :nowtimeq",
+                    "SELECT COUNT(*) FROM {quiz} q
+                      WHERE q.course $insqlq
+                        AND q.timeclose > :nowtimeq
+                        AND NOT EXISTS (
+                            SELECT 1 FROM {quiz_attempts} qa
+                             WHERE qa.quiz = q.id
+                               AND qa.userid = :curuseridq
+                               AND qa.state = 'finished'
+                        )",
                     $paramsq
                 );
-                $pendingtasks = $assigncount + $quizcount;
+
+                // H5P CBT count: only exams not yet completed or approved by current student.
+                list($insqlh, $paramsh) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'xh');
+                $paramsh['curuseridh'] = $USER->id;
+                $cbtcount = (int)$DB->count_records_sql(
+                    "SELECT COUNT(*) FROM {course_modules} cm
+                       JOIN {modules} m ON m.id = cm.module AND m.name = 'h5pactivity'
+                      WHERE cm.course $insqlh
+                        AND cm.deletioninprogress = 0
+                        AND (cm.completionexpected > 0 OR cm.availability IS NOT NULL)
+                        AND NOT EXISTS (
+                            SELECT 1 FROM {local_lumina_exam_sessions} les
+                             WHERE les.activityid = cm.id
+                               AND les.userid = :curuseridh
+                               AND les.status IN ('completed', 'approved')
+                        )",
+                    $paramsh
+                );
+
+                $pendingtasks = $assigncount + $quizcount + $cbtcount;
             } catch (\Throwable $e) {
                 $pendingtasks = 0;
             }

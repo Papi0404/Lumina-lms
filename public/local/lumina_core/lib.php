@@ -35,3 +35,38 @@ function local_lumina_core_is_installed(): bool {
     return $dbman->table_exists('local_lumina_attendance');
 }
 
+/**
+ * File serving callback for local_lumina_core.
+ *
+ * @param stdClass $course
+ * @param stdClass $cm
+ * @param context $context
+ * @param string $filearea
+ * @param array $args
+ * @param bool $forcedownload
+ * @param array $options
+ * @return bool
+ */
+function local_lumina_core_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = []) {
+    global $CFG, $DB;
+
+    if ($filearea !== 'library') {
+        return false;
+    }
+
+    $folderid = (int)array_shift($args);
+    $filename = array_pop($args);
+    $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
+
+    $fs = get_file_storage();
+    $file = $fs->get_file($context->id, 'local_lumina_core', $filearea, $folderid, $filepath, $filename);
+
+    if (!$file || $file->is_directory()) {
+        return false;
+    }
+
+    send_stored_file($file, 0, 0, $forcedownload, $options);
+    return true;
+}
+
+

@@ -22,10 +22,8 @@
             <span>{{ lumina_semester }}</span>
         </div>
 
-        <!-- Moodle edit switch (Allowed ONLY for Administrator) -->
-        {{#lumina_role.is_admin}}
+        <!-- Moodle edit switch (Available for Admin & Teachers with editing capability) -->
         {{{ output.edit_switch }}}
-        {{/lumina_role.is_admin}}
 
         <!-- Direct message toggle -->
         <a href="{{{ config.wwwroot }}}/message/index.php" class="action-icon-btn" aria-label="Pesan Masuk">

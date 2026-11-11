@@ -5340,5 +5340,369 @@ body:not(.lumina-role-admin) {
     }
 }
 
+/* ==========================================================================
+   46. Assignment Submissions & Grading Table Responsive Elevation
+   ========================================================================== */
+.path-mod-assign {
+    /* Top Tertiary Navigation & Filter Bar */
+    .tertiary-navigation {
+        background: transparent !important;
+        border-bottom: 1px solid var(--lumina-border, #E2E8F0) !important;
+        padding: 0.75rem 0 !important;
+        margin-bottom: 1.25rem !important;
+
+        > .d-flex {
+            flex-wrap: wrap !important;
+            gap: 0.75rem !important;
+            align-items: center !important;
+        }
+
+        .navitem {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+
+            h2 {
+                font-family: var(--lumina-font-display, "Plus Jakarta Sans", sans-serif) !important;
+                font-size: 1.35rem !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                color: #0F172A !important;
+            }
+
+            .dropdown-toggle,
+            .btn-outline-secondary,
+            .btn-secondary {
+                border-radius: 9999px !important;
+                border: 1px solid var(--lumina-border, #E2E8F0) !important;
+                background: #FFFFFF !important;
+                color: #334155 !important;
+                font-size: 0.8125rem !important;
+                font-weight: 600 !important;
+                padding: 0.45rem 1.1rem !important;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+                transition: all 0.15s ease;
+
+                &:hover {
+                    background: #F8FAFC !important;
+                    border-color: #CBD5E1 !important;
+                    color: var(--lumina-primary, #4338CA) !important;
+                }
+            }
+
+            .btn-primary {
+                border-radius: 9999px !important;
+                padding: 0.45rem 1.25rem !important;
+                font-weight: 600 !important;
+                font-size: 0.875rem !important;
+                box-shadow: 0 2px 6px rgba(67, 56, 202, 0.25) !important;
+            }
+        }
+
+        .user-search {
+            min-width: 250px !important;
+            max-width: 360px !important;
+            flex: 1 1 auto !important;
+
+            .simplesearchform {
+                width: 100% !important;
+
+                .input-group.searchbar {
+                    width: 100% !important;
+
+                    input.form-control {
+                        border-radius: 9999px !important;
+                        padding-left: 1rem !important;
+                        padding-right: 1rem !important;
+                        border: 1px solid var(--lumina-border, #E2E8F0) !important;
+                        font-size: 0.875rem !important;
+                        background: #FFFFFF !important;
+                        height: 38px !important;
+
+                        &:focus {
+                            border-color: var(--lumina-primary, #4338CA) !important;
+                            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.12) !important;
+                        }
+                    }
+
+                    .btn {
+                        border-radius: 0 9999px 9999px 0 !important;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Submissions Action bar & Quick grading toggles */
+    .gradingbatchoperationsform,
+    .quickgradingform {
+        margin-bottom: 1rem !important;
+
+        .form-check {
+            font-size: 0.875rem !important;
+            color: #475569 !important;
+        }
+
+        .dropdown-toggle {
+            border-radius: 9999px !important;
+            font-size: 0.8125rem !important;
+            font-weight: 600 !important;
+        }
+    }
+
+    /* Grading Table Container (Horizontal Scroll & Card Elevation) */
+    .gradingtable {
+        background: #FFFFFF !important;
+        border: 1px solid var(--lumina-border, #E2E8F0) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04) !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        margin: 1.25rem 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        position: relative !important;
+
+        table#submissions {
+            min-width: 1100px !important;
+            width: 100% !important;
+            margin: 0 !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            background: transparent !important;
+            border: none !important;
+
+            thead th {
+                background: #F8FAFC !important;
+                color: #475569 !important;
+                font-family: var(--lumina-font-display, "Plus Jakarta Sans", sans-serif) !important;
+                font-size: 0.74rem !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.06em !important;
+                padding: 0.9rem 1.1rem !important;
+                border-top: none !important;
+                border-bottom: 2px solid var(--lumina-border, #E2E8F0) !important;
+                white-space: nowrap !important;
+                vertical-align: middle !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 2 !important;
+
+                a {
+                    color: #475569 !important;
+                    text-decoration: none !important;
+                    font-weight: 700 !important;
+
+                    &:hover {
+                        color: var(--lumina-primary, #4338CA) !important;
+                    }
+                }
+
+                .commands a {
+                    color: #94A3B8 !important;
+                    margin-left: 0.25rem;
+                }
+            }
+
+            tbody tr {
+                transition: background-color 0.15s ease;
+
+                &:hover td {
+                    background-color: #F8FAFC !important;
+                }
+
+                td {
+                    padding: 0.95rem 1.1rem !important;
+                    vertical-align: middle !important;
+                    border-bottom: 1px solid #F1F5F9 !important;
+                    font-size: 0.875rem !important;
+                    color: #1E293B !important;
+                    background-color: #FFFFFF !important;
+                }
+
+                &:last-child td {
+                    border-bottom: none !important;
+                }
+            }
+
+            /* Column-specific fixes */
+            .c0 {
+                width: 48px !important;
+                min-width: 48px !important;
+                text-align: center !important;
+                padding-left: 1.25rem !important;
+
+                input[type="checkbox"] {
+                    width: 1.1rem;
+                    height: 1.1rem;
+                    accent-color: var(--lumina-primary, #4338CA);
+                    cursor: pointer;
+                }
+            }
+
+            .c1.username {
+                min-width: 220px !important;
+                white-space: nowrap !important;
+
+                .aabtn {
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    gap: 0.65rem !important;
+                    text-decoration: none !important;
+                    font-weight: 600 !important;
+                    color: #0F172A !important;
+
+                    &:hover {
+                        color: var(--lumina-primary, #4338CA) !important;
+                    }
+                }
+
+                .userinitials {
+                    width: 34px !important;
+                    height: 34px !important;
+                    border-radius: 50% !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    background: #EEF2FF !important;
+                    color: #4338CA !important;
+                    font-size: 0.78rem !important;
+                    font-weight: 700 !important;
+                    border: 1px solid #C7D2FE !important;
+                    flex-shrink: 0 !important;
+                }
+            }
+
+            .c2.email {
+                min-width: 200px !important;
+                color: #64748B !important;
+                font-size: 0.8125rem !important;
+            }
+
+            .c3.status {
+                min-width: 230px !important;
+
+                .d-flex {
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    gap: 0.5rem !important;
+                }
+
+                .submissioninfo {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 0.35rem !important;
+                }
+
+                .submissionstatussubmitted {
+                    background: #DCFCE7 !important;
+                    color: #15803D !important;
+                    border: 1px solid #BBF7D0 !important;
+                    border-radius: 9999px !important;
+                    padding: 0.25rem 0.75rem !important;
+                    font-size: 0.72rem !important;
+                    font-weight: 600 !important;
+                    display: inline-block !important;
+                    width: fit-content !important;
+                }
+
+                .submissiongraded {
+                    background: #EEF2FF !important;
+                    color: #4338CA !important;
+                    border: 1px solid #C7D2FE !important;
+                    border-radius: 9999px !important;
+                    padding: 0.25rem 0.75rem !important;
+                    font-size: 0.72rem !important;
+                    font-weight: 600 !important;
+                    display: inline-block !important;
+                    width: fit-content !important;
+                }
+            }
+
+            .c4.grade {
+                min-width: 170px !important;
+                font-weight: 700 !important;
+                color: #0F172A !important;
+                font-size: 0.9375rem !important;
+
+                .d-flex {
+                    align-items: center !important;
+                    gap: 0.5rem !important;
+                }
+            }
+
+            .c5 {
+                min-width: 180px !important;
+                font-size: 0.8125rem !important;
+                color: #64748B !important;
+                line-height: 1.4 !important;
+            }
+
+            .c6 {
+                min-width: 240px !important;
+
+                .fileuploadsubmission {
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    gap: 0.4rem !important;
+                    padding: 0.35rem 0.75rem !important;
+                    background: #F8FAFC !important;
+                    border: 1px solid var(--lumina-border, #E2E8F0) !important;
+                    border-radius: 10px !important;
+                    font-size: 0.8125rem !important;
+                    font-weight: 500 !important;
+                    color: #334155 !important;
+                    text-decoration: none !important;
+                    transition: all 0.15s ease;
+
+                    &:hover {
+                        background: #F1F5F9 !important;
+                        border-color: #CBD5E1 !important;
+                        color: var(--lumina-primary, #4338CA) !important;
+                    }
+                }
+            }
+
+            /* Action menus inside table cells */
+            .action-menu.moodle-actionmenu {
+                .btn.btn-icon {
+                    width: 32px !important;
+                    height: 32px !important;
+                    border-radius: 50% !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    color: #64748B !important;
+                    background: transparent !important;
+                    border: 1px solid transparent !important;
+                    transition: all 0.15s ease;
+
+                    &:hover {
+                        background: #F1F5F9 !important;
+                        border-color: #E2E8F0 !important;
+                        color: #0F172A !important;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Paging selector at bottom */
+    .paging-selector {
+        margin-top: 1rem !important;
+        font-size: 0.875rem !important;
+        color: #64748B !important;
+
+        select.custom-select {
+            border-radius: 9999px !important;
+            padding: 0.25rem 1.75rem 0.25rem 0.75rem !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            font-size: 0.8125rem !important;
+        }
+    }
+}
+
+
 
 

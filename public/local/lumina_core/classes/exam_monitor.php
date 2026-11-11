@@ -327,7 +327,7 @@ class exam_monitor {
                   FROM {local_lumina_exam_sessions} s
                   JOIN {user} u ON u.id = s.userid
                   JOIN {course} c ON c.id = s.courseid
-                 WHERE s.status IN ('under_review', 'invalidated')
+                 WHERE s.status IN ('under_review', 'invalidated', 'approved')
                     OR s.warningcount >= 1
                     OR EXISTS (
                         SELECT 1 FROM {local_lumina_exam_events} ev
@@ -365,6 +365,7 @@ class exam_monitor {
                 'student_name'     => fullname($r),
                 'student_email'    => $r->email,
                 'warning_count'    => (int)$r->warningcount,
+                'score'            => $r->score !== null ? (float)$r->score : null,
                 'event_count'      => $eventcount,
                 'latest_violation' => $latestlabel,
                 'latest_time'      => $latesttime,
@@ -406,7 +407,9 @@ class exam_monitor {
             $DB->delete_records('local_lumina_exam_warnings', ['sessionid' => $sessionid]);
             $DB->delete_records('local_lumina_exam_events', ['sessionid' => $sessionid]);
 
-            return $DB->update_record('local_lumina_exam_sessions', $session);
+            $res = $DB->update_record('local_lumina_exam_sessions', $session);
+            self::sync_grade_to_gradebook((int)$session->activityid, (int)$session->userid, null);
+            return $res;
         }
 
         $session->status = in_array($decision, ['approved', 'invalidated'], true) ? $decision : 'under_review';
@@ -414,11 +417,30 @@ class exam_monitor {
         $session->adminreviewtime = time();
         $session->adminreviewnotes = clean_text($notes);
 
-        if ($decision === 'invalidated') {
+        if ($decision === 'approved') {
+            $session->warningcount = 0; // Cleared and approved by admin
+            // Restore legitimate submitted score if current score is null or 0.00
+            if ($session->score === null || (float)$session->score <= 0) {
+                $submitevent = $DB->get_record('local_lumina_exam_events', [
+                    'sessionid' => $sessionid,
+                    'eventtype' => 'exam_submitted',
+                ]);
+                if ($submitevent && !empty($submitevent->metadata)) {
+                    $meta = json_decode($submitevent->metadata, true);
+                    if (isset($meta['score'])) {
+                        $session->score = number_format((float)$meta['score'], 2, '.', '');
+                    }
+                }
+            }
+        } else if ($decision === 'invalidated') {
             $session->score = 0.00;
         }
 
-        return $DB->update_record('local_lumina_exam_sessions', $session);
+        $res = $DB->update_record('local_lumina_exam_sessions', $session);
+        if ($session->score !== null) {
+            self::sync_grade_to_gradebook((int)$session->activityid, (int)$session->userid, (float)$session->score);
+        }
+        return $res;
     }
 
     /**
@@ -457,6 +479,57 @@ class exam_monitor {
      */
     public static function get_exam_questions(int $cmid): array {
         global $DB;
+
+        // 1. If it's a native Moodle Quiz (mod_quiz)
+        $cm = get_coursemodule_from_id('', $cmid, 0, false, IGNORE_MISSING);
+        if ($cm && $cm->modname === 'quiz') {
+            try {
+                $sql = "SELECT q.id, q.questiontext, q.qtype, qs.slot
+                          FROM {quiz_slots} qs
+                          JOIN {question_references} qr ON qr.itemid = qs.id AND qr.component = 'mod_quiz' AND qr.questionarea = 'slot'
+                          JOIN {question_bank_entries} qbe ON qbe.id = qr.questionbankentryid
+                          JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
+                          JOIN {question} q ON q.id = qv.questionid
+                         WHERE qs.quizid = ?
+                      ORDER BY qs.slot ASC";
+                $quizq = $DB->get_records_sql($sql, [$cm->instance]);
+                if (!empty($quizq)) {
+                    $extracted = [];
+                    $slotnum = 1;
+                    foreach ($quizq as $qq) {
+                        $answers = $DB->get_records('question_answers', ['question' => $qq->id], 'id ASC');
+                        $opts = [];
+                        $correctidx = 0;
+                        $aidx = 0;
+                        foreach ($answers as $ans) {
+                            if ($ans->fraction > 0) {
+                                $correctidx = $aidx;
+                            }
+                            $opts[] = [
+                                'index' => $aidx,
+                                'label' => chr(65 + $aidx),
+                                'text'  => strip_tags($ans->answer),
+                            ];
+                            $aidx++;
+                        }
+                        $extracted[] = [
+                            'id'            => $qq->id,
+                            'number'        => $slotnum,
+                            'question'      => strip_tags($qq->questiontext),
+                            'options'       => $opts,
+                            'correct_index' => $correctidx,
+                        ];
+                        $slotnum++;
+                    }
+                    if (!empty($extracted)) {
+                        return $extracted;
+                    }
+                }
+            } catch (\Throwable $qe) {
+                debugging('Error loading quiz questions: ' . $qe->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
+
         $context = \context_module::instance($cmid, IGNORE_MISSING);
         if ($context) {
             $fs = get_file_storage();
@@ -687,6 +760,9 @@ class exam_monitor {
         }
         $DB->update_record('local_lumina_exam_sessions', $session);
 
+        // Instantly push grade to Moodle Gradebook so it appears in student dashboard & teacher grading
+        self::sync_grade_to_gradebook((int)$session->activityid, $userid, $finalscore);
+
         // Record submission event
         $ev = new \stdClass();
         $ev->sessionid = $sessionid;
@@ -715,6 +791,114 @@ class exam_monitor {
             'is_suspended'  => ($session->status === 'under_review'),
             'submitted_at'  => userdate($now, '%d %b %Y, %H:%M WIB'),
         ];
+    }
+
+    /**
+     * Automatically sync all H5P and CBT exam scheduled dates to Moodle's calendar {event} table.
+     */
+    public static function sync_cbt_events(): void {
+        global $DB;
+
+        try {
+            // Find all h5pactivity course modules
+            $sql = "SELECT cm.id AS cmid, cm.course, cm.instance, cm.completionexpected, cm.availability, h.name
+                      FROM {course_modules} cm
+                      JOIN {modules} m ON m.id = cm.module
+                      JOIN {h5pactivity} h ON h.id = cm.instance
+                     WHERE m.name = 'h5pactivity'
+                       AND cm.deletioninprogress = 0";
+            $cms = $DB->get_records_sql($sql);
+
+            foreach ($cms as $item) {
+                $targetdate = (int)$item->completionexpected;
+
+                // If completionexpected is 0, extract from availability
+                if ($targetdate <= 0 && !empty($item->availability)) {
+                    $avail = json_decode($item->availability, true);
+                    if (!empty($avail['c'])) {
+                        foreach ($avail['c'] as $cond) {
+                            if (($cond['type'] ?? '') === 'date' && !empty($cond['t'])) {
+                                $targetdate = (int)$cond['t'];
+                                if (($cond['d'] ?? '') === '<') {
+                                    break; // Prefer closing deadline
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($targetdate > 0) {
+                    $eventname = format_string($item->name) . ' is due';
+                    $existing = $DB->get_record('event', ['modulename' => 'h5pactivity', 'instance' => $item->instance]);
+
+                    if (!$existing) {
+                        $ev = new \stdClass();
+                        $ev->name = $eventname;
+                        $ev->description = '<p>Ujian CBT Terpantau: ' . format_string($item->name) . '</p>';
+                        $ev->format = FORMAT_HTML;
+                        $ev->courseid = (int)$item->course;
+                        $ev->groupid = 0;
+                        $ev->userid = 0;
+                        $ev->repeatid = 0;
+                        $ev->component = '';
+                        $ev->modulename = 'h5pactivity';
+                        $ev->instance = (int)$item->instance;
+                        $ev->type = 0;
+                        $ev->eventtype = 'due';
+                        $ev->timestart = $targetdate;
+                        $ev->timeduration = 0;
+                        $ev->visible = 1;
+                        $ev->sequence = 1;
+                        $ev->timemodified = time();
+                        $DB->insert_record('event', $ev);
+                    } else {
+                        if ($existing->timestart != $targetdate || $existing->name !== $eventname) {
+                            $existing->timestart = $targetdate;
+                            $existing->name = $eventname;
+                            $existing->timemodified = time();
+                            $DB->update_record('event', $existing);
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            debugging('Error syncing CBT calendar events: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
+
+    /**
+     * Push or update exam score to Moodle's gradebook.
+     *
+     * @param int $activityid (cmid)
+     * @param int $userid
+     * @param float|null $score (null to reset/delete grade)
+     */
+    public static function sync_grade_to_gradebook(int $activityid, int $userid, ?float $score): void {
+        global $CFG, $DB;
+        require_once($CFG->libdir . '/gradelib.php');
+
+        try {
+            $cm = get_coursemodule_from_id('', $activityid, 0, false, IGNORE_MISSING);
+            if (!$cm) {
+                return;
+            }
+
+            if ($score === null) {
+                // Delete or reset grade
+                $grade = ['userid' => $userid, 'delete' => 1];
+            } else {
+                $grade = new \stdClass();
+                $grade->userid = $userid;
+                $grade->rawgrade = (float)$score;
+                $grade->finalgrade = (float)$score;
+                $grade->dategraded = time();
+                $grade->datesubmitted = time();
+            }
+
+            grade_update('mod/' . $cm->modname, $cm->course, 'mod', $cm->modname, $cm->instance, 0, $grade);
+        } catch (\Throwable $e) {
+            debugging('Error syncing CBT grade to gradebook: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        }
     }
 }
 

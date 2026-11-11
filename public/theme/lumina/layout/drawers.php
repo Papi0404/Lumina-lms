@@ -45,23 +45,46 @@ if (defined('BEHAT_SITE_RUNNING') && get_user_preferences('behat_keep_drawer_clo
     $blockdraweropen = true;
 }
 
-// Auto-routing for Proctored Anti-Cheat CBT Exams.
-$h5pcmid = optional_param('id', 0, PARAM_INT);
+// Auto-routing for Proctored Anti-Cheat CBT Exams (Universal for all Quiz/H5P exam activities).
 $pagetype = $PAGE->pagetype ?? '';
 $urlpath = $PAGE->url ? $PAGE->url->get_path() : '';
+$isexamactivity = (
+    $pagetype === 'mod-h5pactivity-view' ||
+    strpos($urlpath, 'mod/h5pactivity/view.php') !== false ||
+    $pagetype === 'mod-quiz-view' ||
+    $pagetype === 'mod-quiz-attempt' ||
+    strpos($urlpath, 'mod/quiz/view.php') !== false ||
+    strpos($urlpath, 'mod/quiz/attempt.php') !== false
+);
 
-if (($pagetype === 'mod-h5pactivity-view' || strpos($urlpath, 'mod/h5pactivity/view.php') !== false) && $h5pcmid) {
-    $proctorcm = get_coursemodule_from_id('h5pactivity', $h5pcmid, 0, false, IGNORE_MISSING);
-    if ($proctorcm && ($proctorcm->id == 26 || strpos($proctorcm->name, 'Anti-Curang') !== false || strpos($proctorcm->name, 'Live Proctoring') !== false)) {
-        global $USER;
-        $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
-        $isstudent = (!empty($roleinfo['is_student']) || !has_capability('moodle/course:manageactivities', $PAGE->context));
-        $isaction = optional_param('action', '', PARAM_ALPHA);
-        if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
-            $examurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
-            echo "<script>window.location.replace('" . $examurl . "');</script>";
-            echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
-            exit;
+if ($isexamactivity) {
+    global $USER, $DB;
+    $cmid = optional_param('id', 0, PARAM_INT);
+    if (!$cmid && (strpos($urlpath, 'mod/quiz/attempt.php') !== false || $pagetype === 'mod-quiz-attempt')) {
+        $attemptid = optional_param('attempt', 0, PARAM_INT);
+        if ($attemptid) {
+            $attempt = $DB->get_record('quiz_attempts', ['id' => $attemptid]);
+            if ($attempt) {
+                $cmrec = get_coursemodule_from_instance('quiz', $attempt->quiz);
+                if ($cmrec) {
+                    $cmid = (int)$cmrec->id;
+                }
+            }
+        }
+    }
+
+    if ($cmid) {
+        $proctorcm = get_coursemodule_from_id('', $cmid, 0, false, IGNORE_MISSING);
+        if ($proctorcm && in_array($proctorcm->modname, ['h5pactivity', 'quiz'], true)) {
+            $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
+            $isstudent = (!empty($roleinfo['is_student']) || !has_capability('moodle/course:manageactivities', $PAGE->context));
+            $isaction = optional_param('action', '', PARAM_ALPHA);
+            if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
+                $examurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+                echo "<script>window.location.replace('" . $examurl . "');</script>";
+                echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
+                exit;
+            }
         }
     }
 }
@@ -179,12 +202,24 @@ $useravatarhtml = $luminadata['user']['avatar_html'] ?? $OUTPUT->user_picture($U
 $currentpagepath = $PAGE->url ? $PAGE->url->get_path() : '';
 
 // Determine active course ID strictly based on role and enrollment isolation.
+// Priority 1: Check URL query parameter 'id' or 'courseid' (e.g. from grader report or attendance)
+$paramcourseid = optional_param('id', optional_param('courseid', 0, PARAM_INT), PARAM_INT);
 $activecourseid = null;
-if (!empty($PAGE->course) && $PAGE->course->id > 1) {
-    if ($roleinfo['is_admin'] || is_enrolled(context_course::instance($PAGE->course->id), $USER, '', true)) {
+
+if ($paramcourseid > 1) {
+    if ($roleinfo['is_admin'] || is_siteadmin($USER->id) || is_enrolled(context_course::instance($paramcourseid), $USER, '', true) || has_capability('moodle/grade:viewall', context_course::instance($paramcourseid), $USER)) {
+        $activecourseid = (int)$paramcourseid;
+    }
+}
+
+// Priority 2: Page course context if set and valid
+if (!$activecourseid && !empty($PAGE->course) && $PAGE->course->id > 1) {
+    if ($roleinfo['is_admin'] || is_siteadmin($USER->id) || is_enrolled(context_course::instance($PAGE->course->id), $USER, '', true) || has_capability('moodle/grade:viewall', context_course::instance($PAGE->course->id), $USER)) {
         $activecourseid = (int)$PAGE->course->id;
     }
 }
+
+// Priority 3: Fallback to first enrolled course
 if (!$activecourseid) {
     if (!empty($enrolledcourses)) {
         $activecourseid = (int)array_key_first($enrolledcourses);
@@ -209,6 +244,40 @@ if (($roleinfo['is_admin'] || $roleinfo['is_teacher']) && $activecourseid) {
 // 2.1 Grader Report helper banner & pending submissions hub for Teachers/Admins
 $isgraderreport = ($PAGE->pagetype === 'gradereport_grader-index' || strpos($currentpagepath, '/grade/report/grader') !== false);
 if ($isgraderreport && ($roleinfo['is_teacher'] || $roleinfo['is_admin']) && $activecourseid) {
+    // Course Switcher Tabs for Teachers & Admins
+    $allteachercourses = $enrolledcourses;
+    if (empty($allteachercourses) && ($roleinfo['is_admin'] || is_siteadmin($USER->id))) {
+        $allteachercourses = $DB->get_records_select('course', 'id > 1', null, 'fullname ASC', 'id, fullname, shortname');
+    }
+    if (!empty($allteachercourses) && count($allteachercourses) > 1) {
+        $coursepills = '';
+        foreach ($allteachercourses as $tc) {
+            $isactive = ((int)$tc->id === (int)$activecourseid);
+            $pillclass = $isactive ? 'btn-primary text-white shadow-xs active' : 'btn-outline-secondary bg-white text-secondary';
+            $graderurl = (new \core\url('/grade/report/grader/index.php', ['id' => $tc->id]))->out(false);
+            $activestyle = $isactive ? 'style="background: #4338CA !important; border-color: #4338CA !important; color: #FFFFFF !important;"' : 'style="background: #FFFFFF !important; color: #475569 !important;"';
+            $coursepills .= '<a href="' . $graderurl . '" class="btn btn-sm ' . $pillclass . ' rounded-pill px-3 py-1-5 font-semibold d-inline-flex align-items-center gap-1 text-decoration-none' . ($isactive ? ' active' : '') . '" ' . $activestyle . '>
+                <span class="material-symbols-outlined" style="font-size: 16px;">school</span>
+                ' . s($tc->fullname) . ' (' . s($tc->shortname) . ')
+                ' . ($isactive ? '<span class="badge bg-white text-primary rounded-pill px-1-5 py-0 ms-1 fw-bold" style="font-size: 0.68rem; color: #4338CA !important;">Aktif</span>' : '') . '
+            </a>';
+        }
+        $quizguidehtml .= '
+        <div class="card border-0 mb-3 shadow-2xs rounded-3 p-3 bg-light border border-slate-200">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="text-dark fw-bold small d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 18px;">library_books</span>
+                        Pilih Mata Kuliah untuk Penilaian:
+                    </span>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        ' . $coursepills . '
+                    </div>
+                </div>
+            </div>
+        </div>';
+    }
+
     // Query pending submissions for this course
     $pendingsql = "SELECT s.id AS subid, s.assignment, s.userid, s.timemodified,
                           a.name AS assignmentname, u.firstname, u.lastname, u.email,
@@ -350,6 +419,121 @@ if ($isgraderreport && ($roleinfo['is_teacher'] || $roleinfo['is_admin']) && $ac
     }
 }
 
+// 2.2 Calendar completed task helper for students & users
+$iscalendarpage = ($PAGE->pagetype === 'calendar-view' || strpos($currentpagepath, '/calendar') !== false);
+if ($iscalendarpage && $USER && !empty($USER->id)) {
+    // Collect all submitted/completed activity IDs and names for this student
+    $completedcmids = [];
+    $completednames = [];
+    try {
+        // Submitted assignments
+        $subs = $DB->get_records_sql(
+            "SELECT cm.id, a.name
+               FROM {assign_submission} s
+               JOIN {assign} a ON a.id = s.assignment
+               JOIN {course_modules} cm ON cm.instance = a.id AND cm.course = a.course
+               JOIN {modules} m ON m.id = cm.module AND m.name = 'assign'
+              WHERE s.userid = ? AND s.status = 'submitted'",
+            [$USER->id]
+        );
+        foreach ($subs as $sub) {
+            $completedcmids[] = (int)$sub->id;
+            $completednames[] = strtolower(trim($sub->name));
+        }
+
+        // Completed CBT exams
+        $cbts = $DB->get_records_sql(
+            "SELECT cm.id, h.name
+               FROM {local_lumina_exam_sessions} les
+               JOIN {course_modules} cm ON cm.id = les.activityid
+               JOIN {h5pactivity} h ON h.id = cm.instance
+              WHERE les.userid = ? AND les.status IN ('completed', 'approved')",
+            [$USER->id]
+        );
+        foreach ($cbts as $cbt) {
+            $completedcmids[] = (int)$cbt->id;
+            $completednames[] = strtolower(trim($cbt->name));
+        }
+
+        // Finished quizzes
+        $qzs = $DB->get_records_sql(
+            "SELECT cm.id, q.name
+               FROM {quiz_attempts} qa
+               JOIN {quiz} q ON q.id = qa.quiz
+               JOIN {course_modules} cm ON cm.instance = q.id AND cm.course = q.course
+               JOIN {modules} m ON m.id = cm.module AND m.name = 'quiz'
+              WHERE qa.userid = ? AND qa.state = 'finished'",
+            [$USER->id]
+        );
+        foreach ($qzs as $qz) {
+            $completedcmids[] = (int)$qz->id;
+            $completednames[] = strtolower(trim($qz->name));
+        }
+    } catch (\Throwable $ce) { }
+
+    if (!empty($completedcmids) || !empty($completednames)) {
+        $quizguidehtml .= '
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var completedIds = ' . json_encode($completedcmids) . ';
+            var completedNames = ' . json_encode($completednames) . ';
+
+            function tagCompletedEvents() {
+                var eventNodes = document.querySelectorAll(".calendar_event_course, .event, [data-event-id], .eventlist .row");
+                eventNodes.forEach(function(node) {
+                    if (node.getAttribute("data-lumina-tagged")) return;
+                    var text = (node.innerText || "").toLowerCase();
+                    var links = node.querySelectorAll("a[href*=\'id=\']");
+                    var isCompleted = false;
+
+                    links.forEach(function(a) {
+                        var match = a.href.match(/id=(\d+)/);
+                        if (match && completedIds.indexOf(parseInt(match[1])) !== -1) {
+                            isCompleted = true;
+                        }
+                    });
+
+                    if (!isCompleted) {
+                        for (var i = 0; i < completedNames.length; i++) {
+                            if (completedNames[i] && text.indexOf(completedNames[i]) !== -1) {
+                                isCompleted = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (isCompleted) {
+                        node.setAttribute("data-lumina-tagged", "true");
+                        node.style.borderLeft = "4px solid #10B981";
+                        node.style.background = "#F0FDF4";
+                        node.style.borderRadius = "12px";
+
+                        var titleNode = node.querySelector("h3, h4, h5, .name, .eventname, a.card-link");
+                        if (titleNode && !titleNode.querySelector(".lumina-completed-badge")) {
+                            var badge = document.createElement("span");
+                            badge.className = "lumina-completed-badge badge bg-success text-white rounded-pill ms-2 px-2-5 py-1 font-semibold";
+                            badge.style.fontSize = "0.72rem";
+                            badge.innerHTML = "✓ Sudah Selesai &amp; Dikumpulkan";
+                            titleNode.appendChild(badge);
+                        }
+
+                        var actionBtn = node.querySelector(".card-footer a, a.btn, .commands a");
+                        if (actionBtn && actionBtn.innerText.indexOf("Go to") !== -1) {
+                            actionBtn.className = "btn btn-sm btn-outline-success rounded-pill px-3 py-1 font-semibold";
+                            actionBtn.innerHTML = "✓ Selesai (Lihat Aktivitas)";
+                        }
+                    }
+                });
+            }
+
+            tagCompletedEvents();
+            setTimeout(tagCompletedEvents, 400);
+            setTimeout(tagCompletedEvents, 1200);
+        });
+        </script>';
+    }
+}
+
 // 3. Smart Resource Library URL (Role & Course-isolated)
 if ($roleinfo['is_admin']) {
     $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);
@@ -483,6 +667,8 @@ $templatecontext = [
         'used_formatted' => $usedformatted,
         'total_formatted' => $totalformatted,
     ],
+    'lumina_completed_activities' => $luminadata['completed_activities'] ?? [],
+    'has_completed_activities'    => $luminadata['has_completed_activities'] ?? false,
     'lumina_nav' => [
         'is_dashboard' => (strpos($currentpagepath, '/my') !== false && strpos($currentpagepath, '/my/courses') === false),
         'is_mycourses' => (strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false),

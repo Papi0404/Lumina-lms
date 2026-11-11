@@ -28,16 +28,34 @@ require_once($CFG->dirroot . '/theme/lumina/classes/role_resolver.php');
 
 use local_lumina_core\attendance_manager;
 
-$id = required_param('id', PARAM_INT); // Course ID.
+$id = optional_param('id', 0, PARAM_INT); // Course ID.
 $sessionid = optional_param('sessionid', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);
 $tab = optional_param('tab', 'session', PARAM_ALPHA);
+
+require_login();
+$roleinfo = theme_lumina_role_resolver::resolve_role($USER);
+
+// Resolve available courses for user
+$mycourses = [];
+if ($roleinfo['is_admin']) {
+    $mycourses = $DB->get_records_select('course', 'id > 1', null, 'fullname ASC');
+} else if ($roleinfo['is_teacher']) {
+    $tdata = theme_lumina_role_resolver::get_teacher_dashboard_data($USER);
+    $mycourses = $tdata['courses'];
+} else {
+    $mycourses = enrol_get_all_users_courses($USER->id, true);
+}
+
+if ($id <= 0 && !empty($mycourses)) {
+    $firstc = reset($mycourses);
+    $id = is_object($firstc) ? (int)$firstc->id : (int)$firstc['id'];
+}
 
 $course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
 require_login($course);
 
 $context = context_course::instance($course->id);
-$roleinfo = theme_lumina_role_resolver::resolve_role($USER);
 $canmanage = $roleinfo['is_admin'] || has_capability('moodle/course:update', $context) || has_capability('local/lumina_core:manageattendance', $context);
 
 // Export CSV handler for Teachers and Admins
@@ -185,6 +203,31 @@ echo $OUTPUT->header();
         </div>
         <?php endif; ?>
     </div>
+
+    <?php if (!empty($mycourses) && count($mycourses) > 1): ?>
+    <!-- Course Switcher Pills -->
+    <div class="antigravity-glass-card rounded-2xl p-3 mb-4 d-flex align-items-center gap-2 overflow-auto border shadow-xs">
+        <span class="text-muted small fw-bold text-uppercase me-2 text-nowrap d-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined text-primary" style="font-size: 18px;">swap_horiz</span>
+            Pilih Mata Kuliah:
+        </span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <?php foreach ($mycourses as $c): ?>
+                <?php
+                $cid = is_object($c) ? $c->id : $c['id'];
+                $cname = is_object($c) ? $c->fullname : $c['fullname'];
+                $cshort = is_object($c) ? $c->shortname : $c['shortname'];
+                $active = ($course->id == $cid);
+                ?>
+                <a href="attendance.php?id=<?php echo $cid; ?>&tab=<?php echo s($tab); ?>" 
+                   class="btn btn-sm rounded-pill px-3 py-1-5 text-nowrap d-inline-flex align-items-center gap-1-5 font-semibold <?php echo $active ? 'btn-primary shadow-xs' : 'btn-light border text-secondary'; ?>">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">school</span>
+                    <span><?php echo format_string($cname); ?> (<?php echo format_string($cshort); ?>)</span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if ($notice): ?>
     <div class="alert alert-<?php echo $noticetype; ?> rounded-2xl alert-dismissible fade show mb-4 shadow-xs" role="alert">

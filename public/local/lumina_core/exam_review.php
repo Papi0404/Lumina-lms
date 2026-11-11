@@ -198,7 +198,7 @@ echo $OUTPUT->header();
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle <?php echo $item['warning_count'] >= 3 ? 'bg-danger text-white' : 'bg-warning text-dark'; ?> d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; min-width: 36px;">
+                                <div class="rounded-circle <?php echo $item['status'] === 'approved' ? 'bg-success text-white' : ($item['warning_count'] >= 3 ? 'bg-danger text-white' : 'bg-warning text-dark'); ?> d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; min-width: 36px;">
                                     <?php echo strtoupper(substr($item['student_name'], 0, 1)); ?>
                                 </div>
                                 <div>
@@ -213,7 +213,15 @@ echo $OUTPUT->header();
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <?php if ($item['warning_count'] >= 3 || $item['status'] === 'under_review'): ?>
+                                <?php if ($item['status'] === 'approved'): ?>
+                                <span class="badge bg-success text-white rounded-pill px-2-5 py-1 font-semibold" style="font-size: 0.72rem;">
+                                    ✅ Sesi Lolos &amp; Disetujui (Nilai Sah: <?php echo number_format((float)($item['score'] ?? 0), 1); ?>)
+                                </span>
+                                <?php elseif ($item['status'] === 'invalidated'): ?>
+                                <span class="badge bg-danger text-white rounded-pill px-2-5 py-1 font-semibold" style="font-size: 0.72rem;">
+                                    ❌ Dibatalkan / Nilai 0.0
+                                </span>
+                                <?php elseif ($item['warning_count'] >= 3 || $item['status'] === 'under_review'): ?>
                                 <span class="badge bg-danger text-white rounded-pill px-2-5 py-1 font-semibold" style="font-size: 0.72rem;">
                                     🚫 3 / 3 Ditangguhkan
                                 </span>
@@ -250,6 +258,24 @@ echo $OUTPUT->header();
                             <span class="text-muted" style="font-size: 0.7rem;">Mulai: <?php echo $item['start_time']; ?></span>
                         </td>
                         <td class="text-end">
+                            <?php if ($item['status'] === 'approved'): ?>
+                            <div class="d-inline-flex align-items-center gap-1 justify-content-end">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2-5 py-1 font-semibold" style="font-size: 0.74rem;">
+                                    <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: -2px;">verified</span>
+                                    Sah (<?php echo number_format((float)($item['score'] ?? 0), 1); ?>)
+                                </span>
+                                <form method="post" action="exam_review.php?action=resolve" class="d-inline-flex gap-1">
+                                    <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
+                                    <input type="hidden" name="sessionid" value="<?php echo $item['session_id']; ?>">
+                                    <button type="submit" name="decision" value="reset" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0-5" title="Reset Sesi" style="font-size: 0.7rem;">
+                                        Reset
+                                    </button>
+                                    <button type="submit" name="decision" value="invalidated" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-0-5" title="Batalkan jika curang" style="font-size: 0.7rem;">
+                                        Batalkan
+                                    </button>
+                                </form>
+                            </div>
+                            <?php else: ?>
                             <form method="post" action="exam_review.php?action=resolve" class="d-inline-flex gap-1 flex-wrap justify-content-end">
                                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
                                 <input type="hidden" name="sessionid" value="<?php echo $item['session_id']; ?>">
@@ -266,6 +292,7 @@ echo $OUTPUT->header();
                                     Batalkan
                                 </button>
                             </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

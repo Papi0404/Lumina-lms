@@ -102,50 +102,552 @@
                 {{/hasblocks}}
             </div>
 
-            <!-- Lumina Hero Banner on Dashboard -->
+            <!-- Lumina Dynamic Dashboard Container by Role -->
             {{#lumina_nav.is_dashboard}}
-            <div class="lumina-welcome-banner d-print-none">
-                <div class="row align-items-center justify-content-between g-4">
-                    <div class="col-xl-8 col-lg-7">
-                        <div class="banner-semester-pill">
-                            <span class="pulse-dot"></span>
-                            <span>{{ lumina_semester }} • {{ lumina_stats.active_week_label }}</span>
-                        </div>
-                        <h1 class="banner-title">{{#str}}welcome_back, theme_lumina{{/str}}, {{ lumina_user.fullname }}! 👋</h1>
-                        <p class="banner-subtitle">{{#str}}welcome_subtitle, theme_lumina{{/str}}</p>
-                        <div class="semester-progress-box">
-                            <div class="progress-labels">
-                                <span>{{#str}}semester_progress, theme_lumina{{/str}}</span>
-                                <span class="progress-val">{{ lumina_stats.progress_percent }}% Selesai</span>
+
+            <!-- ================================================================= -->
+            <!-- 1. ADMINISTRATOR DASHBOARD VIEW                                   -->
+            <!-- ================================================================= -->
+            {{#lumina_role.is_admin}}
+            <div class="lumina-dashboard-view role-admin d-print-none">
+                <!-- Admin Hero Banner -->
+                <div class="lumina-welcome-banner admin-banner mb-4">
+                    <div class="row align-items-center justify-content-between g-4">
+                        <div class="col-xl-8 col-lg-7">
+                            <div class="banner-semester-pill admin-pill">
+                                <span class="pulse-dot green"></span>
+                                <span>STATUS SISTEM: {{ lumina_admin.system_status }} • MOODLE v{{ lumina_admin.moodle_version }}</span>
                             </div>
-                            <div class="progress-bar-track">
-                                <div class="progress-bar-fill" style="width: {{ lumina_stats.progress_percent }}%;"></div>
+                            <h1 class="banner-title">Dasbor Administrator, {{ lumina_user.fullname }}! ⚡</h1>
+                            <p class="banner-subtitle">Pantau kesehatan infrastruktur server, aktivitas akun pengguna, log keamanan, dan manajemen kursus global secara terpadu.</p>
+                        </div>
+                        <div class="col-xl-4 col-lg-5 text-lg-end">
+                            <div class="d-inline-flex gap-2 flex-wrap">
+                                <a href="{{{ config.wwwroot }}}/admin/user.php" class="btn btn-sm btn-light rounded-pill px-3 py-2 fw-semibold shadow-xs">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: text-bottom;">group_add</span>
+                                    Kelola Pengguna
+                                </a>
+                                <a href="{{{ config.wwwroot }}}/course/management.php" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-semibold shadow-xs">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: text-bottom;">add_circle</span>
+                                    Buat Kursus Baru
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-4 col-lg-5">
-                        <div class="banner-metrics-matrix">
-                            <div class="metric-col" role="button" onclick="window.location='{{{ lumina_nav.grades_url }}}'" style="cursor: pointer;" title="Klik untuk lihat rincian rekap nilai">
-                                <span class="metric-label">Nilai Rata-rata</span>
-                                <div class="metric-value">{{ lumina_stats.avg_grade_stat }}</div>
-                                <span class="metric-badge">{{#lumina_stats.completed_tasks_count}}{{ lumina_stats.completed_tasks_count }} Tugas Tuntas{{/lumina_stats.completed_tasks_count}}{{^lumina_stats.completed_tasks_count}}Belum Ada Nilai{{/lumina_stats.completed_tasks_count}}</span>
+                </div>
+
+                <!-- Anti-Gravity KPI Glass Cards (Admin) -->
+                <div class="lumina-antigravity-kpi-grid mb-4">
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble indigo">
+                            <span class="material-symbols-outlined">supervisor_account</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Total Pengguna Terdaftar</span>
+                            <h3 class="stat-value">{{ lumina_admin.total_users }} <span class="stat-subbadge">{{ lumina_admin.active_users_5m }} Online</span></h3>
+                            <span class="stat-caption">{{ lumina_admin.active_users_24h }} pengguna aktif 24 jam terakhir</span>
+                        </div>
+                    </div>
+
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble cyan">
+                            <span class="material-symbols-outlined">dns</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Infrastruktur Server</span>
+                            <h3 class="stat-value">PHP {{ lumina_admin.php_version }}</h3>
+                            <span class="stat-caption">Database: {{ lumina_admin.db_type }} &bull; RAM: {{ lumina_admin.memory_usage }}</span>
+                        </div>
+                    </div>
+
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble emerald">
+                            <span class="material-symbols-outlined">verified_user</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Skor Keamanan Sistem</span>
+                            <h3 class="stat-value">{{ lumina_admin.security_score }}% <span class="stat-subbadge optimal">Aman</span></h3>
+                            <span class="stat-caption">Protokol SSL &amp; isolasi modul aktif</span>
+                        </div>
+                    </div>
+
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble amber">
+                            <span class="material-symbols-outlined">auto_stories</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Total Kursus Global</span>
+                            <h3 class="stat-value">{{ lumina_admin.total_courses }} <span class="stat-subbadge">Aktif</span></h3>
+                            <span class="stat-caption">Semua fakultas &amp; program studi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Administrative Shortcut Panels -->
+                <div class="antigravity-glass-card rounded-3xl p-4 mb-4">
+                    <div class="section-card-header mb-3">
+                        <span class="section-title fw-bold">Pusat Kendali Administrasi</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill px-3 py-1">Role: Administrator</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/admin/user.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-primary">manage_accounts</span>
+                                <span class="tile-title">Manajemen Akun</span>
+                                <span class="tile-desc">Tambah, edit, atau daftarkan user</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/course/management.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-indigo">menu_book</span>
+                                <span class="tile-title">Manajemen Course</span>
+                                <span class="tile-desc">Buat kursus, kategori, &amp; assign guru</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/local/lumina_core/exam_review.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-danger">verified_user</span>
+                                <span class="tile-title">Audit Ujian Anti-Curang</span>
+                                <span class="tile-desc">Tinjau sesi ujian yang ditangguhkan</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/local/lumina_core/library.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-warning">folder_special</span>
+                                <span class="tile-title">Perpustakaan Digital</span>
+                                <span class="tile-desc">Kelola folder, berkas, &amp; H5P global</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/admin/search.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-success">admin_panel_settings</span>
+                                <span class="tile-title">Site Administration</span>
+                                <span class="tile-desc">Pusat konfigurasi Moodle</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-sm-6">
+                            <a href="{{{ config.wwwroot }}}/report/security/index.php" class="antigravity-action-tile">
+                                <span class="material-symbols-outlined tile-icon text-secondary">shield_lock</span>
+                                <span class="tile-title">Log Keamanan</span>
+                                <span class="tile-desc">Audit riwayat login &amp; akses</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{/lumina_role.is_admin}}
+
+            <!-- ================================================================= -->
+            <!-- 2. GURU / INSTRUKTUR DASHBOARD VIEW                               -->
+            <!-- ================================================================= -->
+            {{#lumina_role.is_teacher}}
+            <div class="lumina-dashboard-view role-teacher d-print-none">
+                <!-- Teacher Hero Banner -->
+                <div class="lumina-welcome-banner teacher-banner mb-4">
+                    <div class="row align-items-center justify-content-between g-4">
+                        <div class="col-xl-8 col-lg-7">
+                            <div class="banner-semester-pill teacher-pill">
+                                <span class="pulse-dot amber"></span>
+                                <span>PORTAL PENGAJAR • {{ lumina_semester }}</span>
                             </div>
-                            <div class="metric-col" role="button" onclick="window.location='{{{ config.wwwroot }}}/my/courses.php'" style="cursor: pointer;" title="Lihat semua kursus">
-                                <span class="metric-label">Mata Kuliah</span>
-                                <div class="metric-value">{{ lumina_stats.enrolled_courses_count }}</div>
-                                <span class="metric-badge">Terdaftar</span>
+                            <h1 class="banner-title">Selamat Bertugas, {{ lumina_user.fullname }}! 📚</h1>
+                            <p class="banner-subtitle">
+                                {{#lumina_teacher.pending_grading_count}}
+                                Terdapat <strong class="text-warning font-bold">{{ lumina_teacher.pending_grading_count }} berkas tugas</strong> yang siap dinilai.
+                                {{/lumina_teacher.pending_grading_count}}
+                                {{^lumina_teacher.pending_grading_count}}
+                                Semua berkas tugas mahasiswa sudah dinilai tuntas. Kelas Anda dalam kondisi optimal!
+                                {{/lumina_teacher.pending_grading_count}}
+                            </p>
+                        </div>
+                        <div class="col-xl-4 col-lg-5 text-lg-end">
+                            <a href="{{{ lumina_nav.teacher_manage_material_url }}}" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-semibold shadow-xs">
+                                <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: text-bottom;">post_add</span>
+                                Kelola &amp; Tambah Materi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anti-Gravity KPI Glass Cards (Teacher) -->
+                <div class="lumina-antigravity-kpi-grid mb-4">
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble amber">
+                            <span class="material-symbols-outlined">assignment_late</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Menunggu Penilaian</span>
+                            <h3 class="stat-value">{{ lumina_teacher.pending_grading_count }} <span class="stat-subbadge urgent">Berkas</span></h3>
+                            <span class="stat-caption">Perlu review &amp; umpan balik dosen</span>
+                        </div>
+                    </div>
+
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble indigo">
+                            <span class="material-symbols-outlined">groups</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Total Siswa Bimbingan</span>
+                            <h3 class="stat-value">{{ lumina_teacher.total_students_guided }} <span class="stat-subbadge">Mahasiswa</span></h3>
+                            <span class="stat-caption">Terdaftar di seluruh kelas Anda</span>
+                        </div>
+                    </div>
+
+                    <div class="antigravity-glass-card stat-card float-hover">
+                        <div class="stat-icon-bubble emerald">
+                            <span class="material-symbols-outlined">menu_book</span>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-label">Kelas / Kursus Diampu</span>
+                            <h3 class="stat-value">{{ lumina_teacher.courses_count }} <span class="stat-subbadge optimal">Aktif</span></h3>
+                            <span class="stat-caption">Semester berjalan 2026/2027</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daftar Kelas & Kehadiran Siswa Panel -->
+                <div id="daftar-kelas" class="antigravity-glass-card rounded-3xl p-4 mb-4">
+                    <div class="section-card-header mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary" style="font-size: 24px;">groups</span>
+                            <span class="section-title fw-bold">Daftar Kelas &amp; Kehadiran Siswa</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 ms-2 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">Kelas yang Anda Ampu</span>
+                        </div>
+                        <span class="text-muted small">Total: <strong>{{ lumina_teacher.courses_count }}</strong> Kelas</span>
+                    </div>
+
+                    {{#lumina_teacher.has_courses}}
+                    <div class="row g-3">
+                        {{#lumina_teacher.courses}}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="antigravity-action-tile h-100 p-3 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.7rem;">{{ shortname }}</span>
+                                        <span class="text-muted small d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined" style="font-size: 16px;">person</span>
+                                            <strong>{{ students_count }}</strong> Siswa
+                                        </span>
+                                    </div>
+                                    <h5 class="tile-title mb-1" style="font-size: 1rem;">{{ fullname }}</h5>
+                                    <p class="tile-desc mb-3">Lihat presensi kehadiran, riwayat keaktifan siswa, dan buku nilai.</p>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap pt-2 border-top">
+                                    <a href="{{{ attendance_url }}}" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 flex-fill text-center d-inline-flex align-items-center justify-content-center gap-1 shadow-xs" title="Buka Presensi Kehadiran Kelas">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">how_to_reg</span>
+                                        <span>Presensi Kelas</span>
+                                    </a>
+                                    <a href="{{{ edit_url }}}" class="btn btn-sm btn-outline-secondary rounded-pill px-2-5 py-1-5 d-inline-flex align-items-center justify-content-center" title="Kelola Materi Modul">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">post_add</span>
+                                    </a>
+                                    <a href="{{{ grader_url }}}" class="btn btn-sm btn-outline-secondary rounded-pill px-2-5 py-1-5 d-inline-flex align-items-center justify-content-center" title="Buku Nilai">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">grade</span>
+                                    </a>
+                                </div>
                             </div>
-                            <div class="metric-col" role="button" onclick="window.location='{{{ config.wwwroot }}}/calendar/view.php?view=upcoming'" style="cursor: pointer;" title="Lihat tugas mendatang">
-                                <span class="metric-label">Tugas Terbuka</span>
-                                <div class="metric-value">{{ lumina_stats.pending_tasks_count }}</div>
-                                <span class="metric-badge">Tenggat Aktif</span>
+                        </div>
+                        {{/lumina_teacher.courses}}
+                    </div>
+                    {{/lumina_teacher.has_courses}}
+
+                    {{^lumina_teacher.has_courses}}
+                    <div class="empty-state-box text-center py-4">
+                        <span class="material-symbols-outlined text-muted" style="font-size: 42px;">school</span>
+                        <h6 class="mt-2 mb-1 fw-bold">Belum Ada Kelas yang Ditugaskan</h6>
+                        <p class="text-muted small mb-0">Sesuai alur sekolah, Administrator yang membuat kursus dan menugaskan guru pengampu. Hubungi Admin untuk ditugaskan ke kelas Anda.</p>
+                    </div>
+                    {{/lumina_teacher.has_courses}}
+                </div>
+
+                <!-- Main 2-Column Responsive Layout for Teacher -->
+                <div class="row g-4 mb-4">
+                    <!-- Left: Pending Grading Queue -->
+                    <div class="col-lg-8">
+                        <div class="antigravity-glass-card rounded-3xl p-4 h-100">
+                            <div class="section-card-header mb-3">
+                                <div>
+                                    <span class="section-title fw-bold">Antrean Tugas Perlu Dinilai</span>
+                                    <span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 ms-2 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">Pending Grading</span>
+                                </div>
+                                <a href="{{{ lumina_nav.grades_url }}}" class="section-link">Buka Buku Nilai →</a>
+                            </div>
+
+                            <div class="teacher-grading-queue">
+                                {{#lumina_teacher.pending_submissions}}
+                                <div class="queue-item-card">
+                                    <div class="queue-student-info">
+                                        <div class="queue-avatar-placeholder">
+                                            <span class="material-symbols-outlined">person</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="student-name mb-0">{{ student_name }}</h6>
+                                            <span class="assignment-meta">{{ course_name }} &bull; {{ assignment_name }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="queue-actions">
+                                        <span class="submission-time text-muted"><i class="fa-regular fa-clock me-1"></i>{{ submitted_ago }}</span>
+                                        <a href="{{{ grade_url }}}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1">Beri Nilai</a>
+                                    </div>
+                                </div>
+                                {{/lumina_teacher.pending_submissions}}
+
+                                {{^lumina_teacher.has_pending_grading}}
+                                <div class="empty-state-box text-center py-5">
+                                    <span class="material-symbols-outlined text-success" style="font-size: 48px;">task_alt</span>
+                                    <h5 class="mt-2 mb-1 fw-bold">Semua Tugas Sudah Dinilai!</h5>
+                                    <p class="text-muted small">Tidak ada berkas tugas mahasiswa yang sedang menunggu penilaian saat ini.</p>
+                                </div>
+                                {{/lumina_teacher.has_pending_grading}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Today's Schedule & Quick Tools -->
+                    <div class="col-lg-4">
+                        <div class="antigravity-glass-card rounded-3xl p-4 h-100">
+                            <div class="section-card-header mb-3">
+                                <span class="section-title fw-bold">Jadwal Mengajar Hari Ini</span>
+                            </div>
+
+                            <div class="teacher-schedule-list">
+                                {{#lumina_teacher.today_schedule}}
+                                <div class="schedule-timeline-item {{#is_live}}live{{/is_live}}">
+                                    <div class="schedule-time-badge">{{ time_str }}</div>
+                                    <div class="schedule-body">
+                                        <h6 class="schedule-title mb-1">{{ title }}</h6>
+                                        {{#is_live}}<span class="live-status-pill">SEDANG BERLANGSUNG</span>{{/is_live}}
+                                    </div>
+                                </div>
+                                {{/lumina_teacher.today_schedule}}
+
+                                {{^lumina_teacher.has_today_schedule}}
+                                <div class="empty-state-box text-center py-4">
+                                    <span class="material-symbols-outlined text-muted" style="font-size: 36px;">event_available</span>
+                                    <p class="text-muted small mt-2 mb-0">Tidak ada sesi mengajar langsung terjadwal hari ini.</p>
+                                </div>
+                                {{/lumina_teacher.has_today_schedule}}
+                            </div>
+
+                            <div class="teacher-quick-tools mt-4 pt-3 border-top">
+                                <h6 class="small fw-bold text-muted text-uppercase mb-2">Akses Cepat</h6>
+                                <div class="d-grid gap-2">
+                                    <a href="{{{ lumina_nav.virtualclass_url }}}" class="btn btn-sm btn-light border text-start rounded-pill px-3 py-2 d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary" style="font-size: 18px;">videocam</span>
+                                        <span>Buka Kelas Virtual</span>
+                                    </a>
+                                    <a href="{{{ lumina_nav.forum_url }}}" class="btn btn-sm btn-light border text-start rounded-pill px-3 py-2 d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-indigo" style="font-size: 18px;">chat</span>
+                                        <span>Forum Diskusi Kelas</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {{/lumina_role.is_teacher}}
 
-            <!-- Lumina Up-to-date Security Status Banner (Dismissible) -->
+            <!-- ================================================================= -->
+            <!-- 3. MURID / SISWA DASHBOARD VIEW                                   -->
+            <!-- ================================================================= -->
+            {{#lumina_role.is_student}}
+            <div class="lumina-dashboard-view role-student d-print-none">
+                <!-- Lumina Hero Banner on Dashboard -->
+                <div class="lumina-welcome-banner d-print-none mb-4">
+                    <div class="row align-items-center justify-content-between g-4">
+                        <div class="col-xl-8 col-lg-7">
+                            <div class="banner-semester-pill">
+                                <span class="pulse-dot"></span>
+                                <span>{{ lumina_semester }} • {{ lumina_stats.active_week_label }}</span>
+                            </div>
+                            <h1 class="banner-title">{{#str}}welcome_back, theme_lumina{{/str}}, {{ lumina_user.fullname }}! 👋</h1>
+                            <p class="banner-subtitle">{{#str}}welcome_subtitle, theme_lumina{{/str}}</p>
+                            <div class="semester-progress-box">
+                                <div class="progress-labels">
+                                    <span>{{#str}}semester_progress, theme_lumina{{/str}}</span>
+                                    <span class="progress-val">{{ lumina_stats.progress_percent }}% Selesai</span>
+                                </div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" style="width: {{ lumina_stats.progress_percent }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-5">
+                            <div class="banner-metrics-matrix">
+                                <div class="metric-col" role="button" onclick="window.location='{{{ lumina_nav.grades_url }}}'" style="cursor: pointer;" title="Klik untuk lihat rincian rekap nilai">
+                                    <span class="metric-label">Nilai Rata-rata</span>
+                                    <div class="metric-value">{{ lumina_stats.avg_grade_stat }}</div>
+                                    <span class="metric-badge">{{#lumina_stats.completed_tasks_count}}{{ lumina_stats.completed_tasks_count }} Tugas Tuntas{{/lumina_stats.completed_tasks_count}}{{^lumina_stats.completed_tasks_count}}Belum Ada Nilai{{/lumina_stats.completed_tasks_count}}</span>
+                                </div>
+                                <div class="metric-col" role="button" onclick="window.location='{{{ config.wwwroot }}}/my/courses.php'" style="cursor: pointer;" title="Lihat semua kursus">
+                                    <span class="metric-label">Mata Kuliah</span>
+                                    <div class="metric-value">{{ lumina_stats.enrolled_courses_count }}</div>
+                                    <span class="metric-badge">Terdaftar</span>
+                                </div>
+                                <div class="metric-col" role="button" onclick="window.location='{{{ config.wwwroot }}}/calendar/view.php?view=upcoming'" style="cursor: pointer;" title="Lihat tugas mendatang">
+                                    <span class="metric-label">Tugas Terbuka</span>
+                                    <div class="metric-value">{{ lumina_stats.pending_tasks_count }}</div>
+                                    <span class="metric-badge">Tenggat Aktif</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lumina Quick Action Bar on Dashboard -->
+                <div class="lumina-quick-actions d-print-none mb-4">
+                    <a href="{{{ config.wwwroot }}}/my/courses.php" class="quick-action-card">
+                        <div class="action-icon bg-indigo">
+                            <span class="material-symbols-outlined">play_circle</span>
+                        </div>
+                        <div class="action-meta">
+                            <span class="action-title">{{#str}}continue_learning, theme_lumina{{/str}}</span>
+                            <span class="action-subtitle">Lanjutkan modul aktif</span>
+                        </div>
+                    </a>
+                    <a href="{{{ config.wwwroot }}}/calendar/view.php" class="quick-action-card">
+                        <div class="action-icon bg-cyan">
+                            <span class="material-symbols-outlined">event_available</span>
+                        </div>
+                        <div class="action-meta">
+                            <span class="action-title">{{#str}}today_schedule, theme_lumina{{/str}}</span>
+                            <span class="action-subtitle">Lihat agenda hari ini</span>
+                        </div>
+                    </a>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_core/library.php?tab=private" class="quick-action-card">
+                        <div class="action-icon bg-light-blue">
+                            <span class="material-symbols-outlined">folder_special</span>
+                        </div>
+                        <div class="action-meta">
+                            <span class="action-title">Berkas Belajar Pribadi</span>
+                            <span class="action-subtitle">Ruang 100% rahasia mandiri</span>
+                        </div>
+                    </a>
+                    <a href="{{{ lumina_nav.virtualclass_url }}}" class="quick-action-card">
+                        <div class="action-icon bg-green">
+                            <span class="material-symbols-outlined">{{ lumina_nav.virtualclass_icon }}</span>
+                        </div>
+                        <div class="action-meta">
+                            <span class="action-title">{{ lumina_nav.virtualclass_title }}</span>
+                            <span class="action-subtitle">{{ lumina_nav.virtualclass_subtitle }}</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Bahan Ajar & Modul Pembelajaran (Per-Course Hybrid Folder Library) -->
+                <div id="bahan-ajar" class="antigravity-glass-card rounded-3xl p-4 mb-4">
+                    <div class="section-card-header mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary" style="font-size: 24px;">folder_special</span>
+                            <span class="section-title fw-bold">Bahan Ajar &amp; Modul Pembelajaran</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 ms-2 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">Perpustakaan Kursus</span>
+                        </div>
+                        <span class="text-muted small">Materi terdaftar di mata kuliah Anda</span>
+                    </div>
+
+                    {{#has_student_materials}}
+                    <div class="row g-4">
+                        {{#lumina_student_materials}}
+                        <div class="col-lg-6">
+                            <div class="course-materials-folder-card p-3 rounded-2xl border bg-white h-100 d-flex flex-column justify-content-between shadow-xs">
+                                <div>
+                                    <!-- Course Folder Header -->
+                                    <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="material-symbols-outlined text-warning" style="font-size: 28px;">folder</span>
+                                            <div>
+                                                <h5 class="course-folder-title mb-0 font-bold" style="font-size: 0.95rem;">{{ course_fullname }}</h5>
+                                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0-5" style="font-size: 0.68rem;">{{ course_shortname }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="text-muted small font-semibold">{{ materials_count }} Materi</span>
+                                    </div>
+
+                                    <!-- Sub-modules List inside this Course Folder -->
+                                    <div class="materials-sublist d-flex flex-column gap-2 my-2">
+                                        {{#materials}}
+                                        <a href="{{{ url }}}" class="material-item-row d-flex align-items-center justify-content-between p-2 rounded-xl border text-decoration-none transition-all">
+                                            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                                <div class="material-icon-bubble">
+                                                    <span class="material-symbols-outlined" style="font-size: 18px;">{{ icon }}</span>
+                                                </div>
+                                                <div class="text-truncate">
+                                                    <span class="material-title text-dark fw-semibold d-block text-truncate" style="font-size: 0.85rem;">{{ name }}</span>
+                                                    <span class="material-type text-muted" style="font-size: 0.72rem;">{{ type_label }}</span>
+                                                </div>
+                                            </div>
+                                            <span class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 ms-2 flex-shrink-0" style="font-size: 0.7rem;">Buka &rarr;</span>
+                                        </a>
+                                        {{/materials}}
+
+                                        {{^has_materials}}
+                                        <div class="text-center py-3 text-muted small">
+                                            <span class="material-symbols-outlined text-muted" style="font-size: 24px;">draft</span>
+                                            <p class="mb-0 mt-1">Belum ada bahan ajar yang diunggah untuk kelas ini.</p>
+                                        </div>
+                                        {{/has_materials}}
+                                    </div>
+                                </div>
+
+                                <div class="pt-2 border-top text-end">
+                                    <a href="{{{ view_course_url }}}" class="btn btn-sm btn-light border rounded-pill px-3 py-1 font-semibold text-primary" style="font-size: 0.78rem;">
+                                        Buka Seluruh Topik Kursus &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {{/lumina_student_materials}}
+                    </div>
+                    {{/has_student_materials}}
+
+                    {{^has_student_materials}}
+                    <div class="empty-state-box text-center py-4">
+                        <span class="material-symbols-outlined text-muted" style="font-size: 42px;">folder_off</span>
+                        <h6 class="mt-2 mb-1 fw-bold">Belum Ada Materi Pembelajaran</h6>
+                        <p class="text-muted small mb-0">Anda belum terdaftar dalam kelas yang memiliki bahan ajar. Hubungi guru pengampu untuk materi kelas.</p>
+                    </div>
+                    {{/has_student_materials}}
+                </div>
+
+                <!-- Lumina Dashboard Cards: Deadlines Only with Anti-Gravity UI -->
+                <div class="lumina-dashboard-cards d-print-none mb-4">
+                    <div class="lumina-section-card antigravity-glass-card rounded-3xl p-4" style="grid-column: 1 / -1;">
+                        <div class="section-card-header mb-3">
+                            <div>
+                                <span class="section-title fw-bold">Tenggat Waktu Mendatang</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 ms-2 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">Real-time</span>
+                            </div>
+                            <a href="{{{ config.wwwroot }}}/calendar/view.php?view=upcoming" class="section-link">Semua Tugas →</a>
+                        </div>
+                        {{#lumina_upcoming_assignments}}
+                        <div class="deadline-item">
+                            <div class="deadline-icon deadline-icon-{{ status_class }}">
+                                <span class="material-symbols-outlined">{{ type_icon }}</span>
+                            </div>
+                            <div class="deadline-meta">
+                                <span class="deadline-name">{{{ name }}}</span>
+                                <span class="deadline-course">{{{ coursename }}}</span>
+                            </div>
+                            <div class="deadline-right">
+                                <span class="deadline-badge {{ status_class }}">{{ status_label }}</span>
+                                <span class="deadline-time">{{ due_label }}</span>
+                            </div>
+                        </div>
+                        {{/lumina_upcoming_assignments}}
+                        {{^lumina_upcoming_assignments}}
+                        <div class="deadline-empty text-center py-4">
+                            <span class="material-symbols-outlined text-success" style="font-size: 40px;">check_circle</span>
+                            <h6 class="mt-2 mb-1 fw-bold">Semua tugas dan kuis selesai!</h6>
+                            <p class="text-muted small">Tidak ada tenggat tugas yang mendesak minggu ini.</p>
+                            <a href="{{{ config.wwwroot }}}/calendar/view.php?view=upcoming" class="btn btn-sm btn-outline-primary rounded-pill mt-2">Lihat Kalender</a>
+                        </div>
+                        {{/lumina_upcoming_assignments}}
+                    </div>
+                </div>
+            </div>
+            {{/lumina_role.is_student}}
+
+            <!-- Lumina Up-to-date Security Status Banner (Dismissible, for all roles) -->
             <div id="luminaSecurityBanner" class="lumina-security-banner d-print-none mb-3 alert alert-dismissible fade show" role="alert" style="display: none;">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <div class="d-flex align-items-center gap-3">
@@ -176,79 +678,6 @@
                         </button>
                         <button type="button" class="btn-close position-static p-2" data-bs-dismiss="alert" aria-label="Close" onclick="sessionStorage.setItem('lumina_sec_dismissed', '1')"></button>
                     </div>
-                </div>
-            </div>
-
-            <!-- Lumina Quick Action Bar on Dashboard -->
-            <div class="lumina-quick-actions d-print-none">
-                <a href="{{{ config.wwwroot }}}/my/courses.php" class="quick-action-card">
-                    <div class="action-icon bg-indigo">
-                        <span class="material-symbols-outlined">play_circle</span>
-                    </div>
-                    <div class="action-meta">
-                        <span class="action-title">{{#str}}continue_learning, theme_lumina{{/str}}</span>
-                        <span class="action-subtitle">Lanjutkan modul aktif</span>
-                    </div>
-                </a>
-                <a href="{{{ config.wwwroot }}}/calendar/view.php" class="quick-action-card">
-                    <div class="action-icon bg-cyan">
-                        <span class="material-symbols-outlined">event_available</span>
-                    </div>
-                    <div class="action-meta">
-                        <span class="action-title">{{#str}}today_schedule, theme_lumina{{/str}}</span>
-                        <span class="action-subtitle">Lihat agenda hari ini</span>
-                    </div>
-                </a>
-                <a href="{{{ config.wwwroot }}}/user/files.php" class="quick-action-card">
-                    <div class="action-icon bg-light-blue">
-                        <span class="material-symbols-outlined">cloud_download</span>
-                    </div>
-                    <div class="action-meta">
-                        <span class="action-title">{{#str}}offline_materials, theme_lumina{{/str}}</span>
-                        <span class="action-subtitle">Sinkronisasi berkas</span>
-                    </div>
-                </a>
-                <a href="{{{ lumina_nav.virtualclass_url }}}" class="quick-action-card">
-                    <div class="action-icon bg-green">
-                        <span class="material-symbols-outlined">{{ lumina_nav.virtualclass_icon }}</span>
-                    </div>
-                    <div class="action-meta">
-                        <span class="action-title">{{ lumina_nav.virtualclass_title }}</span>
-                        <span class="action-subtitle">{{ lumina_nav.virtualclass_subtitle }}</span>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Lumina Dashboard Cards: Deadlines Only -->
-            <div class="lumina-dashboard-cards d-print-none">
-                <!-- Upcoming Deadlines Card -->
-                <div class="lumina-section-card d-print-none" style="grid-column: 1 / -1;">
-                    <div class="section-card-header">
-                        <span class="section-title">Tenggat Waktu Mendatang</span>
-                        <a href="{{{ config.wwwroot }}}/calendar/view.php?view=upcoming" class="section-link">Semua Tugas →</a>
-                    </div>
-                    {{#lumina_upcoming_assignments}}
-                    <div class="deadline-item">
-                        <div class="deadline-icon deadline-icon-{{ status_class }}">
-                            <span class="material-symbols-outlined">{{ type_icon }}</span>
-                        </div>
-                        <div class="deadline-meta">
-                            <span class="deadline-name">{{{ name }}}</span>
-                            <span class="deadline-course">{{{ coursename }}}</span>
-                        </div>
-                        <div class="deadline-right">
-                            <span class="deadline-badge {{ status_class }}">{{ status_label }}</span>
-                            <span class="deadline-time">{{ due_label }}</span>
-                        </div>
-                    </div>
-                    {{/lumina_upcoming_assignments}}
-                    {{^lumina_upcoming_assignments}}
-                    <div class="deadline-empty">
-                        <span class="material-symbols-outlined">check_circle</span>
-                        <span>Semua tugas dan kuis selesai!</span>
-                        <a href="{{{ config.wwwroot }}}/calendar/view.php?view=upcoming" class="btn btn-sm btn-outline-primary mt-2">Lihat Kalender</a>
-                    </div>
-                    {{/lumina_upcoming_assignments}}
                 </div>
             </div>
             {{/lumina_nav.is_dashboard}}
@@ -318,6 +747,7 @@
                                 </div>
                             </div>
                         {{/overflow}}
+                        {{{ lumina_quiz_guide }}}
                         {{{ output.main_content }}}
                         {{{ output.activity_navigation }}}
                         {{{ output.course_content_footer }}}
@@ -385,6 +815,158 @@ document.addEventListener('DOMContentLoaded', function() {
     const secBanner = document.getElementById('luminaSecurityBanner');
     if (secBanner && !sessionStorage.getItem('lumina_sec_dismissed')) {
         secBanner.style.display = 'block';
+    }
+
+    // Course Management Form Guard (Prevent "A required parameter movecategoriesto / resortcategoriesby was missing")
+    const mgmtForm = document.getElementById('coursecat-management');
+    if (mgmtForm) {
+        // Universal guard on submit: ensure all form controls inside #coursecat-management
+        // are enabled right before submit so the browser includes them in the POST payload.
+        mgmtForm.addEventListener('submit', function() {
+            mgmtForm.querySelectorAll('select[disabled], input[disabled]').forEach(function(el) {
+                el.removeAttribute('disabled');
+            });
+        });
+
+        // Guard 1: Move Categories (bulkmovecategories)
+        const moveCatBtn = mgmtForm.querySelector('input[name="bulkmovecategories"]');
+        const moveCatSelect = mgmtForm.querySelector('select[name="movecategoriesto"]');
+        if (moveCatBtn && moveCatSelect) {
+            moveCatBtn.addEventListener('click', function(e) {
+                const checkedCats = mgmtForm.querySelectorAll('input[name="bcat[]"]:checked');
+                if (checkedCats.length === 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    alert('Harap centang minimal satu kategori yang ingin dipindahkan.');
+                    return false;
+                }
+                // '0' represents 'Top' category, so only empty string is invalid
+                if (moveCatSelect.value === '' || moveCatSelect.value === null || moveCatSelect.value === undefined) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    moveCatSelect.focus();
+                    moveCatSelect.style.borderColor = '#EF4444';
+                    moveCatSelect.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                    alert('Harap pilih kategori tujuan pemindahan terlebih dahulu pada menu dropdown.');
+                    return false;
+                }
+                moveCatSelect.removeAttribute('disabled');
+                moveCatSelect.style.borderColor = '';
+                moveCatSelect.style.boxShadow = '';
+            });
+        }
+
+        // Guard 2: Move Courses (bulkmovecourses)
+        const moveCourseBtn = mgmtForm.querySelector('input[name="bulkmovecourses"]');
+        const moveCourseSelect = mgmtForm.querySelector('select[name="movecoursesto"]');
+        if (moveCourseBtn && moveCourseSelect) {
+            moveCourseBtn.addEventListener('click', function(e) {
+                const checkedCourses = mgmtForm.querySelectorAll('input[name="bc[]"]:checked');
+                if (checkedCourses.length === 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    alert('Harap centang minimal satu mata kuliah yang ingin dipindahkan.');
+                    return false;
+                }
+                if (moveCourseSelect.value === '' || moveCourseSelect.value === null || moveCourseSelect.value === undefined) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    moveCourseSelect.focus();
+                    moveCourseSelect.style.borderColor = '#EF4444';
+                    moveCourseSelect.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                    alert('Harap pilih kategori tujuan pemindahan kursus terlebih dahulu pada menu dropdown.');
+                    return false;
+                }
+                moveCourseSelect.removeAttribute('disabled');
+                moveCourseSelect.style.borderColor = '';
+                moveCourseSelect.style.boxShadow = '';
+            });
+        }
+
+        // Guard 3: Sort Categories & Courses (bulksort)
+        const sortBtn = mgmtForm.querySelector('input[name="bulksort"]');
+        const sortCatSelect = mgmtForm.querySelector('select[name="resortcategoriesby"]');
+        const sortCourseSelect = mgmtForm.querySelector('select[name="resortcoursesby"]');
+        const selectSortBy = mgmtForm.querySelector('select[name="selectsortby"]');
+        if (sortBtn) {
+            sortBtn.addEventListener('click', function(e) {
+                if (selectSortBy && selectSortBy.value === 'selectedcategories') {
+                    const checkedCats = mgmtForm.querySelectorAll('input[name="bcat[]"]:checked');
+                    if (checkedCats.length === 0) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        alert('Harap centang minimal satu kategori yang ingin diurutkan, atau pilih opsi "All categories" / "Semua kategori".');
+                        return false;
+                    }
+                }
+                // Ensure dropdowns are enabled so the browser transmits their values in POST
+                if (selectSortBy) selectSortBy.removeAttribute('disabled');
+                if (sortCatSelect) {
+                    sortCatSelect.removeAttribute('disabled');
+                    if (!sortCatSelect.value) sortCatSelect.value = 'name';
+                }
+                if (sortCourseSelect) {
+                    sortCourseSelect.removeAttribute('disabled');
+                    if (!sortCourseSelect.value) sortCourseSelect.value = 'fullname';
+                }
+            });
+        }
+    }
+
+    // Teacher: Auto-trigger Activity/Resource Chooser when clicking "Buat Materi/Modul" (add_material=1)
+    if (window.location.search.indexOf('add_material=1') !== -1) {
+        const courseRegion = document.getElementById('region-main') || document.querySelector('.course-content');
+        if (courseRegion && !document.getElementById('lumina-add-material-banner')) {
+            const banner = document.createElement('div');
+            banner.id = 'lumina-add-material-banner';
+            banner.className = 'alert d-flex align-items-center justify-content-between p-3 mb-4 rounded-3 border-0 shadow-sm';
+            banner.style.cssText = 'background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-left: 5px solid #4338CA !important;';
+            banner.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <span class="material-symbols-outlined fs-2" style="color: #4338CA;">post_add</span>
+                    <div>
+                        <h6 class="mb-0 fw-bold" style="color: #312E81;">Mode Buat Materi & Modul Aktif</h6>
+                        <p class="mb-0 small" style="color: #4B5563;">Pilih modul (Berkas PDF/PPT, Tugas, Kuis, Halaman Materi, URL, dll.) dari jendela pemilih aktivitas atau klik tombol <em>+ Add content</em> di topik yang diinginkan.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm text-white rounded-pill px-3 py-2 fw-semibold shadow-xs" id="lumina-open-chooser-action" style="background: #4338CA; border: none; cursor: pointer;">
+                    + Buka Menu Modul
+                </button>
+            `;
+            courseRegion.prepend(banner);
+
+            const triggerBtn = document.getElementById('lumina-open-chooser-action');
+            if (triggerBtn) {
+                triggerBtn.addEventListener('click', function() {
+                    const btn = document.querySelector('button[data-action="open-chooser"]') ||
+                                document.querySelector('.section-modchooser-link') ||
+                                document.querySelector('.activity-add');
+                    if (btn) {
+                        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        btn.click();
+                    }
+                });
+            }
+        }
+
+        // Automatically trigger the first chooser modal after content is ready
+        let attempts = 0;
+        const autoOpenInterval = setInterval(function() {
+            attempts++;
+            const chooserBtn = document.querySelector('button[data-action="open-chooser"]') ||
+                               document.querySelector('.section-modchooser-link') ||
+                               document.querySelector('.activity-add');
+            if (chooserBtn) {
+                clearInterval(autoOpenInterval);
+                setTimeout(function() {
+                    chooserBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    chooserBtn.click();
+                }, 400);
+            }
+            if (attempts > 25) {
+                clearInterval(autoOpenInterval);
+            }
+        }, 200);
     }
 });
 </script>

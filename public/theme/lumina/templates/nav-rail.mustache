@@ -1,11 +1,15 @@
 <aside class="lumina-sidebar" id="luminaSidebar" aria-label="{{#str}}sitemenubar, admin{{/str}}">
     <div>
+        <!-- Brand Header with Anti-Gravity UI Glow -->
         <div class="sidebar-header">
             <a href="{{{ config.wwwroot }}}/my/" class="brand-logo">
                 <div class="brand-icon">L</div>
                 <div class="brand-text">
                     <span class="brand-title">{{ sitename }}</span>
-                    <span class="brand-version">v5.3 Lumina LMS</span>
+                    <div class="d-flex align-items-center gap-1 mt-0-5">
+                        <span class="brand-version">v5.3 Lumina</span>
+                        <span class="role-indicator-badge {{ lumina_user.role_badge_class }}">{{ lumina_user.role_label }}</span>
+                    </div>
                 </div>
             </a>
             <button class="rail-toggle-btn d-none d-lg-flex" id="luminaRailToggle" type="button" aria-label="Toggle Navigation Rail">
@@ -13,14 +17,187 @@
             </button>
         </div>
 
+        <!-- Role Preview Quick-Switcher for Administrators -->
+        {{#lumina_user.can_switch_preview}}
+        <div class="lumina-role-preview-bar d-print-none">
+            <div class="preview-bar-label">
+                <span class="material-symbols-outlined" style="font-size: 14px;">visibility</span>
+                <span>Preview Role:</span>
+            </div>
+            <div class="preview-pills-group">
+                <a href="?lumina_preview_role=admin" class="preview-pill {{#lumina_role.is_admin}}active{{/lumina_role.is_admin}}" title="Preview sebagai Administrator">Admin</a>
+                <a href="?lumina_preview_role=teacher" class="preview-pill {{#lumina_role.is_teacher}}active{{/lumina_role.is_teacher}}" title="Preview sebagai Guru / Instruktur">Guru</a>
+                <a href="?lumina_preview_role=student" class="preview-pill {{#lumina_role.is_student}}active{{/lumina_role.is_student}}" title="Preview sebagai Murid / Siswa">Murid</a>
+                {{#lumina_role.is_preview_active}}
+                <a href="?lumina_preview_role=reset" class="preview-pill reset" title="Reset ke role asli">&#x2715;</a>
+                {{/lumina_role.is_preview_active}}
+            </div>
+        </div>
+        {{/lumina_user.can_switch_preview}}
+
+        <!-- 1. ADMINISTRATOR SIDEBAR -->
+        {{#lumina_role.is_admin}}
         <div class="sidebar-nav-section">
-            <div class="nav-section-title">{{#str}}academic_nav, theme_lumina{{/str}}</div>
+            <div class="nav-section-title">ADMINISTRASI SISTEM</div>
+            <ul class="nav-list">
+                <li>
+                    <a href="{{{ config.wwwroot }}}/my/" class="nav-link-item {{#lumina_nav.is_dashboard}}active{{/lumina_nav.is_dashboard}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">dashboard</span>
+                            <span>Dashboard</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/admin/user.php" class="nav-link-item {{#lumina_nav.is_manage_users}}active{{/lumina_nav.is_manage_users}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">manage_accounts</span>
+                            <span>Manajemen Pengguna</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/admin/search.php" class="nav-link-item {{#lumina_nav.is_admin}}active{{/lumina_nav.is_admin}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">admin_panel_settings</span>
+                            <span>Site Administration</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/admin/category.php?category=server" class="nav-link-item {{#lumina_nav.is_server_settings}}active{{/lumina_nav.is_server_settings}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">tune</span>
+                            <span>Pengaturan Sistem</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/report/security/index.php" class="nav-link-item {{#lumina_nav.is_security_report}}active{{/lumina_nav.is_security_report}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">shield_with_heart</span>
+                            <span>Log Keamanan</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_core/exam_review.php" class="nav-link-item {{#lumina_nav.is_exam_review}}active{{/lumina_nav.is_exam_review}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">verified_user</span>
+                            <span>Audit Ujian Anti-Curang</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-nav-section">
+            <div class="nav-section-title">MANAJEMEN KURSUS</div>
+            <ul class="nav-list">
+                <li>
+                    <a href="{{{ config.wwwroot }}}/course/management.php" class="nav-link-item {{#lumina_nav.is_manage_courses}}active{{/lumina_nav.is_manage_courses}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">auto_stories</span>
+                            <span>Kelola Kursus & Kategori</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item {{#lumina_nav.is_resources}}active{{/lumina_nav.is_resources}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">folder_special</span>
+                            <span>Perpustakaan Sumber Belajar</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {{/lumina_role.is_admin}}
+
+        <!-- 2. GURU / INSTRUKTUR SIDEBAR -->
+        {{#lumina_role.is_teacher}}
+        <div class="sidebar-nav-section">
+            <div class="nav-section-title">PORTAL GURU / PENGAJAR</div>
+            <ul class="nav-list">
+                <li>
+                    <a href="{{{ config.wwwroot }}}/my/" class="nav-link-item {{#lumina_nav.is_dashboard}}active{{/lumina_nav.is_dashboard}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">space_dashboard</span>
+                            <span>Dashboard Pengajar</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/my/courses.php" class="nav-link-item {{#lumina_nav.is_mycourses}}active{{/lumina_nav.is_mycourses}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">library_books</span>
+                            <span>Mata Kuliah yang Diampu</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ lumina_nav.class_list_url }}}" class="nav-link-item {{#lumina_nav.is_classlist}}active{{/lumina_nav.is_classlist}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">groups</span>
+                            <span>Daftar Kelas & Kehadiran</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ lumina_nav.grades_url }}}" class="nav-link-item {{#lumina_nav.is_grades}}active{{/lumina_nav.is_grades}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">assignment_turned_in</span>
+                            <span>Penilaian Tugas/Kuis</span>
+                        </div>
+                        {{#lumina_teacher.pending_grading_count}}
+                        <span class="nav-count-badge urgent">{{ lumina_teacher.pending_grading_count }} Baru</span>
+                        {{/lumina_teacher.pending_grading_count}}
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ lumina_nav.teacher_manage_material_url }}}" class="nav-link-item {{#lumina_nav.is_manage_material}}active{{/lumina_nav.is_manage_material}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">post_add</span>
+                            <span>Buat Materi/Modul</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-nav-section">
+            <div class="nav-section-title">KOLABORASI KELAS</div>
+            <ul class="nav-list">
+                <li>
+                    <a href="{{{ lumina_nav.forum_url }}}" class="nav-link-item {{#lumina_nav.is_forum}}active{{/lumina_nav.is_forum}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">forum</span>
+                            <span>Forum Diskusi Kelas</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item {{#lumina_nav.is_resources}}active{{/lumina_nav.is_resources}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">{{ lumina_nav.resources_icon }}</span>
+                            <span>{{ lumina_nav.resources_label }}</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {{/lumina_role.is_teacher}}
+
+        <!-- 3. MURID / SISWA SIDEBAR -->
+        {{#lumina_role.is_student}}
+        <div class="sidebar-nav-section">
+            <div class="nav-section-title">AKADEMIK & BELAJAR</div>
             <ul class="nav-list">
                 <li>
                     <a href="{{{ config.wwwroot }}}/my/" class="nav-link-item {{#lumina_nav.is_dashboard}}active{{/lumina_nav.is_dashboard}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">grid_view</span>
-                            <span>{{#str}}dashboard, theme_lumina{{/str}}</span>
+                            <span>Dashboard / Beranda</span>
                         </div>
                     </a>
                 </li>
@@ -28,7 +205,7 @@
                     <a href="{{{ config.wwwroot }}}/my/courses.php" class="nav-link-item {{#lumina_nav.is_mycourses}}active{{/lumina_nav.is_mycourses}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">school</span>
-                            <span>{{#str}}mycourses, theme_lumina{{/str}}</span>
+                            <span>Mata Kuliah Saya</span>
                         </div>
                         {{#lumina_user.enrolled_count}}
                         <span class="nav-count-badge">{{ lumina_user.enrolled_count }} Aktif</span>
@@ -39,7 +216,7 @@
                     <a href="{{{ config.wwwroot }}}/calendar/view.php" class="nav-link-item {{#lumina_nav.is_calendar}}active{{/lumina_nav.is_calendar}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">calendar_month</span>
-                            <span>{{#str}}calendar_deadlines, theme_lumina{{/str}}</span>
+                            <span>Kalender & Tugas</span>
                         </div>
                     </a>
                 </li>
@@ -47,7 +224,7 @@
                     <a href="{{{ lumina_nav.grades_url }}}" class="nav-link-item {{#lumina_nav.is_grades}}active{{/lumina_nav.is_grades}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">monitoring</span>
-                            <span>{{#str}}grades_analytics, theme_lumina{{/str}}</span>
+                            <span>Nilai & Laporan</span>
                         </div>
                     </a>
                 </li>
@@ -55,34 +232,24 @@
         </div>
 
         <div class="sidebar-nav-section">
-            <div class="nav-section-title">{{#str}}collaboration_nav, theme_lumina{{/str}}</div>
+            <div class="nav-section-title">KOLABORASI & SUMBER DAYA</div>
             <ul class="nav-list">
                 <li>
                     <a href="{{{ lumina_nav.forum_url }}}" class="nav-link-item {{#lumina_nav.is_forum}}active{{/lumina_nav.is_forum}}">
                         <div class="nav-item-content">
                             <span class="material-symbols-outlined nav-icon">forum</span>
-                            <span>{{#str}}forum_discussion, theme_lumina{{/str}}</span>
+                            <span>Forum Diskusi</span>
                         </div>
                     </a>
                 </li>
                 <li>
                     <a href="{{{ lumina_nav.resources_url }}}" class="nav-link-item {{#lumina_nav.is_resources}}active{{/lumina_nav.is_resources}}">
                         <div class="nav-item-content">
-                            <span class="material-symbols-outlined nav-icon">local_library</span>
-                            <span>{{#str}}resource_library, theme_lumina{{/str}}</span>
+                            <span class="material-symbols-outlined nav-icon">{{ lumina_nav.resources_icon }}</span>
+                            <span>{{ lumina_nav.resources_label }}</span>
                         </div>
                     </a>
                 </li>
-                {{#lumina_user.is_siteadmin}}
-                <li>
-                    <a href="{{{ config.wwwroot }}}/admin/search.php" class="nav-link-item {{#lumina_nav.is_admin}}active{{/lumina_nav.is_admin}}">
-                        <div class="nav-item-content">
-                            <span class="material-symbols-outlined nav-icon">admin_panel_settings</span>
-                            <span>Site Administration</span>
-                        </div>
-                    </a>
-                </li>
-                {{/lumina_user.is_siteadmin}}
                 {{#has_local_lumina_ai}}
                 <li>
                     <a href="javascript:void(0)" id="luminaNavAiBtn" class="nav-link-item lumina-ai-nav-item" role="button" aria-label="Tanya Lumina AI" title="Buka Asisten AI Akademik">
@@ -111,8 +278,10 @@
                 {{/has_local_lumina_ai}}
             </ul>
         </div>
+        {{/lumina_role.is_student}}
     </div>
 
+    <!-- Sidebar Footer with Anti-Gravity Glassmorphism Profile -->
     <div class="sidebar-footer">
         <div class="cloud-storage-card">
             <div class="storage-header">

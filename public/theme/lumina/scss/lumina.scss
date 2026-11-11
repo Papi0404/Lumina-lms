@@ -517,7 +517,7 @@ h1, h2, h3, h4, h5, h6,
     }
   }
 
-  // Prevent duplicate AI floating widgets in iframes, H5P embeds, popups
+  // Prevent duplicate AI floating widgets in iframes, H5P embeds, popups, and during exams
   body.h5p-embed #luminaAiFab,
   body.h5p-embed #luminaAiChatWindow,
   body.pagelayout-embedded #luminaAiFab,
@@ -525,7 +525,19 @@ h1, h2, h3, h4, h5, h6,
   body.layout-embedded #luminaAiFab,
   body.layout-embedded #luminaAiChatWindow,
   body.pagelayout-popup #luminaAiFab,
-  body.pagelayout-popup #luminaAiChatWindow {
+  body.pagelayout-popup #luminaAiChatWindow,
+  body.pagelayout-secure #luminaAiFab,
+  body.pagelayout-secure #luminaAiChatWindow,
+  body.path-mod-h5pactivity #luminaAiFab,
+  body.path-mod-h5pactivity #luminaAiChatWindow,
+  body.path-mod-quiz #luminaAiFab,
+  body.path-mod-quiz #luminaAiChatWindow,
+  body.path-local-lumina_core #luminaAiFab,
+  body.path-local-lumina_core #luminaAiChatWindow,
+  .lumina-exam-view #luminaAiFab,
+  .lumina-exam-view #luminaAiChatWindow,
+  #examGuardViewport #luminaAiFab,
+  #examGuardViewport #luminaAiChatWindow {
     display: none !important;
     visibility: hidden !important;
   }
@@ -4136,4 +4148,706 @@ body.pagelayout-admin {
   .shadow-xs {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
+}
+
+
+/* ==========================================================================
+   LUMINA LMS - ANTI-GRAVITY UI & MULTI-ROLE SYSTEM
+   ========================================================================== */
+
+/* Role Badges in Sidebar Header */
+.role-indicator-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  display: inline-block;
+  line-height: 1.2;
+
+  &.role-admin {
+    background: rgba(239, 68, 68, 0.12);
+    color: #DC2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  &.role-teacher {
+    background: rgba(245, 158, 11, 0.12);
+    color: #D97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  &.role-student {
+    background: rgba(99, 102, 241, 0.12);
+    color: #4F46E5;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* Role Preview Quick-Switcher for Administrators */
+.lumina-role-preview-bar {
+  margin: 0.75rem 0.85rem 1rem 0.85rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid #E2E8F0;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  .preview-bar-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748B;
+  }
+
+  .preview-pills-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    .preview-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      color: #475569;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      text-decoration: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #F8FAFC;
+        color: #1E293B;
+      }
+
+      &.active {
+        background: #4F46E5;
+        color: #FFFFFF;
+        border-color: #4F46E5;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+      }
+
+      &.reset {
+        color: #EF4444;
+        border-color: rgba(239, 68, 68, 0.3);
+        padding: 0.15rem 0.4rem;
+        &:hover {
+          background: #FEF2F2;
+        }
+      }
+    }
+  }
+}
+
+/* Anti-Gravity UI Glassmorphism Cards */
+.antigravity-glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.05),
+              inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.float-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -12px rgba(79, 70, 229, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* Anti-Gravity KPI Grid */
+.lumina-antigravity-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+
+  .stat-card {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+
+    .stat-icon-bubble {
+      width: 52px;
+      height: 52px;
+      border-radius: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      .material-symbols-outlined {
+        font-size: 26px;
+      }
+
+      &.indigo {
+        background: rgba(99, 102, 241, 0.12);
+        color: #4F46E5;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+      }
+      &.cyan {
+        background: rgba(6, 182, 212, 0.12);
+        color: #0891B2;
+        border: 1px solid rgba(6, 182, 212, 0.25);
+      }
+      &.emerald {
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+      }
+      &.amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #D97706;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+      }
+    }
+
+    .stat-details {
+      flex: 1;
+      overflow: hidden;
+
+      .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: block;
+      }
+
+      .stat-value {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #0F172A;
+        margin: 0.15rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        letter-spacing: -0.02em;
+
+        .stat-subbadge {
+          font-size: 0.65rem;
+          font-weight: 700;
+          padding: 0.15rem 0.5rem;
+          border-radius: 999px;
+          background: rgba(99, 102, 241, 0.1);
+          color: #4F46E5;
+
+          &.optimal {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+          }
+          &.urgent {
+            background: rgba(239, 68, 68, 0.1);
+            color: #DC2626;
+          }
+        }
+      }
+
+      .stat-caption {
+        font-size: 0.72rem;
+        color: #94A3B8;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+/* Administrative Action Tiles */
+.antigravity-action-tile {
+  display: block;
+  padding: 1.25rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 1.25rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+
+  .tile-icon {
+    font-size: 28px;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  .tile-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1E293B;
+    display: block;
+  }
+
+  .tile-desc {
+    font-size: 0.75rem;
+    color: #64748B;
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: #6366F1;
+    box-shadow: 0 12px 24px -6px rgba(99, 102, 241, 0.15);
+  }
+}
+
+/* Teacher Queue & Schedule Styles */
+.teacher-grading-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .queue-item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.15rem;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #CBD5E1;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .queue-student-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .queue-avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(99, 102, 241, 0.1);
+        color: #4F46E5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .student-name {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #1E293B;
+      }
+
+      .assignment-meta {
+        font-size: 0.75rem;
+        color: #64748B;
+      }
+    }
+
+    .queue-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .submission-time {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+.teacher-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .schedule-timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1rem;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+
+    &.live {
+      background: rgba(16, 185, 129, 0.06);
+      border-color: rgba(16, 185, 129, 0.3);
+
+      .schedule-time-badge {
+        background: #10B981;
+        color: #FFFFFF;
+      }
+    }
+
+    .schedule-time-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.6rem;
+      background: #E2E8F0;
+      color: #334155;
+    }
+
+    .schedule-body {
+      flex: 1;
+
+      .schedule-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1E293B;
+      }
+
+      .live-status-pill {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #059669;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+  }
+}
+
+.nav-count-badge.urgent {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #DC2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+
+/* Student Learning Materials Folder Card */
+.course-materials-folder-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #E2E8F0;
+  border-radius: 1.25rem;
+  transition: all 0.25s ease;
+
+  &:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
+
+  .material-item-row {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #FFFFFF;
+      border-color: #6366F1;
+      transform: translateX(3px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+
+      .material-title {
+        color: #4F46E5 !important;
+      }
+    }
+
+    .material-icon-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 0.6rem;
+      background: rgba(99, 102, 241, 0.1);
+      color: #4F46E5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+  }
+}
+
+/* ============================================================
+   LUMINA LMS — COURSE MANAGEMENT & CATEGORY LISTING REDESIGN
+   ============================================================ */
+
+/* Fix top overlapping on Admin Course Management */
+body.path-course-management,
+body#page-course-management,
+body.path-course {
+    #page.drawers,
+    .lumina-main-viewport {
+        padding-top: calc(var(--lumina-header-height, 64px) + 1.25rem) !important;
+    }
+
+    .page-context-header,
+    #page-header {
+        margin-top: 0.5rem !important;
+        margin-bottom: 1.5rem !important;
+
+        h1, h2 {
+            font-family: var(--lumina-font-display, 'Plus Jakarta Sans'), sans-serif !important;
+            font-weight: 800 !important;
+            color: var(--lumina-text-headline, #0F172A) !important;
+            font-size: 1.65rem !important;
+            letter-spacing: -0.02em !important;
+        }
+    }
+}
+
+#course-category-listings {
+    gap: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+
+    /* Card Containers for Category Listing & Course Listing */
+    > .col-12,
+    > .col-sm,
+    > div {
+        > div {
+            background: #FFFFFF !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            border-radius: 1.25rem !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05) !important;
+            min-height: 480px;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s ease;
+
+            &:hover {
+                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
+            }
+        }
+    }
+
+    /* Column Headers (h3) */
+    h3 {
+        font-family: var(--lumina-font-display, 'Plus Jakarta Sans'), sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 1.25rem !important;
+        color: #0F172A !important;
+        padding: 0 0 1rem 0 !important;
+        margin-bottom: 1rem !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    h4 {
+        font-family: var(--lumina-font-display, 'Plus Jakarta Sans'), sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        color: #1E293B !important;
+        padding: 0 0 0.75rem 0 !important;
+        margin-top: 0.5rem !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+    }
+
+    /* Top Listing Action Buttons (Create new category, Create new course, etc.) */
+    .listing-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem !important;
+        padding: 0.25rem 0 1rem 0 !important;
+        margin-bottom: 0.75rem !important;
+        text-align: left !important;
+
+        a.btn, .btn {
+            border-radius: 9999px !important;
+            padding: 0.45rem 1.1rem !important;
+            font-size: 0.8125rem !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .moodle-actionmenu {
+            display: inline-flex !important;
+            margin: 0 !important;
+        }
+    }
+
+    /* Category & Course Lists (ul.ml) */
+    ul.ml {
+        list-style: none !important;
+        padding-left: 0 !important;
+        margin: 0.5rem 0 1.5rem 0 !important;
+        flex-grow: 1;
+
+        .listitem {
+            margin-bottom: 0.65rem !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 1rem !important;
+            background: #FFFFFF !important;
+            transition: all 0.2s ease !important;
+            overflow: hidden;
+
+            > div {
+                padding: 0.85rem 1rem !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            &:hover {
+                border-color: #CBD5E1 !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+                background-color: #F8FAFC !important;
+            }
+
+            &[data-selected='1'] {
+                border-color: #6366F1 !important;
+                background-color: rgba(99, 102, 241, 0.04) !important;
+                box-shadow: 0 0 0 1px #6366F1, 0 4px 12px rgba(99, 102, 241, 0.08) !important;
+            }
+
+            /* Category / Course Name Link */
+            .coursename,
+            .categoryname,
+            a.float-start {
+                font-weight: 600 !important;
+                font-size: 0.925rem !important;
+                color: #1E293B !important;
+                text-decoration: none !important;
+
+                &:hover {
+                    color: var(--lumina-primary, #4338CA) !important;
+                }
+            }
+
+            /* Item Actions Toolbar (Edit, Delete, Eye, Move) */
+            .item-actions {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 0.35rem !important;
+                margin: 0 !important;
+
+                a {
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 32px !important;
+                    height: 32px !important;
+                    border-radius: 8px !important;
+                    color: #64748B !important;
+                    transition: all 0.15s ease !important;
+
+                    &:hover {
+                        background: rgba(99, 102, 241, 0.1) !important;
+                        color: #4F46E5 !important;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Bulk Actions & Detail-Pair Redesign (Sorting & Move) */
+    .category-bulk-actions,
+    .course-bulk-actions {
+        margin-top: auto !important;
+        padding-top: 1.25rem !important;
+        border-top: 1px solid #F1F5F9 !important;
+    }
+
+    .detail-pair {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        margin: 0.75rem 0 !important;
+        padding: 0.85rem 1rem !important;
+        background: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 0.875rem !important;
+        gap: 0.5rem !important;
+
+        > * {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+            padding: 0 !important;
+        }
+
+        .pair-key {
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+            color: #64748B !important;
+            white-space: normal !important;
+            word-break: normal !important;
+            line-height: 1.4 !important;
+            margin-bottom: 0.25rem !important;
+
+            span {
+                display: inline !important;
+                margin-right: 0 !important;
+            }
+        }
+
+        .pair-value {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+
+            form,
+            .d-flex {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+
+            select.form-select,
+            select {
+                flex: 1 1 200px !important;
+                min-width: 160px !important;
+                max-width: 100% !important;
+                height: 38px !important;
+                border-radius: 10px !important;
+                border: 1px solid #CBD5E1 !important;
+                background-color: #FFFFFF !important;
+                font-size: 0.85rem !important;
+                color: #1E293B !important;
+                padding: 0.35rem 0.75rem !important;
+
+                &:focus {
+                    border-color: var(--lumina-primary, #4338CA) !important;
+                    box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15) !important;
+                    outline: none !important;
+                }
+            }
+
+            input[type="submit"],
+            button[type="submit"] {
+                flex: 0 0 auto !important;
+                height: 38px !important;
+                padding: 0 1.25rem !important;
+                border-radius: 10px !important;
+                font-size: 0.85rem !important;
+                font-weight: 600 !important;
+                background: var(--lumina-primary, #4338CA) !important;
+                color: #FFFFFF !important;
+                border: none !important;
+                box-shadow: 0 2px 6px rgba(67, 56, 202, 0.2) !important;
+                cursor: pointer !important;
+                transition: all 0.15s ease !important;
+
+                &:hover {
+                    background: #3730A3 !important;
+                    box-shadow: 0 4px 10px rgba(67, 56, 202, 0.3) !important;
+                    transform: translateY(-1px) !important;
+                }
+            }
+        }
+    }
 }

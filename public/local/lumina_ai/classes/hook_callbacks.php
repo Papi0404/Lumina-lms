@@ -52,6 +52,22 @@ class hook_callbacks {
             return;
         }
 
+        // Guard: NEVER display AI chatbot during exams, quizzes, or proctoring views.
+        $currenturl = $PAGE->url ? $PAGE->url->out_as_local_url(false) : '';
+        $pagelayout = $PAGE->pagelayout ?? '';
+        $isexam = (
+            strpos($currenturl, 'exam_view.php') !== false ||
+            strpos($currenturl, 'mod/h5pactivity/') !== false ||
+            strpos($currenturl, 'mod/quiz/') !== false ||
+            strpos($pagetype, 'mod-h5pactivity-') === 0 ||
+            strpos($pagetype, 'mod-quiz-') === 0 ||
+            in_array($pagelayout, ['secure', 'popup', 'embedded']) ||
+            (isset($_GET['cmid']) && strpos($currenturl, 'exam') !== false)
+        );
+        if ($isexam) {
+            return;
+        }
+
         // Guard: skip if plugin is disabled in settings.
         if (!get_config('local_lumina_ai', 'enabled')) {
             return;

@@ -25,6 +25,23 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
+// Event types constants for calendar integration.
+if (!defined('ASSIGN_EVENT_TYPE_DUE')) {
+    define('ASSIGN_EVENT_TYPE_DUE', 'due');
+}
+if (!defined('ASSIGN_EVENT_TYPE_GRADINGDUE')) {
+    define('ASSIGN_EVENT_TYPE_GRADINGDUE', 'gradingdue');
+}
+if (!defined('ASSIGN_EVENT_TYPE_OPEN')) {
+    define('ASSIGN_EVENT_TYPE_OPEN', 'open');
+}
+if (!defined('ASSIGN_EVENT_TYPE_CLOSE')) {
+    define('ASSIGN_EVENT_TYPE_CLOSE', 'close');
+}
+if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
+    define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
+}
+
 /**
  * Adds an assignment instance
  *

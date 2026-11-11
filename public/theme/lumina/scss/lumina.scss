@@ -5866,6 +5866,144 @@ body:not(.lumina-role-admin) {
     }
 }
 
+/* ==========================================================================
+   Admin User Management (/admin/user.php)
+   Hides secondary tabs (General/Users/etc) and site search;
+   Styles the live user search bar and table.
+   ========================================================================== */
+#page-admin-user,
+.path-admin-user {
+    .secondary-navigation,
+    #page-header .searchform,
+    #page-header form[action*="search.php"] {
+        display: none !important;
+    }
+
+    [data-region="core_reportbuilder/report"] {
+        .dropdown.d-flex {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 1rem !important;
+            margin-bottom: 1.5rem !important;
+            background: #FFFFFF !important;
+            padding: 1rem 1.25rem !important;
+            border-radius: 16px !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        .lumina-user-search-wrapper {
+            flex: 1 1 320px;
+            max-width: 480px;
+            position: relative;
+
+            .lumina-search-icon {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 20px;
+                color: #94A3B8;
+                pointer-events: none;
+            }
+
+            input#lumina-user-live-search {
+                width: 100%;
+                padding: 0.6rem 2.5rem 0.6rem 2.6rem !important;
+                border-radius: 9999px !important;
+                border: 1.5px solid #E2E8F0 !important;
+                font-size: 0.875rem !important;
+                background: #F8FAFC !important;
+                color: #0F172A !important;
+                transition: all 0.2s ease !important;
+
+                &::placeholder {
+                    color: #94A3B8 !important;
+                    font-size: 0.875rem !important;
+                }
+
+                &:focus {
+                    background: #FFFFFF !important;
+                    border-color: var(--lumina-primary, #4338CA) !important;
+                    box-shadow: 0 0 0 4px rgba(67, 56, 202, 0.12) !important;
+                    outline: none !important;
+                }
+            }
+
+            .lumina-clear-btn {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                border: none;
+                background: #E2E8F0;
+                color: #64748B;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                cursor: pointer;
+                transition: all 0.15s ease;
+
+                &:hover {
+                    background: #CBD5E1;
+                    color: #1E293B;
+                }
+            }
+        }
+
+        .lumina-action-buttons {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-left: auto;
+        }
+
+        .table-responsive {
+            border-radius: 16px !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            overflow: hidden !important;
+            background: #FFFFFF !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+
+            table.reportbuilder-table {
+                margin-bottom: 0 !important;
+
+                thead th {
+                    background: #F8FAFC !important;
+                    font-weight: 600 !important;
+                    font-size: 0.8125rem !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 0.04em !important;
+                    color: #475569 !important;
+                    border-bottom: 1px solid #E2E8F0 !important;
+                    padding: 0.875rem 1rem !important;
+                }
+
+                tbody tr {
+                    transition: background-color 0.15s ease;
+
+                    &:hover {
+                        background-color: #F8FAFC !important;
+                    }
+
+                    td {
+                        padding: 0.875rem 1rem !important;
+                        vertical-align: middle !important;
+                        border-bottom: 1px solid #F1F5F9 !important;
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 

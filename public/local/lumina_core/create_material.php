@@ -355,6 +355,8 @@ echo $OUTPUT->header();
                                             case 'resource': $icon = 'picture_as_pdf'; $badgeclass = 'bg-primary-subtle text-primary'; break;
                                             case 'assign': $icon = 'assignment'; $badgeclass = 'bg-warning-subtle text-warning'; break;
                                             case 'quiz': $icon = 'quiz'; $badgeclass = 'bg-danger-subtle text-danger'; break;
+                                            case 'h5pactivity': $icon = 'extension'; $badgeclass = 'bg-info-subtle text-info'; break;
+                                            case 'qbank': $icon = 'help_center'; $badgeclass = 'bg-secondary-subtle text-secondary'; break;
                                             case 'page': $icon = 'article'; $badgeclass = 'bg-success-subtle text-success'; break;
                                             case 'url': $icon = 'link'; $badgeclass = 'bg-info-subtle text-info'; break;
                                             case 'forum': $icon = 'forum'; $badgeclass = 'bg-purple-subtle text-purple'; break;
@@ -383,10 +385,15 @@ echo $OUTPUT->header();
                                             <?php endif; ?>
                                         </td>
                                         <td class="py-3 px-3 text-end">
-                                            <div class="d-inline-flex gap-1">
+                                            <div class="d-inline-flex gap-1 align-items-center">
                                                 <a href="<?php echo $m['url']; ?>" class="btn btn-sm btn-light rounded-pill px-3 py-1 fw-medium text-secondary" title="Lihat Materi">
                                                     Lihat
                                                 </a>
+                                                <?php if (in_array($m['modname'], ['h5pactivity', 'quiz'])): ?>
+                                                    <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $m['id']]))->out(false); ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 fw-medium" title="Uji Coba Ruang Ujian CBT Anti-Curang" target="_blank">
+                                                        <span class="material-symbols-outlined align-middle" style="font-size: 15px;">quiz</span> CBT
+                                                    </a>
+                                                <?php endif; ?>
                                                 <a href="<?php echo $m['editurl']; ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-medium shadow-xs" title="Edit Pengaturan Modul">
                                                     Edit
                                                 </a>

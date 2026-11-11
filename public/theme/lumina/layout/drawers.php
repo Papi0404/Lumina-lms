@@ -202,24 +202,38 @@ $useravatarhtml = $luminadata['user']['avatar_html'] ?? $OUTPUT->user_picture($U
 $currentpagepath = $PAGE->url ? $PAGE->url->get_path() : '';
 
 // Determine active course ID strictly based on role and enrollment isolation.
-// Priority 1: Check URL query parameter 'id' or 'courseid' (e.g. from grader report or attendance)
-$paramcourseid = optional_param('id', optional_param('courseid', 0, PARAM_INT), PARAM_INT);
 $activecourseid = null;
 
-if ($paramcourseid > 1) {
-    if ($roleinfo['is_admin'] || is_siteadmin($USER->id) || is_enrolled(context_course::instance($paramcourseid), $USER, '', true) || has_capability('moodle/grade:viewall', context_course::instance($paramcourseid), $USER)) {
-        $activecourseid = (int)$paramcourseid;
+// Priority 1: Page course context if set and valid (> 1)
+if (!empty($PAGE->course) && $PAGE->course->id > 1) {
+    $activecourseid = (int)$PAGE->course->id;
+}
+
+// Priority 2: Check URL query parameter 'courseid'
+if (!$activecourseid) {
+    $cid = optional_param('courseid', 0, PARAM_INT);
+    if ($cid > 1 && $DB->record_exists('course', ['id' => $cid])) {
+        $activecourseid = $cid;
     }
 }
 
-// Priority 2: Page course context if set and valid
-if (!$activecourseid && !empty($PAGE->course) && $PAGE->course->id > 1) {
-    if ($roleinfo['is_admin'] || is_siteadmin($USER->id) || is_enrolled(context_course::instance($PAGE->course->id), $USER, '', true) || has_capability('moodle/grade:viewall', context_course::instance($PAGE->course->id), $USER)) {
-        $activecourseid = (int)$PAGE->course->id;
+// Priority 3: Check 'id' parameter (handling activity cmid vs course id)
+if (!$activecourseid) {
+    $paramid = optional_param('id', 0, PARAM_INT);
+    if ($paramid > 1) {
+        $isactivityurl = (strpos($currentpagepath, '/mod/') !== false);
+        if ($isactivityurl) {
+            $cmcourse = $DB->get_field('course_modules', 'course', ['id' => $paramid]);
+            if ($cmcourse && $cmcourse > 1) {
+                $activecourseid = (int)$cmcourse;
+            }
+        } else if ($DB->record_exists('course', ['id' => $paramid])) {
+            $activecourseid = $paramid;
+        }
     }
 }
 
-// Priority 3: Fallback to first enrolled course
+// Priority 4: Fallback to first enrolled course
 if (!$activecourseid) {
     if (!empty($enrolledcourses)) {
         $activecourseid = (int)array_key_first($enrolledcourses);
@@ -228,6 +242,20 @@ if (!$activecourseid) {
         if ($firstrealcourse) {
             $activecourseid = (int)$firstrealcourse;
         }
+    }
+}
+
+// Validate active course access safely
+if ($activecourseid) {
+    try {
+        $ccontext = context_course::instance($activecourseid);
+        if (!$roleinfo['is_admin'] && !is_siteadmin($USER->id)) {
+            if (!is_enrolled($ccontext, $USER, '', true) && !has_capability('moodle/grade:viewall', $ccontext, $USER)) {
+                $activecourseid = !empty($enrolledcourses) ? (int)array_key_first($enrolledcourses) : null;
+            }
+        }
+    } catch (\Throwable $e) {
+        $activecourseid = !empty($enrolledcourses) ? (int)array_key_first($enrolledcourses) : null;
     }
 }
 
@@ -778,6 +806,162 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
     </script>';
 }
 
+// 2.3 Admin User Management instant live search & page cleaner
+$isadminuserpage = ($PAGE->pagetype === 'admin-user' || strpos($currentpagepath, '/admin/user.php') !== false);
+if ($isadminuserpage && !empty($roleinfo['is_admin'])) {
+    $quizguidehtml .= '
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Polish Page Title & Hide Secondary Navigation / Settings Search
+        var secNav = document.querySelector(".secondary-navigation");
+        if (secNav) secNav.style.setProperty("display", "none", "important");
+
+        var siteSearch = document.querySelector("#page-header form[action*=\'search.php\']") || document.querySelector("#page-header .searchform");
+        if (siteSearch) siteSearch.style.setProperty("display", "none", "important");
+
+        var pageTitleEl = document.querySelector("#page-header .page-header-headings h1") || document.querySelector("#page-header h1");
+        if (pageTitleEl && pageTitleEl.textContent.trim().toLowerCase() === "belajar moodle") {
+            pageTitleEl.innerHTML = "<span class=\"material-symbols-outlined align-middle me-2\" style=\"font-size: 32px; color: #4338CA;\">group</span>Manajemen Pengguna";
+            if (!document.getElementById("lumina-user-mgr-subtitle")) {
+                var subtitle = document.createElement("p");
+                subtitle.id = "lumina-user-mgr-subtitle";
+                subtitle.className = "text-muted small mb-0 mt-1";
+                subtitle.textContent = "Kelola akun pengguna, pengajar/dosen, mahasiswa, dan hak akses dengan mudah.";
+                pageTitleEl.parentNode.appendChild(subtitle);
+            }
+        }
+
+        // 2. Inject Instant Real-Time User Search Bar
+        function initUserLiveSearch() {
+            var reportRegion = document.querySelector(\'[data-region="core_reportbuilder/report"]\') || document.querySelector(\'[data-region="report-user-list-wrapper"]\');
+            if (!reportRegion) return;
+
+            var toolbar = reportRegion.querySelector(".dropdown.d-flex");
+            if (!toolbar || toolbar.getAttribute("data-lumina-search-ready") === "true") return;
+
+            toolbar.setAttribute("data-lumina-search-ready", "true");
+
+            // Wrap existing buttons (Add a new user, Filters) into an action buttons container
+            var existingItems = Array.from(toolbar.children);
+            var actionGroup = document.createElement("div");
+            actionGroup.className = "lumina-action-buttons";
+
+            existingItems.forEach(function(item) {
+                actionGroup.appendChild(item);
+            });
+
+            // Create Search Bar Wrapper
+            var searchWrapper = document.createElement("div");
+            searchWrapper.className = "lumina-user-search-wrapper";
+            searchWrapper.innerHTML = \'<span class="material-symbols-outlined lumina-search-icon">search</span>\' +
+                \'<input type="text" id="lumina-user-live-search" class="form-control" placeholder="Cari nama pengguna, email, atau username..." autocomplete="off">\' +
+                \'<button type="button" id="lumina-clear-user-search" class="lumina-clear-btn" title="Reset pencarian" style="display: none;">✕</button>\';
+
+            toolbar.innerHTML = "";
+            toolbar.appendChild(searchWrapper);
+            toolbar.appendChild(actionGroup);
+
+            var searchInput = document.getElementById("lumina-user-live-search");
+            var clearBtn = document.getElementById("lumina-clear-user-search");
+
+            function filterUserRows() {
+                var query = (searchInput.value || "").toLowerCase().trim();
+                if (clearBtn) {
+                    clearBtn.style.display = query.length > 0 ? "flex" : "none";
+                }
+
+                var tableBody = reportRegion.querySelector("table.reportbuilder-table tbody");
+                if (!tableBody) return;
+
+                var rows = tableBody.querySelectorAll("tr:not(.lumina-no-results-row)");
+                var visibleCount = 0;
+
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    var text = (row.textContent || row.innerText || "").toLowerCase();
+                    if (!query || text.indexOf(query) !== -1) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                }
+
+                var noResults = tableBody.querySelector(".lumina-no-results-row");
+                if (visibleCount === 0 && rows.length > 0) {
+                    if (!noResults) {
+                        noResults = document.createElement("tr");
+                        noResults.className = "lumina-no-results-row";
+                        var table = reportRegion.querySelector("table.reportbuilder-table");
+                        var colCount = (table ? table.querySelectorAll("thead th") : []).length || 5;
+                        noResults.innerHTML = \'<td colspan="\' + colCount + \'" class="text-center py-5 text-muted" style="background: #FAFAFA;">\' +
+                            \'<span class="material-symbols-outlined d-block mb-2 text-secondary" style="font-size: 40px; opacity: 0.5;">person_search</span>\' +
+                            \'<div class="fw-bold fs-6 text-dark mb-1">Pengguna Tidak Ditemukan</div>\' +
+                            \'<div class="small">Tidak ada data pengguna yang cocok dengan kata kunci "<strong>\' + query.replace(/</g, "&lt;") + \'</strong>"</div>\' +
+                            \'</td>\';
+                        tableBody.appendChild(noResults);
+                    } else {
+                        noResults.style.display = "";
+                        var qStrong = noResults.querySelector("strong");
+                        if (qStrong) qStrong.textContent = query;
+                    }
+                } else if (noResults) {
+                    noResults.style.display = "none";
+                }
+            }
+
+            searchInput.addEventListener("input", filterUserRows);
+            searchInput.addEventListener("keyup", filterUserRows);
+
+            clearBtn.addEventListener("click", function() {
+                searchInput.value = "";
+                filterUserRows();
+                searchInput.focus();
+            });
+
+            // Prevent Enter from submitting page
+            searchInput.addEventListener("keydown", function(e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    filterUserRows();
+                }
+            });
+        }
+
+        initUserLiveSearch();
+        setTimeout(initUserLiveSearch, 200);
+        setTimeout(initUserLiveSearch, 600);
+
+        // Keep active when reportbuilder reloads via AJAX
+        var reportRegion = document.querySelector(\'[data-region="core_reportbuilder/report"]\') || document.querySelector(\'[data-region="report-user-list-wrapper"]\');
+        if (reportRegion && window.MutationObserver) {
+            var observer = new MutationObserver(function() {
+                var searchInput = document.getElementById("lumina-user-live-search");
+                if (!searchInput) {
+                    initUserLiveSearch();
+                } else if (searchInput.value.trim().length > 0) {
+                    var tableBody = reportRegion.querySelector("table.reportbuilder-table tbody");
+                    if (tableBody) {
+                        var rows = tableBody.querySelectorAll("tr:not(.lumina-no-results-row)");
+                        var query = searchInput.value.toLowerCase().trim();
+                        for (var i = 0; i < rows.length; i++) {
+                            var row = rows[i];
+                            var text = (row.textContent || row.innerText || "").toLowerCase();
+                            if (!query || text.indexOf(query) !== -1) {
+                                row.style.display = "";
+                            } else {
+                                row.style.display = "none";
+                            }
+                        }
+                    }
+                }
+            });
+            observer.observe(reportRegion, { childList: true, subtree: true });
+        }
+    });
+    </script>';
+}
+
 // 3. Smart Resource Library URL (Role & Course-isolated)
 if ($roleinfo['is_admin']) {
     $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);
@@ -822,12 +1006,12 @@ $virtualclassicon  = 'videocam';
 $virtualclassisactive = false;
 
 if (class_exists('\local_lumina_core\virtual_class_manager')) {
-    if ($is_teacher || $is_admin) {
+    if (!empty($roleinfo['is_teacher']) || !empty($roleinfo['is_admin'])) {
         $virtualclassurl   = (new \core\url('/local/lumina_core/virtual_class.php'))->out(false);
         $virtualclasstitle = 'Buka Kelas Virtual';
         $virtualclasssub   = 'Kelola Zoom & Google Meet';
         $virtualclassicon  = 'videocam';
-    } else if ($is_student) {
+    } else if (!empty($roleinfo['is_student'])) {
         $activemeets = \local_lumina_core\virtual_class_manager::get_student_active_meetings($USER->id);
         if (!empty($activemeets)) {
             $virtualclassisactive = true;

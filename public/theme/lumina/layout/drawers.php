@@ -66,7 +66,7 @@ if (($pagetype === 'mod-h5pactivity-view' || strpos($urlpath, 'mod/h5pactivity/v
     }
 }
 
-$extraclasses = ['uses-drawers', 'lumina-layout'];
+$extraclasses = ['uses-drawers', 'lumina-layout', 'lumina-role-' . ($roleinfo['role_key'] ?? 'student')];
 if (!empty($PAGE->pagelayout)) {
     $extraclasses[] = 'layout-' . $PAGE->pagelayout;
 }

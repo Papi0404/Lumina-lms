@@ -5252,4 +5252,20 @@ body.pagelayout-admin {
     }
 }
 
+/* ==========================================================================
+   45. Role Access Control: Disable Edit Mode for Teachers & Students
+   ========================================================================== */
+body.lumina-role-teacher,
+body.lumina-role-student,
+body:not(.lumina-role-admin) {
+    .editmode-switch-form,
+    [data-region="editmode-switch"],
+    .lumina-topbar .editmode-switch-form {
+        display: none !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+    }
+}
+
+
 

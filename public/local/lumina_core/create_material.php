@@ -387,15 +387,19 @@ echo $OUTPUT->header();
                                         </td>
                                         <td class="py-3 px-3 text-end">
                                             <div class="d-inline-flex gap-1 align-items-center">
-                                                <a href="<?php echo $m['url']; ?>" class="btn btn-sm btn-light rounded-pill px-3 py-1 fw-medium text-secondary" title="Lihat Materi">
-                                                    Lihat
-                                                </a>
                                                 <?php if (in_array($m['modname'], ['h5pactivity', 'quiz'])): ?>
-                                                    <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $m['id']]))->out(false); ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 fw-medium" title="Uji Coba Ruang Ujian CBT Anti-Curang" target="_blank">
-                                                        <span class="material-symbols-outlined align-middle" style="font-size: 15px;">quiz</span> CBT
+                                                    <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $m['id']]))->out(false); ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1" title="Buka Pratinjau Ujian CBT Layar Penuh" target="_blank" style="background: #4338CA; border-color: #4338CA;">
+                                                        <span class="material-symbols-outlined align-middle" style="font-size: 16px;">fullscreen</span> Lihat Ujian (CBT)
+                                                    </a>
+                                                    <a href="<?php echo $m['url']; ?>" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-medium text-secondary" title="Kelola Nilai & Laporan">
+                                                        Kelola
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a href="<?php echo $m['url']; ?>" class="btn btn-sm btn-light border rounded-pill px-3 py-1 fw-medium text-secondary" title="Lihat Materi">
+                                                        Lihat
                                                     </a>
                                                 <?php endif; ?>
-                                                <a href="<?php echo $m['editurl']; ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-medium shadow-xs" title="Edit Pengaturan Modul">
+                                                <a href="<?php echo $m['editurl']; ?>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-medium" title="Edit Pengaturan Modul">
                                                     Edit
                                                 </a>
                                             </div>

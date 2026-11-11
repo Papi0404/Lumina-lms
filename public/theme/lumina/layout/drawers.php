@@ -48,6 +48,7 @@ if (defined('BEHAT_SITE_RUNNING') && get_user_preferences('behat_keep_drawer_clo
 // Auto-routing for Proctored Anti-Cheat CBT Exams (Universal for all Quiz/H5P exam activities).
 $pagetype = $PAGE->pagetype ?? '';
 $urlpath = $PAGE->url ? $PAGE->url->get_path() : '';
+$quizguidehtml = '';
 $isexamactivity = (
     $pagetype === 'mod-h5pactivity-view' ||
     strpos($urlpath, 'mod/h5pactivity/view.php') !== false ||
@@ -84,6 +85,62 @@ if ($isexamactivity) {
                 echo "<script>window.location.replace('" . $examurl . "');</script>";
                 echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
                 exit;
+            } else if (!$isstudent) {
+                // Teacher / Admin viewing CBT Exam in Moodle - Inject modern Teacher Hub Banner & Iframe auto-resizer
+                $cbtpreviewurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+                $auditurl = (new moodle_url('/local/lumina_core/exam_review.php'))->out(false);
+                $editsettingsurl = (new moodle_url('/course/modedit.php', ['update' => $proctorcm->id, 'return' => 1]))->out(false);
+
+                $quizguidehtml .= '
+                <div class="lumina-exam-teacher-hub card border-0 mb-4 shadow-sm" style="border-radius: 20px; background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%); border: 1.5px solid #C7D2FE !important; overflow: hidden;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center shadow-xs" style="width: 52px; height: 52px; min-width: 52px; background: #4338CA; color: white;">
+                                    <span class="material-symbols-outlined" style="font-size: 28px;">quiz</span>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge rounded-pill bg-primary px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700;">Ujian CBT Lumina</span>
+                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem; font-weight: 600;">Anti-Curang Live Proctoring</span>
+                                    </div>
+                                    <h5 class="fw-bold mb-1 text-dark">Pratinjau &amp; Manajemen Ujian (Mode Guru)</h5>
+                                    <p class="text-muted small mb-0">Uji coba simulasi lembar soal layar penuh seperti yang dilihat mahasiswa atau pantau audit integritas.</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <a href="' . $cbtpreviewurl . '" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-xs" style="background: #4338CA; border: none;" target="_blank">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">fullscreen</span>
+                                    Simulasi Ruang Ujian CBT &rarr;
+                                </a>
+                                <a href="' . $auditurl . '" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 bg-white">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">security</span>
+                                    Audit Pelanggaran
+                                </a>
+                                <a href="' . $editsettingsurl . '" class="btn btn-light border rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                                    Edit Pengaturan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    var ifr = document.querySelector("iframe.h5p-player");
+                    if (ifr) {
+                        ifr.style.setProperty("min-height", "650px", "important");
+                        ifr.style.setProperty("height", "650px", "important");
+                        ifr.addEventListener("load", function() {
+                            setTimeout(function() {
+                                if (ifr.clientHeight < 400) {
+                                    ifr.style.setProperty("height", "700px", "important");
+                                }
+                            }, 500);
+                        });
+                    }
+                });
+                </script>';
             }
         }
     }
@@ -143,9 +200,8 @@ $headercontent = $header ? $header->export_for_template($renderer) : null;
 
 // Guidance banner for Teachers on New Quiz page (explaining where Options A, B, C, D are)
 $isquizadd = ($PAGE->pagetype === 'course-modedit' && optional_param('add', '', PARAM_ALPHA) === 'quiz');
-$quizguidehtml = '';
 if ($isquizadd) {
-    $quizguidehtml = '
+    $quizguidehtml .= '
     <div class="alert alert-primary border-2 border-indigo-200 rounded-3xl p-4 mb-4 shadow-sm" style="background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%); border-color: #C7D2FE !important;">
         <div class="d-flex align-items-center gap-3">
             <div class="rounded-circle bg-primary text-white p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; flex-shrink: 0; background: #4338CA !important;">

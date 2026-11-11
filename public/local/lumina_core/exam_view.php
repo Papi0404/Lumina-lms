@@ -75,6 +75,19 @@ $PAGE->set_context($context);
 $PAGE->set_title('CBT Ujian Terpantau: ' . format_string($cm->name));
 $PAGE->set_pagelayout('popup');
 
+$ismanager = has_capability('moodle/course:manageactivities', $context) || is_siteadmin($USER->id);
+if ($ismanager && optional_param('resetsim', 0, PARAM_INT)) {
+    $DB->update_record('local_lumina_exam_sessions', [
+        'id' => $session->id,
+        'status' => 'in_progress',
+        'warningcount' => 0,
+        'score' => null,
+        'timefinish' => null,
+        'adminreviewnotes' => '',
+    ]);
+    redirect(new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $cmid]));
+}
+
 echo $OUTPUT->header();
 
 // 1. If Exam is already completed or approved: Student cannot take it again without Admin Reset
@@ -134,8 +147,22 @@ if ($session->status === 'completed' || $session->status === 'approved') {
             </p>
 
             <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-primary rounded-pill py-2-5 px-4 font-semibold w-100 shadow-xs">
-                ← Kembali ke Dashboard Siswa
+                ← Kembali ke Dashboard
             </a>
+
+            <?php if ($ismanager): ?>
+                <div class="mt-3 p-3 bg-primary-subtle border border-primary-subtle rounded-3 text-start">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <span class="badge bg-primary rounded-pill mb-1">Mode Guru / Pengajar</span>
+                            <div class="small fw-semibold text-dark">Ingin mencoba simulasi ujian ini lagi?</div>
+                        </div>
+                        <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $cmid, 'resetsim' => 1]))->out(false); ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1-5 fw-bold shadow-xs">
+                            <i class="fa fa-refresh me-1"></i> Mulai Uji Coba Pratinjau Ulang &rarr;
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     <?php
@@ -198,8 +225,22 @@ if ($session->status === 'under_review' || $session->status === 'invalidated') {
             </p>
 
             <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-outline-danger rounded-pill py-2-5 px-4 font-semibold w-100 shadow-xs">
-                ← Kembali ke Dashboard Siswa
+                ← Kembali ke Dashboard
             </a>
+
+            <?php if ($ismanager): ?>
+                <div class="mt-3 p-3 bg-warning-subtle border border-warning-subtle rounded-3 text-start">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <span class="badge bg-warning text-dark rounded-pill mb-1">Mode Guru / Pengajar</span>
+                            <div class="small fw-semibold text-dark">Sesi uji coba terkunci karena pengujian batas pelanggaran.</div>
+                        </div>
+                        <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $cmid, 'resetsim' => 1]))->out(false); ?>" class="btn btn-sm btn-warning text-dark rounded-pill px-3 py-1-5 fw-bold shadow-xs">
+                            <i class="fa fa-refresh me-1"></i> Buka Kunci &amp; Reset Sesi Simulasi Guru &rarr;
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     <?php

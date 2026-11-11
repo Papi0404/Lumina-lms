@@ -46,15 +46,15 @@ if (!empty($action) && confirm_sesskey()) {
 
     if ($courseid > 0) {
         $context = \context_course::instance($courseid, IGNORE_MISSING);
-        if ($context && ($isadmin || has_capability('moodle/course:update', $context) || has_capability('moodle/course:manageactivities', $context))) {
+        if ($context && ($isadmin || is_siteadmin($USER->id) || has_capability('moodle/course:update', $context) || has_capability('moodle/course:manageactivities', $context))) {
             if ($action === 'save') {
                 $meeturl   = required_param('meet_url', PARAM_RAW_TRIMMED);
                 $meettitle = optional_param('meet_title', '', PARAM_TEXT);
                 virtual_class_manager::set_course_meeting($courseid, $meeturl, $meettitle, $USER->id);
-                \core\notification::success('Tautan kelas virtual berhasil diperbarui dan dipublikasikan ke mahasiswa!');
+                \core\notification::success('Tautan kelas virtual berhasil disimpan dan dipublikasikan ke mahasiswa!');
             } else if ($action === 'clear') {
                 virtual_class_manager::clear_course_meeting($courseid);
-                \core\notification::info('Sesi kelas virtual untuk mata kuliah ini telah diakhiri.');
+                \core\notification::info('Sesi tatap muka kelas virtual ini telah diakhiri.');
             }
         }
     }
@@ -72,139 +72,155 @@ echo $OUTPUT->header();
 ?>
 
 <style>
-/* Lumina Virtual Class UI */
-.virtual-class-wrapper {
+/* Lumina Clean Virtual Class Styling */
+.lumina-virtual-container {
     max-width: 1140px;
     margin: 0 auto;
-    padding-bottom: 3rem;
+    padding: 1rem 0 3rem 0;
 }
-.virtual-header-card {
-    background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);
-    color: #FFFFFF;
-    border-radius: 20px;
-    padding: 2.25rem 2.5rem;
-    box-shadow: 0 10px 30px rgba(49, 46, 129, 0.2);
-    position: relative;
-    overflow: hidden;
+
+.virtual-page-header {
     margin-bottom: 2rem;
 }
-.virtual-header-card::after {
-    content: '';
-    position: absolute;
-    right: -40px;
-    bottom: -40px;
-    width: 220px;
-    height: 220px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.06);
-    pointer-events: none;
+
+.meet-course-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 20px !important;
+    padding: 1.75rem !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    transition: all 0.25s ease !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
 }
+
+.meet-course-card:hover {
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+
+.meet-course-card.is-active {
+    border-color: #34D399 !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F0FDF4 100%) !important;
+}
+
 .live-pulse-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
     background: #10B981;
     color: #FFFFFF;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.35rem 0.85rem;
     border-radius: 9999px;
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
 }
+
 .live-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     background: #FFFFFF;
     border-radius: 50%;
-    animation: pulse-dot 1.5s infinite;
+    animation: live-pulse 1.4s infinite;
 }
-@keyframes pulse-dot {
-    0% { transform: scale(0.95); opacity: 0.8; }
-    50% { transform: scale(1.35); opacity: 1; }
-    100% { transform: scale(0.95); opacity: 0.8; }
+
+@keyframes live-pulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
 }
-.meet-course-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-    transition: all 0.2s ease;
-    height: 100%;
-    display: flex;
-    flex-column: column;
-    justify-content: space-between;
-}
-.meet-course-card:hover {
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    transform: translateY(-2px);
-}
-.meet-course-card.is-active {
-    border-color: #A7F3D0;
-    background: linear-gradient(180deg, #FFFFFF 0%, #F0FDF4 100%);
-}
+
 .platform-brand-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.78rem;
+    gap: 0.35rem;
+    font-size: 0.75rem;
     font-weight: 600;
     padding: 0.3rem 0.75rem;
     border-radius: 9999px;
     border: 1px solid transparent;
 }
+
+.join-meeting-btn {
+    border-radius: 9999px !important;
+    padding: 0.8rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.6rem !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+.join-meeting-btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35) !important;
+}
+
+.meeting-info-box {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
 </style>
 
-<div class="virtual-class-wrapper">
+<div class="lumina-virtual-container">
 
-    <!-- Header Hero Banner -->
-    <div class="virtual-header-card">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <div class="d-inline-flex align-items-center gap-2 bg-white bg-opacity-15 px-3 py-1 rounded-pill mb-3" style="font-size: 0.8rem; backdrop-filter: blur(8px);">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">videocam</span>
-                    <span>Lumina Video Conference Connector</span>
-                </div>
-                <h2 class="h3 font-bold mb-2">Kelas Virtual &amp; Sesi Tatap Muka</h2>
-                <p class="mb-0 text-white text-opacity-80" style="max-width: 650px; font-size: 0.95rem; line-height: 1.6;">
-                    <?php if ($isteacher || $isadmin): ?>
-                        Masukkan tautan Google Meet atau Zoom untuk mata kuliah Anda. Mahasiswa yang terdaftar di kelas akan langsung melihat tautan dan tombol bergabung.
-                    <?php else: ?>
-                        Bergabung ke pertemuan tatap muka daring terjadwal bersama dosen pengampu Anda melalui Google Meet atau Zoom.
-                    <?php endif; ?>
-                </p>
-            </div>
-            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                <div class="p-3 bg-white bg-opacity-10 rounded-2xl d-inline-block text-start" style="backdrop-filter: blur(8px); min-width: 220px;">
-                    <span class="small text-white text-opacity-75 d-block mb-1">Platform Didukung:</span>
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="badge bg-white text-dark rounded-pill px-2-5 py-1 d-inline-flex align-items-center gap-1">
-                            <i class="fa-solid fa-video text-danger"></i> Google Meet
-                        </span>
-                        <span class="badge bg-white text-dark rounded-pill px-2-5 py-1 d-inline-flex align-items-center gap-1">
-                            <i class="fa-solid fa-video text-primary"></i> Zoom
-                        </span>
-                    </div>
-                </div>
+    <!-- Header Section (Clean Lumina Standard) -->
+    <div class="virtual-page-header d-flex align-items-center justify-content-between flex-wrap gap-3 pb-3 border-bottom">
+        <div>
+            <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-sm btn-light border rounded-pill px-3 py-1 mb-2 d-inline-flex align-items-center gap-1 font-semibold text-secondary">
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_back</span>
+                Kembali ke Dashboard
+            </a>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: 1.6rem;">
+                <span class="material-symbols-outlined text-primary" style="font-size: 32px;">video_camera_front</span>
+                Kelas Virtual &amp; Sesi Tatap Muka
+            </h2>
+            <span class="text-muted small">
+                <?php if ($isteacher || $isadmin): ?>
+                    Kelola tautan Google Meet atau Zoom untuk kelas Anda. Mahasiswa terdaftar akan langsung melihat tautan untuk bergabung.
+                <?php else: ?>
+                    Bergabung ke sesi perkuliahan tatap muka daring terjadwal bersama dosen pengampu Anda.
+                <?php endif; ?>
+            </span>
+        </div>
+
+        <div>
+            <div class="d-flex align-items-center gap-2 bg-light border px-3 py-1-5 rounded-pill small">
+                <span class="text-muted">Platform:</span>
+                <span class="badge bg-white text-danger border rounded-pill px-2 py-0-5 d-inline-flex align-items-center gap-1">
+                    <i class="fa-solid fa-video"></i> Google Meet
+                </span>
+                <span class="badge bg-white text-primary border rounded-pill px-2 py-0-5 d-inline-flex align-items-center gap-1">
+                    <i class="fa-solid fa-video"></i> Zoom
+                </span>
             </div>
         </div>
     </div>
 
-    <!-- Main Content by Role -->
+    <!-- MAIN BODY -->
     <?php if ($isteacher || $isadmin): ?>
+        <!-- ============================================================= -->
+        <!-- TEACHER VIEW                                                  -->
+        <!-- ============================================================= -->
         <?php
         $teachercourses = virtual_class_manager::get_teacher_course_meetings($USER->id);
         ?>
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h4 class="h5 fw-bold mb-1">Kelola Sesi Tatap Muka Kelas Anda</h4>
-                <p class="text-muted small mb-0">Tautan yang disimpan hanya akan dapat dilihat oleh siswa yang terdaftar di kelas tersebut.</p>
-            </div>
-            <a href="<?php echo (new \moodle_url('/my/'))->out(false); ?>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1-5">
-                ← Kembali ke Dashboard
-            </a>
+        <div class="mb-4">
+            <h4 class="h5 fw-bold mb-1">Daftar Kelas yang Anda Ampu</h4>
+            <p class="text-muted small mb-0">Masukkan tautan rapat dan agenda pertemuan. Tautan hanya akan muncul untuk siswa di kelas tersebut.</p>
         </div>
 
         <?php if (empty($teachercourses)): ?>
@@ -219,16 +235,17 @@ echo $OUTPUT->header();
                     <div class="col-lg-6">
                         <div class="meet-course-card <?php echo $tc['has_meeting'] ? 'is-active' : ''; ?>">
                             <div>
+                                <!-- Card Header -->
                                 <div class="d-flex align-items-start justify-content-between mb-3">
                                     <div>
                                         <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">
                                             <?php echo s($tc['course_shortname']); ?>
                                         </span>
-                                        <h5 class="fw-bold mt-2 mb-1" style="font-size: 1.1rem;">
+                                        <h5 class="fw-bold mt-2 mb-1" style="font-size: 1.15rem;">
                                             <?php echo s($tc['course_fullname']); ?>
                                         </h5>
                                         <span class="text-muted small">
-                                            <i class="fa-solid fa-users me-1"></i><?php echo $tc['students_count']; ?> Siswa Terdaftar
+                                            <i class="fa-solid fa-users me-1 text-primary"></i><?php echo $tc['students_count']; ?> Siswa Terdaftar
                                         </span>
                                     </div>
                                     <div>
@@ -244,32 +261,33 @@ echo $OUTPUT->header();
                                     </div>
                                 </div>
 
+                                <!-- Active Session Details (if present) -->
                                 <?php if ($tc['has_meeting']): ?>
-                                    <div class="p-3 rounded-2xl bg-success bg-opacity-10 border border-success border-opacity-25 mb-3">
+                                    <div class="meeting-info-box border-success bg-white">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
                                             <span class="platform-brand-pill <?php echo $tc['badge_class']; ?>">
-                                                <span class="material-symbols-outlined" style="font-size: 16px;"><?php echo $tc['icon']; ?></span>
+                                                <span class="material-symbols-outlined" style="font-size: 15px;"><?php echo $tc['icon']; ?></span>
                                                 <?php echo s($tc['platform']); ?>
                                             </span>
                                             <span class="text-muted small" style="font-size: 0.75rem;">
                                                 Diperbarui <?php echo s($tc['updated_ago']); ?>
                                             </span>
                                         </div>
-                                        <p class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">
+                                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">
                                             <?php echo s($tc['meet_title']); ?>
-                                        </p>
-                                        <a href="<?php echo s($tc['meet_url']); ?>" target="_blank" rel="noopener noreferrer" class="text-truncate d-block small text-primary mb-2">
+                                        </h6>
+                                        <a href="<?php echo s($tc['meet_url']); ?>" target="_blank" rel="noopener noreferrer" class="text-truncate d-block small text-primary mb-3">
                                             <i class="fa-solid fa-arrow-up-right-from-square me-1"></i><?php echo s($tc['meet_url']); ?>
                                         </a>
                                         <div class="d-flex gap-2">
-                                            <a href="<?php echo s($tc['meet_url']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-success rounded-pill px-3 py-1 text-white font-semibold d-inline-flex align-items-center gap-1">
+                                            <a href="<?php echo s($tc['meet_url']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-success rounded-pill px-3 py-1-5 text-white font-semibold d-inline-flex align-items-center gap-1 shadow-xs">
                                                 <span class="material-symbols-outlined" style="font-size: 16px;">launch</span> Buka Sesi Langsung
                                             </a>
                                             <form method="post" action="<?php echo (new \moodle_url('/local/lumina_core/virtual_class.php'))->out(false); ?>" class="d-inline" onsubmit="return confirm('Akhiri dan hapus sesi kelas virtual ini? Mahasiswa tidak akan melihat tautan ini lagi.');">
                                                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
                                                 <input type="hidden" name="action" value="clear">
                                                 <input type="hidden" name="courseid" value="<?php echo $tc['courseid']; ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1-5">
                                                     Akhiri Sesi
                                                 </button>
                                             </form>
@@ -277,7 +295,7 @@ echo $OUTPUT->header();
                                     </div>
                                 <?php endif; ?>
 
-                                <!-- Form to Set / Update URL -->
+                                <!-- Input Form to Set or Update URL -->
                                 <form method="post" action="<?php echo (new \moodle_url('/local/lumina_core/virtual_class.php'))->out(false); ?>" class="mt-3 pt-3 border-top">
                                     <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
                                     <input type="hidden" name="action" value="save">
@@ -289,9 +307,9 @@ echo $OUTPUT->header();
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold text-muted mb-1">Topik / Agenda Pertemuan (Opsional):</label>
-                                        <input type="text" name="meet_title" class="form-control form-control-sm rounded-xl" placeholder="cth: Pertemuan 03 - Responsive Grid & Flexbox" value="<?php echo s($tc['meet_title']); ?>">
+                                        <input type="text" name="meet_title" class="form-control form-control-sm rounded-xl" placeholder="cth: Pertemuan 01 - Pengantar Materi" value="<?php echo s($tc['meet_title']); ?>">
                                     </div>
-                                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 py-1-5 w-100 font-semibold shadow-xs">
+                                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 py-2 w-100 font-semibold shadow-xs">
                                         <i class="fa-solid fa-floppy-disk me-1"></i> <?php echo $tc['has_meeting'] ? 'Perbarui Tautan Sesi' : 'Simpan & Publikasikan Sesi'; ?>
                                     </button>
                                 </form>
@@ -303,37 +321,35 @@ echo $OUTPUT->header();
         <?php endif; ?>
 
     <?php else: ?>
-        <!-- Student View: Only Show Enrolled Courses with Active Meetings -->
+        <!-- ============================================================= -->
+        <!-- STUDENT VIEW                                                  -->
+        <!-- ============================================================= -->
         <?php
         $studentmeetings = virtual_class_manager::get_student_active_meetings($USER->id);
         ?>
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h4 class="h5 fw-bold mb-1">Sesi Tatap Muka Terjadwal</h4>
-                <p class="text-muted small mb-0">Hanya menampilkan ruang tatap muka dari mata kuliah yang Anda ikuti.</p>
-            </div>
-            <a href="<?php echo (new \moodle_url('/my/'))->out(false); ?>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1-5">
-                ← Kembali ke Dashboard
-            </a>
+        <div class="mb-4">
+            <h4 class="h5 fw-bold mb-1">Sesi Tatap Muka Terjadwal</h4>
+            <p class="text-muted small mb-0">Hanya menampilkan ruang tatap muka dari mata kuliah yang Anda ikuti.</p>
         </div>
 
         <?php if (!empty($studentmeetings)): ?>
             <div class="row g-4 mb-4">
                 <?php foreach ($studentmeetings as $sm): ?>
                     <div class="col-lg-6">
-                        <div class="meet-course-card is-active shadow-sm p-4">
-                            <div>
+                        <div class="meet-course-card is-active shadow-sm">
+                            <!-- Card Content (Top) -->
+                            <div class="mb-3">
                                 <div class="d-flex align-items-start justify-content-between mb-3">
                                     <div>
                                         <span class="badge bg-primary bg-opacity-10 text-primary border rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.72rem;">
                                             <?php echo s($sm['course_shortname']); ?>
                                         </span>
-                                        <h5 class="fw-bold mt-2 mb-1" style="font-size: 1.15rem;">
+                                        <h5 class="fw-bold mt-2 mb-1" style="font-size: 1.25rem;">
                                             <?php echo s($sm['course_fullname']); ?>
                                         </h5>
                                         <?php if (!empty($sm['teacher_name'])): ?>
-                                            <span class="text-muted small">
-                                                <i class="fa-solid fa-chalkboard-user me-1 text-primary"></i>Dosen: <strong><?php echo s($sm['teacher_name']); ?></strong>
+                                            <span class="text-muted small d-inline-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-chalkboard-user text-primary"></i> Dosen: <strong><?php echo s($sm['teacher_name']); ?></strong>
                                             </span>
                                         <?php endif; ?>
                                     </div>
@@ -342,36 +358,40 @@ echo $OUTPUT->header();
                                     </span>
                                 </div>
 
-                                <div class="p-3 rounded-2xl bg-white border mb-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                <div class="meeting-info-box">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
                                         <span class="platform-brand-pill <?php echo $sm['badge_class']; ?>">
-                                            <span class="material-symbols-outlined" style="font-size: 16px;"><?php echo $sm['icon']; ?></span>
+                                            <span class="material-symbols-outlined" style="font-size: 15px;"><?php echo $sm['icon']; ?></span>
                                             <?php echo s($sm['platform']); ?>
                                         </span>
                                         <span class="text-muted small">
                                             Aktif sejak <?php echo s($sm['updated_ago']); ?>
                                         </span>
                                     </div>
-                                    <p class="fw-bold text-dark mt-2 mb-0" style="font-size: 0.95rem;">
+                                    <h6 class="fw-bold text-dark mt-2 mb-0" style="font-size: 1rem;">
                                         <?php echo s($sm['title']); ?>
-                                    </p>
+                                    </h6>
                                 </div>
                             </div>
 
-                            <a href="<?php echo s($sm['url']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-lg btn-success text-white rounded-pill py-2-5 px-4 font-semibold w-100 d-inline-flex align-items-center justify-content-center gap-2 shadow-sm">
-                                <span class="material-symbols-outlined">video_camera_front</span>
-                                <span>Buka <?php echo s($sm['platform']); ?> &amp; Masuk Kelas</span>
-                            </a>
+                            <!-- Button (Bottom - 100% Full Width) -->
+                            <div class="pt-2 border-top">
+                                <a href="<?php echo s($sm['url']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-success text-white join-meeting-btn">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">video_camera_front</span>
+                                    <span>Buka <?php echo s($sm['platform']); ?> &amp; Masuk Kelas</span>
+                                    <i class="fa-solid fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <div class="p-5 text-center bg-white rounded-3xl border">
+            <div class="p-5 text-center bg-white rounded-3xl border shadow-xs">
                 <span class="material-symbols-outlined text-muted" style="font-size: 56px;">videocam_off</span>
                 <h5 class="mt-3 fw-bold">Belum Ada Sesi Kelas Daring yang Sedang Berlangsung</h5>
-                <p class="text-muted small" style="max-width: 500px; margin: 0 auto;">
-                    Dosen pengampu mata kuliah Anda belum membuka ruang Google Meet atau Zoom saat ini. Tautan tatap muka akan otomatis tersedia di halaman ini dan di kartu dashboard Anda begitu sesi dimulai oleh dosen.
+                <p class="text-muted small" style="max-width: 520px; margin: 0 auto;">
+                    Dosen pengampu mata kuliah Anda belum membuka ruang Google Meet atau Zoom saat ini. Tautan tatap muka akan otomatis tersedia di sini begitu sesi dimulai oleh dosen.
                 </p>
             </div>
         <?php endif; ?>
@@ -382,4 +402,3 @@ echo $OUTPUT->header();
 
 <?php
 echo $OUTPUT->footer();
-

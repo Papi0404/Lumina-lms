@@ -5203,8 +5203,7 @@ body:has(#fgroup_id_buttonar) {
     .lumina-main-viewport,
     #region-main,
     #topofscroll,
-    #region-main-box,
-    form.mform {
+    #region-main-box {
         padding-bottom: 120px !important;
     }
 }
@@ -6211,3 +6210,275 @@ body:not(.lumina-role-admin) {
 
 
 
+
+/* ==========================================================================
+   Lumina LMS - Forum Activity Modern Styling (.path-mod-forum)
+   ========================================================================== */
+.path-mod-forum {
+    .tertiary-navigation {
+        background: #FFFFFF !important;
+        border: 1px solid var(--lumina-border, #E2E8F0) !important;
+        border-radius: 16px !important;
+        padding: 0.75rem 1.25rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+
+        .d-flex {
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 0.75rem !important;
+        }
+
+        .navitem {
+            margin: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        .help-icon {
+            color: #94A3B8 !important;
+            font-size: 1rem !important;
+            margin-right: 0.5rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+
+            &:hover {
+                color: var(--lumina-primary, #4338CA) !important;
+            }
+        }
+
+        .simplesearchform,
+        form.mform {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        .simplesearchform .input-group {
+            border-radius: 9999px !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            overflow: hidden !important;
+            background: #F8FAFC !important;
+            height: 40px !important;
+            width: 280px !important;
+            max-width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            transition: all 0.15s ease !important;
+
+            &:focus-within {
+                border-color: #4338CA !important;
+                background: #FFFFFF !important;
+                box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1) !important;
+            }
+
+            input.form-control {
+                border: none !important;
+                height: 38px !important;
+                background: transparent !important;
+                font-size: 0.85rem !important;
+                padding-left: 1rem !important;
+                box-shadow: none !important;
+                color: #1E293B !important;
+            }
+
+            button.btn-submit {
+                border: none !important;
+                background: transparent !important;
+                color: #64748B !important;
+                padding: 0 0.85rem !important;
+                height: 38px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+
+                &:hover {
+                    color: #4338CA !important;
+                }
+            }
+        }
+
+        a.btn-primary[data-bs-toggle="collapse"] {
+            height: 40px !important;
+            line-height: 40px !important;
+            padding: 0 1.35rem !important;
+            border-radius: 9999px !important;
+            background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%) !important;
+            border: none !important;
+            color: #FFFFFF !important;
+            font-weight: 600 !important;
+            font-size: 0.84rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.45rem !important;
+            white-space: nowrap !important;
+            box-shadow: 0 2px 6px rgba(67, 56, 202, 0.25) !important;
+            transition: all 0.15s ease !important;
+            text-decoration: none !important;
+
+            &:hover {
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 12px rgba(67, 56, 202, 0.35) !important;
+                color: #FFFFFF !important;
+            }
+        }
+    }
+
+    #collapseAddForm {
+        background: #FFFFFF !important;
+        border: 1px solid var(--lumina-border, #E2E8F0) !important;
+        border-radius: 18px !important;
+        padding: 1.75rem !important;
+        margin-top: 1rem !important;
+        margin-bottom: 2rem !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+
+        .mform {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .fitem {
+            margin-bottom: 1.25rem !important;
+        }
+
+        label {
+            font-weight: 600 !important;
+            color: #1E293B !important;
+            font-size: 0.875rem !important;
+        }
+
+        input[type="text"],
+        textarea {
+            border-radius: 12px !important;
+            border: 1px solid var(--lumina-border, #E2E8F0) !important;
+            font-size: 0.9rem !important;
+        }
+
+        #fgroup_id_buttonar {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+            padding-top: 1.25rem !important;
+            border-top: 1px solid #F1F5F9 !important;
+            margin-top: 1.25rem !important;
+
+            .btn-primary,
+            input[name="submitbutton"] {
+                border-radius: 9999px !important;
+                padding: 0.55rem 1.5rem !important;
+                font-weight: 600 !important;
+                font-size: 0.875rem !important;
+                background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%) !important;
+                border: none !important;
+                box-shadow: 0 2px 6px rgba(67, 56, 202, 0.25) !important;
+            }
+
+            .btn-secondary,
+            input[name="cancel"] {
+                border-radius: 9999px !important;
+                padding: 0.55rem 1.25rem !important;
+                font-weight: 600 !important;
+                font-size: 0.875rem !important;
+                background: #F1F5F9 !important;
+                color: #475569 !important;
+                border: 1px solid #E2E8F0 !important;
+            }
+        }
+    }
+
+    .forumnodiscuss {
+        background: #FFFFFF !important;
+        border: 2px dashed #CBD5E1 !important;
+        border-radius: 18px !important;
+        padding: 3rem 2rem !important;
+        text-align: center !important;
+        color: #64748B !important;
+        font-size: 0.95rem !important;
+        font-weight: 500 !important;
+        box-shadow: none !important;
+        margin: 1.5rem 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.75rem !important;
+
+        &::before {
+            content: "forum";
+            font-family: "Material Symbols Outlined" !important;
+            font-size: 44px !important;
+            color: #94A3B8 !important;
+            display: block !important;
+            line-height: 1 !important;
+        }
+    }
+
+    .discussion-list {
+        background: #FFFFFF !important;
+        border: 1px solid var(--lumina-border, #E2E8F0) !important;
+        border-radius: 16px !important;
+        overflow: hidden !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+
+        th {
+            background: #F8FAFC !important;
+            color: #64748B !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+            padding: 0.85rem 1rem !important;
+        }
+
+        td {
+            padding: 1rem 1rem !important;
+            vertical-align: middle !important;
+            border-bottom: 1px solid #F1F5F9 !important;
+            font-size: 0.875rem !important;
+        }
+
+        tr:hover td {
+            background: #F8FAFC !important;
+        }
+
+        .topic a {
+            font-weight: 600 !important;
+            color: #0F172A !important;
+            text-decoration: none !important;
+
+            &:hover {
+                color: #4338CA !important;
+            }
+        }
+    }
+}
+
+/* Activity Hero info cleaning */
+.lumina-activity-hero .activity-information {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.lumina-activity-hero .activity-description {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 9999px !important;
+    padding: 0.35rem 0.85rem !important;
+    color: #64748B !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* Force hide AI features clutter across all activity pages */
+#ai-features,
+.course-assist-controls {
+    display: none !important;
+}

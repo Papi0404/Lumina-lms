@@ -177,5 +177,5 @@ $THEME->iconsystem = \core\output\icon_system::FONTAWESOME;
 $THEME->haseditswitch = true;
 $THEME->usescourseindex = true;
 $THEME->activityheaderconfig = [
-    'notitle' => true,
+    'notitle' => false,
 ];

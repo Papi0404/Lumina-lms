@@ -1,0 +1,78 @@
+{{!
+    Lumina LMS - Assignment Fast Grader User Selector Component.
+    Streamlines user switching controls, removes raw linebreaks, and polishes icon buttons.
+}}
+<div class="d-flex align-items-center gap-2 flex-nowrap lumina-grader-selector-wrap">
+    <a href="#previous" data-action="previous-user" class="btn btn-sm btn-icon lumina-nav-arrow" aria-label="{{#str}} previoususer, mod_assign {{/str}}" title="{{#str}} previoususer, mod_assign {{/str}}">
+        <i class="icon fa fa-chevron-left fa-fw" aria-hidden="true"></i>
+    </a>
+
+    <span data-region="input-field" class="d-inline-block">
+        <label for="change-user-select" class="visually-hidden">{{#str}} changeuser, mod_assign {{/str}}</label>
+        <select id="change-user-select" class="form-select form-select-sm lumina-user-select" data-action="change-user" data-currentuserid="{{currentuserid}}" data-assignmentid="{{assignmentid}}" data-groupid="{{groupid}}" data-ismarking="{{ismarking}}"></select>
+    </span>
+
+    <a href="#next" data-action="next-user" class="btn btn-sm btn-icon lumina-nav-arrow" aria-label="{{#str}} nextuser, mod_assign {{/str}}" title="{{#str}} nextuser, mod_assign {{/str}}">
+        <i class="icon fa fa-chevron-right fa-fw" aria-hidden="true"></i>
+    </a>
+
+    <span data-region="user-count" class="badge lumina-count-badge">
+        <span data-region="user-count-summary">{{#str}}xofy, mod_assign, { "x": "{{index}}", "y": "{{count}}" }{{/str}}</span>
+    </span>
+
+    <a href="#" data-region="user-filters" class="btn btn-sm btn-icon lumina-filter-btn" title="{{#str}}changefilters, mod_assign{{/str}}" aria-expanded="false" aria-controls="filter-configuration-{{uniqid}}">
+        <span class="accesshide">
+            {{#filters}}
+                {{filtername}}
+            {{/filters}}
+            {{^filters}}
+                {{#str}}nofilters, mod_assign{{/str}}
+            {{/filters}}
+        </span>
+        <i class="icon fa fa-filter fa-fw" aria-hidden="true"></i>
+    </a>
+
+    <a href="#" data-region="user-resettable" class="btn btn-sm btn-icon lumina-reset-btn" title="{{#str}}resettable{{/str}}">
+        <span class="visually-hidden">{{#str}}resettable{{/str}}</span>
+        <i class="icon fa fa-rotate-left fa-fw" aria-hidden="true"></i>
+    </a>
+
+    <div data-region="configure-filters" id="filter-configuration-{{uniqid}}" class="card card-large p-3 shadow-lg border lumina-filter-popover" style="border-radius: 16px;">
+        <form>
+            <div class="mb-2">
+                <label class="form-label small fw-bold text-dark mb-1" for="filter-general-{{uniqid}}">
+                    {{#str}}filter, mod_assign{{/str}}
+                </label>
+                <select name="filter" class="form-select form-select-sm rounded-pill" id="filter-general-{{uniqid}}">
+                {{#filters}}
+                    <option value="{{key}}" {{#active}}selected="selected"{{/active}} > {{name}} </option>
+                {{/filters}}
+                </select>
+            </div>
+            {{#hasmarkingallocation}}
+            <div class="mb-2">
+                <label class="form-label small fw-bold text-dark mb-1" for="filter-marker-{{uniqid}}">
+                    {{#str}}markerfilter, mod_assign{{/str}}
+                </label>
+                <select name="markerfilter" class="form-select form-select-sm rounded-pill" id="filter-marker-{{uniqid}}">
+                {{#markingallocationfilters}}
+                    <option value="{{key}}" {{#active}}selected="selected"{{/active}} > {{name}} </option>
+                {{/markingallocationfilters}}
+                </select>
+            </div>
+            {{/hasmarkingallocation}}
+            {{#hasmarkingworkflow}}
+            <div class="mb-2">
+                <label class="form-label small fw-bold text-dark mb-1" for="filter-workflow-{{uniqid}}">
+                    {{#str}}workflowfilter, mod_assign{{/str}}
+                </label>
+                <select name="workflowfilter" class="form-select form-select-sm rounded-pill" id="filter-workflow-{{uniqid}}">
+                {{#markingworkflowfilters}}
+                    <option value="{{key}}" {{#active}}selected="selected"{{/active}} > {{name}} </option>
+                {{/markingworkflowfilters}}
+                </select>
+            </div>
+            {{/hasmarkingworkflow}}
+        </form>
+    </div>
+</div>

@@ -1161,3 +1161,262 @@
     margin: 0 !important;
     letter-spacing: -0.01em !important;
 }
+
+/* ==========================================================================
+   Lumina LMS - Assignment Fast Grader Complete Polish
+   Polishes PDF Annotator, Right Side Grading Card, and User Selector
+   ========================================================================== */
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-nav-arrow {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: #F1F5F9 !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #4338CA !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    padding: 0 !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-nav-arrow:hover {
+    background: #EEF2FF !important;
+    border-color: #C7D2FE !important;
+    color: #3730A3 !important;
+    transform: translateY(-1px) !important;
+}
+
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-user-select {
+    border-radius: 9999px !important;
+    border: 1px solid #CBD5E1 !important;
+    padding: 0.35rem 1.75rem 0.35rem 0.85rem !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+    max-width: 170px !important;
+}
+
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-count-badge {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+    border-radius: 9999px !important;
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-filter-btn,
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-reset-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: #F1F5F9 !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #64748B !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 12px !important;
+    padding: 0 !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-filter-btn:hover,
+#page-mod-assign-grader .lumina-grader-selector-wrap .lumina-reset-btn:hover {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border-color: #C7D2FE !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Right Grade Panel Polish & Padding-bottom to avoid cut-off */
+#page-mod-assign-grader [data-region="grade-panel"] {
+    background-color: #FFFFFF !important;
+    padding: 1.25rem 1.5rem 140px 1.5rem !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 #F8FAFC;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .submissionstatustable {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 16px !important;
+    padding: 1.15rem !important;
+    margin-bottom: 1.25rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .submissionstatustable h3 {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #64748B !important;
+    margin-bottom: 0.75rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .submissionstatussubmitted {
+    display: inline-block !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 9999px !important;
+    background: #DCFCE7 !important;
+    color: #15803D !important;
+    border: 1px solid #BBF7D0 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    margin-right: 0.35rem !important;
+    margin-bottom: 0.35rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .submissiongraded {
+    display: inline-block !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 9999px !important;
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border: 1px solid #C7D2FE !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    margin-right: 0.35rem !important;
+    margin-bottom: 0.35rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .submissionnotgraded {
+    display: inline-block !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 9999px !important;
+    background: #FEF3C7 !important;
+    color: #B45309 !important;
+    border: 1px solid #FDE68A !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    margin-right: 0.35rem !important;
+    margin-bottom: 0.35rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .earlysubmission,
+#page-mod-assign-grader [data-region="grade-panel"] .latesubmission,
+#page-mod-assign-grader [data-region="grade-panel"] .submissioneditable {
+    font-size: 0.8125rem !important;
+    color: #64748B !important;
+    margin-top: 0.35rem !important;
+    line-height: 1.4 !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .earlysubmission {
+    color: #15803D !important;
+    font-weight: 600 !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmission {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.65rem !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    padding: 0.65rem 0.85rem !important;
+    margin-top: 0.65rem !important;
+    width: 100% !important;
+    float: none !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmission:hover {
+    background: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmission a {
+    font-weight: 600 !important;
+    color: #0F172A !important;
+    text-decoration: none !important;
+    font-size: 0.84rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmission a:hover {
+    color: #4338CA !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmissiontime {
+    font-size: 0.75rem !important;
+    color: #94A3B8 !important;
+    float: none !important;
+    margin-top: 0.25rem !important;
+}
+
+/* Grade Fieldset Box */
+#page-mod-assign-grader [data-region="grade-panel"] #id_gradeheader {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 16px !important;
+    padding: 1.15rem !important;
+    margin-bottom: 1.25rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] #id_gradeheader > legend {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #64748B !important;
+    margin-bottom: 0.75rem !important;
+    float: none !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] input[name="grade"] {
+    height: 48px !important;
+    width: 140px !important;
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    color: #4338CA !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    border: 2px solid #CBD5E1 !important;
+    background: #FFFFFF !important;
+    margin-top: 0.4rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] input[name="grade"]:focus {
+    border-color: #4338CA !important;
+    box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15) !important;
+}
+
+/* PDF Drawing Region Modern Clean Slate */
+.assignfeedback_editpdf_widget .drawingregion {
+    background-color: #F1F5F9 !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+.assignfeedback_editpdf_widget .drawingcanvas {
+    background-color: #FFFFFF !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 8px !important;
+    margin: 1.25rem auto !important;
+}
+
+.assignfeedback_editpdf_widget .pageheader {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    padding: 0.4rem 0.85rem !important;
+}
+
+.assignfeedback_editpdf_widget .toolbar button {
+    border-radius: 8px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #FFFFFF !important;
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+}
+
+.assignfeedback_editpdf_widget .toolbar button:hover {
+    background: #EEF2FF !important;
+    color: #4338CA !important;
+    border-color: #C7D2FE !important;
+}

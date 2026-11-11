@@ -4851,3 +4851,255 @@ body.path-course {
         }
     }
 }
+
+// ==========================================================================
+// 41. Lumina Modern Sticky Footer & Form Action Buttons System
+// ==========================================================================
+
+/* --- Fix Sticky Footer Sidebar Overlap & Responsive Positioning --- */
+.stickyfooter {
+    position: fixed !important;
+    left: var(--lumina-sidebar-width, 280px) !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: auto !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid var(--lumina-border, #E2E8F0) !important;
+    box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.08) !important;
+    z-index: 1020 !important;
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease !important;
+    padding: 0.75rem 2rem !important;
+
+    /* Override Boost inner wrappers and reset conflicting margins */
+    .sticky-footer-content-wrapper {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: 56px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .sticky-footer-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        overflow: visible !important;
+    }
+
+    #fgroup_id_buttonar,
+    .fitem_actionbuttons,
+    .fitem {
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        width: 100% !important;
+        background: transparent !important;
+    }
+
+    .col-md-9,
+    .col-md-3,
+    .col-form-label,
+    .felement {
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+    }
+
+    fieldset {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+
+        > div,
+        [data-groupname="buttonar"],
+        .fitem_actionbuttons {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 0.75rem !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
+}
+
+/* Collapsed rail mode: adjust sticky footer left offset */
+body.lumina-rail-collapsed .stickyfooter {
+    left: var(--lumina-sidebar-collapsed-width, 72px) !important;
+}
+
+/* When Course Index Drawer is visible on desktop */
+@media (min-width: 992px) {
+    body.show-drawer-left .stickyfooter,
+    body:has(.drawer-left.show) .stickyfooter {
+        left: calc(var(--lumina-sidebar-width, 280px) + 315px) !important;
+    }
+
+    body.lumina-rail-collapsed.show-drawer-left .stickyfooter,
+    body.lumina-rail-collapsed:has(.drawer-left.show) .stickyfooter {
+        left: calc(var(--lumina-sidebar-collapsed-width, 72px) + 315px) !important;
+    }
+}
+
+/* Mobile & tablet view: sidebar becomes offcanvas */
+@media (max-width: 991.98px) {
+    .stickyfooter {
+        left: 0 !important;
+        right: 0 !important;
+        padding: 0.625rem 1rem !important;
+
+        fieldset > div,
+        fieldset [data-groupname="buttonar"] {
+            justify-content: center !important;
+        }
+    }
+}
+
+/* Content clearance so bottom-most form fields are never obscured by sticky footer */
+body.hasstickyfooter {
+    #page,
+    .lumina-main-viewport,
+    #region-main,
+    #topofscroll {
+        padding-bottom: 95px !important;
+    }
+}
+
+/* --- High-End Modern Styling for Form Action Buttons Across All Pages --- */
+.stickyfooter,
+#fgroup_id_buttonar,
+.fitem_actionbuttons,
+.form-buttons,
+.settingsform .form-buttons,
+#adminsettings .form-buttons,
+.mform .fitem_actionbuttons,
+.mform [data-groupname="buttonar"],
+.fitem.fsubmit {
+    .btn,
+    input[type="submit"],
+    button[type="submit"],
+    input[type="button"],
+    input[name="cancel"],
+    button[name="cancel"] {
+        border-radius: 9999px !important;
+        padding: 0.55rem 1.4rem !important;
+        font-family: 'Plus Jakarta Sans', var(--lumina-font-sans, sans-serif) !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        line-height: 1.4 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+        min-height: 42px !important;
+        margin: 0 !important;
+        text-decoration: none !important;
+    }
+
+    /* Primary Save Action (e.g. Save and return to course / Save changes) */
+    .btn-primary,
+    input[name="submitbutton2"],
+    button[name="submitbutton2"],
+    input[type="submit"]:not(.btn-secondary):not([name="cancel"]):not([name="submitbutton"]) {
+        background: var(--lumina-primary, #4338CA) !important;
+        border: 1px solid #3730A3 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 2px 6px rgba(67, 56, 202, 0.25) !important;
+
+        &:hover,
+        &:focus-visible {
+            background: #3730A3 !important;
+            border-color: #312E81 !important;
+            color: #FFFFFF !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(67, 56, 202, 0.35) !important;
+        }
+
+        &:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 3px rgba(67, 56, 202, 0.2) !important;
+        }
+    }
+
+    /* Secondary Submit (e.g. Save and display) */
+    input[name="submitbutton"],
+    button[name="submitbutton"] {
+        background: #4F46E5 !important;
+        border: 1px solid #4338CA !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2) !important;
+
+        &:hover,
+        &:focus-visible {
+            background: #4338CA !important;
+            border-color: #3730A3 !important;
+            color: #FFFFFF !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.32) !important;
+        }
+
+        &:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 3px rgba(79, 70, 229, 0.2) !important;
+        }
+    }
+
+    /* Cancel and Secondary Utility Buttons */
+    .btn-secondary:not([type="submit"]),
+    input[name="cancel"],
+    button[name="cancel"],
+    input[type="reset"] {
+        background: #F8FAFC !important;
+        border: 1px solid #CBD5E1 !important;
+        color: #475569 !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+
+        &:hover,
+        &:focus-visible {
+            background: #F1F5F9 !important;
+            border-color: #94A3B8 !important;
+            color: #0F172A !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        &:active {
+            transform: translateY(0) !important;
+            background: #E2E8F0 !important;
+        }
+    }
+}
+
+/* Polished styling for standard non-sticky form buttons (e.g. Site Administration settings, Profile Edit, etc.) */
+.form-buttons,
+#adminsettings .form-buttons,
+.settingsform .form-buttons,
+#page:not(.hasstickyfooter) .fitem_actionbuttons,
+#page:not(.hasstickyfooter) #fgroup_id_buttonar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding-top: 1.5rem !important;
+    margin-top: 2rem !important;
+    border-top: 1px solid var(--lumina-border, #E2E8F0) !important;
+}
+

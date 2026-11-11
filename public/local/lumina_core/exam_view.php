@@ -48,6 +48,17 @@ $session = exam_monitor::start_or_get_session($course->id, $cm->id, $USER->id);
 // Load the 20 CBT questions
 $rawquestions = exam_monitor::get_exam_questions($cm->id);
 
+// Decode server-persisted answers if any
+$serversavedanswers = [];
+$serversaveddoubtful = [];
+if (!empty($session->adminreviewnotes) && $session->status === 'in_progress') {
+    $decoded = json_decode($session->adminreviewnotes, true);
+    if (!empty($decoded['progress'])) {
+        $serversavedanswers = $decoded['answers'] ?? [];
+        $serversaveddoubtful = $decoded['doubtful'] ?? [];
+    }
+}
+
 // Prepare client-safe questions (omit correct_index from client JS)
 $clientquestions = [];
 foreach ($rawquestions as $q) {
@@ -629,19 +640,34 @@ body {
     let hasStarted = isCompleted || isSuspended;
 
     let currentIndex = 0; // 0-based question index
-    let userAnswers = {}; // { questionNumber: selectedOptionIndex }
-    let doubtfulMap = {}; // { questionNumber: true/false }
+    let userAnswers = <?php echo json_encode($serversavedanswers, JSON_FORCE_OBJECT); ?> || {};
+    let doubtfulMap = <?php echo json_encode($serversaveddoubtful, JSON_FORCE_OBJECT); ?> || {};
 
-    // Load persisted local answers if any
+    // Load persisted local answers if any (overrides if newer)
     const storageKey = 'lumina_cbt_' + sessionId + '_' + userId;
     try {
         const saved = localStorage.getItem(storageKey);
         if (saved) {
             const parsed = JSON.parse(saved);
-            if (parsed.answers) userAnswers = parsed.answers;
-            if (parsed.doubtful) doubtfulMap = parsed.doubtful;
+            if (parsed.answers) userAnswers = Object.assign({}, userAnswers, parsed.answers);
+            if (parsed.doubtful) doubtfulMap = Object.assign({}, doubtfulMap, parsed.doubtful);
         }
     } catch(e) {}
+
+    let syncTimer = null;
+    function syncProgressToServer() {
+        if (isSuspended || isCompleted) return;
+        if (syncTimer) clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => {
+            const formData = new FormData();
+            formData.append('sessionid', sessionId);
+            formData.append('action', 'save_progress');
+            formData.append('answers', JSON.stringify(userAnswers));
+            formData.append('doubtful', JSON.stringify(doubtfulMap));
+            formData.append('sesskey', sesskey);
+            fetch(ajaxUrl, { method: 'POST', body: formData }).catch(err => console.log('Auto-save heartbeat error:', err));
+        }, 500);
+    }
 
     function saveStateLocally() {
         try {
@@ -651,6 +677,7 @@ body {
                 updatedAt: Date.now()
             }));
         } catch(e) {}
+        syncProgressToServer();
     }
 
     // Initialize Question Palette

@@ -37,6 +37,17 @@ $sessionid = required_param('sessionid', PARAM_INT);
 $action    = optional_param('action', 'violation', PARAM_ALPHAEXT);
 
 try {
+    if ($action === 'save_progress') {
+        $answersraw  = optional_param('answers', '', PARAM_RAW);
+        $doubtfulraw = optional_param('doubtful', '', PARAM_RAW);
+        $answers  = json_decode($answersraw, true) ?: [];
+        $doubtful = json_decode($doubtfulraw, true) ?: [];
+
+        $saved = exam_monitor::save_progress($sessionid, $USER->id, $answers, $doubtful);
+        echo json_encode(['success' => $saved]);
+        exit;
+    }
+
     if ($action === 'submit_exam') {
         $answersraw = optional_param('answers', '', PARAM_RAW);
         $answers = json_decode($answersraw, true);

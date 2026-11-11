@@ -118,6 +118,26 @@ $regionmainsettingsmenu = $buildregionmainsettings ? $OUTPUT->region_main_settin
 $header = $PAGE->activityheader;
 $headercontent = $header ? $header->export_for_template($renderer) : null;
 
+// Guidance banner for Teachers on New Quiz page (explaining where Options A, B, C, D are)
+$isquizadd = ($PAGE->pagetype === 'course-modedit' && optional_param('add', '', PARAM_ALPHA) === 'quiz');
+$quizguidehtml = '';
+if ($isquizadd) {
+    $quizguidehtml = '
+    <div class="alert alert-primary border-2 border-indigo-200 rounded-3xl p-4 mb-4 shadow-sm" style="background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%); border-color: #C7D2FE !important;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-primary text-white p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; flex-shrink: 0; background: #4338CA !important;">
+                <span class="material-symbols-outlined fs-4">tips_and_updates</span>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Panduan Menambahkan Soal Pilihan Ganda (A, B, C, D)</h6>
+                <p class="mb-0 small text-muted">
+                    Halaman ini untuk mengatur <strong>Nama Kuis</strong> dan batas waktu pengerjaan. Setelah mengisi nama kuis di bawah, gulir ke paling bawah lalu klik tombol biru <strong>"Save and display"</strong> untuk langsung menginput pertanyaan beserta opsi pilihan ganda A, B, C, D!
+                </p>
+            </div>
+        </div>
+    </div>';
+}
+
 $coursefullname = ($PAGE->course?->fullname) ? format_string(
     $PAGE->course->fullname,
     true,
@@ -263,6 +283,7 @@ $templatecontext = [
     'hasregionmainsettingsmenu' => !empty($regionmainsettingsmenu),
     'overflow' => $overflow,
     'headercontent' => $headercontent,
+    'lumina_quiz_guide' => $quizguidehtml,
     'addblockbutton' => $addblockbutton,
     // Lumina LMS custom contexts:
     'lumina_role' => $roleinfo,

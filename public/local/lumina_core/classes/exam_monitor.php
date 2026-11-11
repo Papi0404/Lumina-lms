@@ -214,6 +214,34 @@ class exam_monitor {
     }
 
     /**
+     * Save student's in-progress answers and doubtful states to server.
+     *
+     * @param int $sessionid
+     * @param int $userid
+     * @param array $answers
+     * @param array $doubtful
+     * @return bool
+     */
+    public static function save_progress(int $sessionid, int $userid, array $answers, array $doubtful): bool {
+        global $DB;
+
+        $session = $DB->get_record('local_lumina_exam_sessions', ['id' => $sessionid, 'userid' => $userid], '*', MUST_EXIST);
+        if ($session->status === 'completed' || $session->status === 'under_review') {
+            return false;
+        }
+
+        $payload = json_encode([
+            'progress' => true,
+            'answers'  => $answers,
+            'doubtful' => $doubtful,
+            'updated'  => time(),
+        ]);
+
+        $session->adminreviewnotes = $payload;
+        return $DB->update_record('local_lumina_exam_sessions', $session);
+    }
+
+    /**
      * Retrieve question set for a given course module (CBT exam).
      *
      * @param int $cmid

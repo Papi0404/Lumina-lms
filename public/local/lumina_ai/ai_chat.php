@@ -52,6 +52,17 @@ if (empty($message)) {
     exit;
 }
 
+// Burst protection throttle: minimum 2 seconds between messages
+$lastreqtime = (int)get_user_preferences('lumina_ai_last_req_time', 0, $USER->id);
+if ((time() - $lastreqtime) < 2) {
+    echo json_encode([
+        'status' => 'error',
+        'reply'  => '⏳ Mohon tunggu 2 detik sebelum mengirim pertanyaan berikutnya.'
+    ]);
+    exit;
+}
+set_user_preference('lumina_ai_last_req_time', time(), $USER->id);
+
 // Rate limiting: check requests per hour.
 $maxreq = (int)(get_config('local_lumina_ai', 'max_requests_per_hour') ?: 50);
 if ($maxreq > 0) {

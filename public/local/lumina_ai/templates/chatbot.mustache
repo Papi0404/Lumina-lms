@@ -106,11 +106,18 @@
     width: 52px;
     height: 52px;
     z-index: 1040;
-    cursor: pointer;
+    cursor: grab;
     user-select: none;
+    touch-action: none;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-body.hasstickyfooter .lumina-ai-fab {
+.lumina-ai-fab.is-dragging {
+    cursor: grabbing !important;
+    transition: none !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 16px 36px rgba(67, 56, 202, 0.45) !important;
+}
+body.hasstickyfooter .lumina-ai-fab:not([style*="top"]) {
     bottom: calc(var(--stickyfooter-height, 65px) + 24px) !important;
 }
 .lumina-ai-fab:hover {
@@ -192,6 +199,16 @@ body.hasstickyfooter .lumina-ai-fab {
     background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
     color: #ffffff;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+.lumina-ai-chat-window.is-dragging {
+    transition: none !important;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.45) !important;
+}
+.lumina-ai-chat-window.is-dragging .ai-chat-header {
+    cursor: grabbing !important;
 }
 .ai-avatar-badge {
     width: 36px;
@@ -467,6 +484,167 @@ body.hasstickyfooter .lumina-ai-fab {
         var chatHistory = [];
         var isSending = false;
 
+        // Viewport & Sidebar Boundary Calculation
+        function getViewportBounds(elWidth, elHeight) {
+            var sidebar = document.querySelector('.lumina-sidebar');
+            var minLeft = 16;
+            if (sidebar && window.innerWidth >= 992) {
+                var sbRect = sidebar.getBoundingClientRect();
+                if (sbRect.right > 0 && sbRect.width > 0) {
+                    minLeft = Math.max(minLeft, sbRect.right + 16);
+                }
+            }
+
+            var topbar = document.querySelector('.lumina-topbar');
+            var minTop = 16;
+            if (topbar) {
+                var tbRect = topbar.getBoundingClientRect();
+                if (tbRect.bottom > 0) {
+                    minTop = Math.max(minTop, tbRect.bottom + 12);
+                }
+            }
+
+            var maxLeft = window.innerWidth - elWidth - 16;
+            var maxTop = window.innerHeight - elHeight - 16;
+
+            var stickyfooter = document.querySelector('.stickyfooter');
+            if (stickyfooter && document.body.classList.contains('hasstickyfooter')) {
+                var sfRect = stickyfooter.getBoundingClientRect();
+                if (sfRect.top > 0 && sfRect.top < window.innerHeight) {
+                    maxTop = Math.min(maxTop, sfRect.top - elHeight - 12);
+                }
+            }
+
+            if (maxLeft < minLeft) maxLeft = minLeft;
+            if (maxTop < minTop) maxTop = minTop;
+
+            return {
+                minLeft: minLeft,
+                maxLeft: maxLeft,
+                minTop: minTop,
+                maxTop: maxTop
+            };
+        }
+
+        // Generic Draggable Helper with Strict Boundary Enforcement
+        function initDraggable(el, handle, storageKey) {
+            var isDragging = false;
+            var hasMoved = false;
+            var startX = 0, startY = 0;
+            var initLeft = 0, initTop = 0;
+
+            handle = handle || el;
+
+            handle.addEventListener('pointerdown', function(e) {
+                if (e.target.closest('button') || e.target.closest('.ai-icon-btn') || e.target.closest('a')) {
+                    return;
+                }
+
+                isDragging = true;
+                hasMoved = false;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                var rect = el.getBoundingClientRect();
+                initLeft = rect.left;
+                initTop = rect.top;
+
+                el.classList.add('is-dragging');
+                try {
+                    handle.setPointerCapture(e.pointerId);
+                } catch(err) {}
+            });
+
+            handle.addEventListener('pointermove', function(e) {
+                if (!isDragging) return;
+
+                var dx = e.clientX - startX;
+                var dy = e.clientY - startY;
+
+                if (Math.hypot(dx, dy) > 5) {
+                    hasMoved = true;
+                }
+
+                if (!hasMoved) return;
+
+                var rect = el.getBoundingClientRect();
+                var bounds = getViewportBounds(rect.width, rect.height);
+
+                var newLeft = initLeft + dx;
+                var newTop = initTop + dy;
+
+                newLeft = Math.max(bounds.minLeft, Math.min(bounds.maxLeft, newLeft));
+                newTop = Math.max(bounds.minTop, Math.min(bounds.maxTop, newTop));
+
+                el.style.left = newLeft + 'px';
+                el.style.top = newTop + 'px';
+                el.style.right = 'auto';
+                el.style.bottom = 'auto';
+            });
+
+            function endDrag(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                el.classList.remove('is-dragging');
+                try {
+                    handle.releasePointerCapture(e.pointerId);
+                } catch(err) {}
+
+                if (hasMoved && storageKey) {
+                    var rect = el.getBoundingClientRect();
+                    try {
+                        localStorage.setItem(storageKey, JSON.stringify({ left: rect.left, top: rect.top }));
+                    } catch(err) {}
+                }
+            }
+
+            handle.addEventListener('pointerup', endDrag);
+            handle.addEventListener('pointercancel', endDrag);
+
+            return {
+                hasMoved: function() { return hasMoved; }
+            };
+        }
+
+        // Initialize FAB dragging
+        var fabDraggable = initDraggable(fab, fab, 'lumina_ai_fab_pos');
+
+        // Restore saved position for FAB if stored
+        try {
+            var savedFabPos = JSON.parse(localStorage.getItem('lumina_ai_fab_pos'));
+            if (savedFabPos && typeof savedFabPos.left === 'number' && typeof savedFabPos.top === 'number') {
+                var fBounds = getViewportBounds(52, 52);
+                var clampFLeft = Math.max(fBounds.minLeft, Math.min(fBounds.maxLeft, savedFabPos.left));
+                var clampFTop = Math.max(fBounds.minTop, Math.min(fBounds.maxTop, savedFabPos.top));
+                fab.style.left = clampFLeft + 'px';
+                fab.style.top = clampFTop + 'px';
+                fab.style.right = 'auto';
+                fab.style.bottom = 'auto';
+            }
+        } catch(err) {}
+
+        // Make chat window draggable by header
+        var chatHeader = win.querySelector('.ai-chat-header');
+        if (chatHeader) {
+            initDraggable(win, chatHeader, 'lumina_ai_win_pos');
+        }
+
+        // Keep elements in bounds on window resize
+        window.addEventListener('resize', function() {
+            if (fab.style.left && fab.style.left !== 'auto') {
+                var fRect = fab.getBoundingClientRect();
+                var fBounds = getViewportBounds(fRect.width || 52, fRect.height || 52);
+                fab.style.left = Math.max(fBounds.minLeft, Math.min(fBounds.maxLeft, fRect.left)) + 'px';
+                fab.style.top = Math.max(fBounds.minTop, Math.min(fBounds.maxTop, fRect.top)) + 'px';
+            }
+            if (win.style.left && win.style.left !== 'auto') {
+                var wRect = win.getBoundingClientRect();
+                var wBounds = getViewportBounds(wRect.width || 420, wRect.height || 600);
+                win.style.left = Math.max(wBounds.minLeft, Math.min(wBounds.maxLeft, wRect.left)) + 'px';
+                win.style.top = Math.max(wBounds.minTop, Math.min(wBounds.maxTop, wRect.top)) + 'px';
+            }
+        });
+
         // Toggle Chat Window
         function toggleChat(open) {
             if (open === undefined) {
@@ -478,12 +656,30 @@ body.hasstickyfooter .lumina-ai-fab {
             }
             win.setAttribute('aria-hidden', !win.classList.contains('open'));
             if (win.classList.contains('open')) {
+                // If saved window position exists, apply clamped position
+                try {
+                    var savedWPos = JSON.parse(localStorage.getItem('lumina_ai_win_pos'));
+                    if (savedWPos && typeof savedWPos.left === 'number' && typeof savedWPos.top === 'number') {
+                        var curWRect = win.getBoundingClientRect();
+                        var curWBounds = getViewportBounds(curWRect.width || 420, curWRect.height || 600);
+                        win.style.left = Math.max(curWBounds.minLeft, Math.min(curWBounds.maxLeft, savedWPos.left)) + 'px';
+                        win.style.top = Math.max(curWBounds.minTop, Math.min(curWBounds.maxTop, savedWPos.top)) + 'px';
+                        win.style.right = 'auto';
+                        win.style.bottom = 'auto';
+                    }
+                } catch(err) {}
+
                 input.focus();
                 scrollToBottom();
             }
         }
 
-        fab.addEventListener('click', function() {
+        fab.addEventListener('click', function(e) {
+            if (fabDraggable.hasMoved()) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             toggleChat(!win.classList.contains('open'));
         });
         closeBtn.addEventListener('click', function() { toggleChat(false); });

@@ -260,3 +260,4 @@ class virtual_class_manager {
         }
     }
 }
+

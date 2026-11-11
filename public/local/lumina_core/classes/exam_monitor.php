@@ -43,14 +43,19 @@ class exam_monitor {
     public static function start_or_get_session(int $courseid, int $activityid, int $userid): stdClass {
         global $DB;
 
-        $session = $DB->get_record('local_lumina_exam_sessions', [
-            'courseid'   => $courseid,
-            'activityid' => $activityid,
-            'userid'     => $userid,
-        ], '*', IGNORE_MULTIPLE);
+        // Always query the latest session by id DESC
+        $sessions = $DB->get_records_select(
+            'local_lumina_exam_sessions',
+            'courseid = ? AND activityid = ? AND userid = ?',
+            [$courseid, $activityid, $userid],
+            'id DESC',
+            '*',
+            0,
+            1
+        );
 
-        if ($session) {
-            return $session;
+        if (!empty($sessions)) {
+            return reset($sessions);
         }
 
         $newsess = new stdClass();
@@ -154,8 +159,8 @@ class exam_monitor {
                   FROM {local_lumina_exam_sessions} s
                   JOIN {user} u ON u.id = s.userid
                   JOIN {course} c ON c.id = s.courseid
-                 WHERE s.status = 'under_review'
-              ORDER BY s.timefinish DESC, s.id DESC";
+                 WHERE s.status IN ('under_review', 'invalidated') OR s.warningcount >= 3
+              ORDER BY s.id DESC";
 
         $rows = $DB->get_records_sql($sql);
         $result = [];
@@ -201,6 +206,24 @@ class exam_monitor {
         global $DB;
 
         $session = $DB->get_record('local_lumina_exam_sessions', ['id' => $sessionid], '*', MUST_EXIST);
+
+        if ($decision === 'reset') {
+            // Admin ACC & Reset Ujian: Kembalikan sesi ke status in_progress dengan peringatan 0/3
+            $session->status = 'in_progress';
+            $session->warningcount = 0;
+            $session->score = null;
+            $session->timefinish = 0;
+            $session->adminreviewerid = $adminid;
+            $session->adminreviewtime = time();
+            $session->adminreviewnotes = clean_text($notes ?: 'Di-ACC & di-reset oleh Admin agar murid dapat mengerjakan ulang.');
+
+            // Hapus log pelanggaran dan peringatan lama agar murid mulai dengan 0/3 peringatan
+            $DB->delete_records('local_lumina_exam_warnings', ['sessionid' => $sessionid]);
+            $DB->delete_records('local_lumina_exam_events', ['sessionid' => $sessionid]);
+
+            return $DB->update_record('local_lumina_exam_sessions', $session);
+        }
+
         $session->status = in_array($decision, ['approved', 'invalidated'], true) ? $decision : 'under_review';
         $session->adminreviewerid = $adminid;
         $session->adminreviewtime = time();

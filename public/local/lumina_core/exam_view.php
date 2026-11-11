@@ -76,6 +76,136 @@ $PAGE->set_title('CBT Ujian Terpantau: ' . format_string($cm->name));
 $PAGE->set_pagelayout('popup');
 
 echo $OUTPUT->header();
+
+// 1. If Exam is already completed or approved: Student cannot take it again without Admin Reset
+if ($session->status === 'completed' || $session->status === 'approved') {
+    ?>
+    <style>
+    .activity-navigation, #region-main > .activity-navigation, .urlselect, #luminaAiFab, .lumina-ai-fab {
+        display: none !important;
+    }
+    .cbt-terminal-wrap {
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background: #F8FAFC;
+    }
+    .cbt-terminal-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        max-width: 600px;
+        width: 100%;
+        padding: 2.75rem 2.25rem;
+        text-align: center;
+        box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.1);
+    }
+    </style>
+    <div class="cbt-terminal-wrap">
+        <div class="cbt-terminal-card border border-success border-opacity-50">
+            <div class="rounded-circle bg-success bg-opacity-10 text-success d-inline-flex p-3 mb-3">
+                <span class="material-symbols-outlined" style="font-size: 52px;">task_alt</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">Ujian Telah Selesai Dikerjakan</h3>
+            <p class="text-secondary mb-3">
+                Lembar jawaban untuk <strong><?php echo format_string($cm->name); ?></strong> telah berhasil dikumpulkan.
+            </p>
+
+            <div class="alert alert-light border rounded-2xl p-3 mb-3 text-start small" style="background: #F8FAFC;">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Status Sesi:</span>
+                    <span class="fw-bold text-success">Selesai &amp; Tersimpan</span>
+                </div>
+                <?php if (!is_null($session->score)): ?>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Nilai Evaluasi:</span>
+                    <span class="fw-bold text-primary"><?php echo number_format($session->score, 1); ?> / 100</span>
+                </div>
+                <?php endif; ?>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Waktu Pengumpulan:</span>
+                    <span class="fw-semibold text-dark"><?php echo $session->timefinish ? userdate($session->timefinish, '%d %b %Y, %H:%M WIB') : '-'; ?></span>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-4">
+                Sesuai kebijakan akademik, ujian CBT hanya dapat dikerjakan satu kali dan tidak dapat diulang kembali kecuali Administrator telah menyetujui (ACC / Reset) sesi Anda.
+            </p>
+
+            <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-primary rounded-pill py-2-5 px-4 font-semibold w-100 shadow-xs">
+                ← Kembali ke Dashboard Siswa
+            </a>
+        </div>
+    </div>
+    <?php
+    echo $OUTPUT->footer();
+    exit;
+}
+
+// 2. If Exam is Suspended (under_review) or Invalidated: Locked out until Admin ACC / Reset
+if ($session->status === 'under_review' || $session->status === 'invalidated') {
+    ?>
+    <style>
+    .activity-navigation, #region-main > .activity-navigation, .urlselect, #luminaAiFab, .lumina-ai-fab {
+        display: none !important;
+    }
+    .cbt-terminal-wrap {
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background: #F8FAFC;
+    }
+    .cbt-terminal-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        max-width: 600px;
+        width: 100%;
+        padding: 2.75rem 2.25rem;
+        text-align: center;
+        box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.1);
+    }
+    </style>
+    <div class="cbt-terminal-wrap">
+        <div class="cbt-terminal-card border border-danger border-opacity-50">
+            <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-inline-flex p-3 mb-3">
+                <span class="material-symbols-outlined" style="font-size: 52px;">gavel</span>
+            </div>
+            <h3 class="fw-bold text-danger mb-2">Sesi Ujian Terkunci!</h3>
+            <p class="text-dark fw-semibold mb-3">
+                Ujian <strong><?php echo format_string($cm->name); ?></strong> telah dikunci oleh sistem pengawasan anti-curang.
+            </p>
+
+            <div class="alert alert-danger bg-danger bg-opacity-10 border-danger border-opacity-25 rounded-2xl p-3 mb-3 text-start small">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Pelanggaran Terdeteksi:</span>
+                    <span class="fw-bold text-danger">3 / 3 Peringatan Terlampaui</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Kondisi Sesi:</span>
+                    <span class="badge bg-danger rounded-pill px-2-5 py-0-5 font-semibold">Terkunci / Ditangguhkan</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Izin Pengerjaan:</span>
+                    <span class="fw-semibold text-danger">Menunggu ACC / Reset dari Admin</span>
+                </div>
+            </div>
+
+            <p class="text-muted small mb-4">
+                Anda terdeteksi keluar dari mode layar penuh atau berpindah jendela browser melebihi batas toleransi. Sesuai protokol ujian terintegrasi, ujian ini tidak dapat dikerjakan lagi sampai Administrator menyetujui (ACC) atau me-reset sesi ujian Anda.
+            </p>
+
+            <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-outline-danger rounded-pill py-2-5 px-4 font-semibold w-100 shadow-xs">
+                ← Kembali ke Dashboard Siswa
+            </a>
+        </div>
+    </div>
+    <?php
+    echo $OUTPUT->footer();
+    exit;
+}
 ?>
 
 <!-- Suppress AI Floating Assistant & Chat Windows Completely -->
@@ -84,7 +214,10 @@ echo $OUTPUT->header();
 .lumina-ai-fab,
 #luminaAiChatWindow,
 .lumina-ai-chat-window,
-.lumina-chatbot-widget {
+.lumina-chatbot-widget,
+.activity-navigation,
+#region-main > .activity-navigation,
+.urlselect {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
@@ -954,6 +1087,8 @@ body {
                     isSuspended = true;
                     document.getElementById('suspensionOverlay').style.display = 'flex';
                     document.getElementById('fullscreenLockOverlay').style.display = 'none';
+                    const mainEl = document.getElementById('cbtExamMain');
+                    if (mainEl) mainEl.style.display = 'none';
                 } else {
                     showWarningToast(data.warning_level, data.message);
                 }
@@ -979,26 +1114,50 @@ body {
         if (lb) lb.textContent = 'Peringatan ' + count + ' / 3 Terdeteksi';
     }
 
+    function requestBrowserFullscreen() {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+            return el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+            return el.webkitRequestFullscreen();
+        } else if (el.mozRequestFullScreen) {
+            return el.mozRequestFullScreen();
+        } else if (el.msRequestFullscreen) {
+            return el.msRequestFullscreen();
+        }
+        return Promise.resolve();
+    }
+
+    function getFullscreenElement() {
+        return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+    }
+
     // Always Fullscreen Entry
     window.startExamInFullscreen = function() {
-        document.documentElement.requestFullscreen()
+        requestBrowserFullscreen()
             .then(() => {
                 hasStarted = true;
-                document.getElementById('cbtFullscreenGate').style.display = 'none';
+                const gate = document.getElementById('cbtFullscreenGate');
+                if (gate) gate.style.display = 'none';
             })
             .catch(err => {
+                console.log('Fullscreen request notice:', err);
                 hasStarted = true;
-                document.getElementById('cbtFullscreenGate').style.display = 'none';
+                const gate = document.getElementById('cbtFullscreenGate');
+                if (gate) gate.style.display = 'none';
             });
     };
 
     window.resumeFullscreen = function() {
-        document.documentElement.requestFullscreen()
+        requestBrowserFullscreen()
             .then(() => {
-                document.getElementById('fullscreenLockOverlay').style.display = 'none';
+                const lock = document.getElementById('fullscreenLockOverlay');
+                if (lock) lock.style.display = 'none';
             })
             .catch(err => {
-                console.log('Resume fullscreen err:', err);
+                console.log('Resume fullscreen notice:', err);
+                const lock = document.getElementById('fullscreenLockOverlay');
+                if (lock) lock.style.display = 'none';
             });
     };
 
@@ -1006,13 +1165,15 @@ body {
     function handleFullscreenChange() {
         if (!hasStarted || isSuspended || isCompleted) return;
 
-        if (!document.fullscreenElement) {
+        if (!getFullscreenElement()) {
             // Student exited fullscreen -> Lock screen immediately & record violation!
-            document.getElementById('fullscreenLockOverlay').style.display = 'flex';
+            const lock = document.getElementById('fullscreenLockOverlay');
+            if (lock) lock.style.display = 'flex';
             reportViolation('fullscreen_exit', 'Siswa keluar dari mode Layar Penuh (Fullscreen)');
         } else {
             // Student entered fullscreen -> Hide lockout overlay
-            document.getElementById('fullscreenLockOverlay').style.display = 'none';
+            const lock = document.getElementById('fullscreenLockOverlay');
+            if (lock) lock.style.display = 'none';
         }
     }
 

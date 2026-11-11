@@ -47,12 +47,18 @@ $notice = '';
 $noticetype = 'info';
 
 if ($action === 'resolve' && $sessionid > 0 && confirm_sesskey()) {
-    if (in_array($decision, ['approved', 'invalidated'], true)) {
+    if (in_array($decision, ['approved', 'invalidated', 'reset'], true)) {
         exam_monitor::resolve_session($sessionid, $USER->id, $decision, $notes);
-        $notice = ($decision === 'approved')
-            ? 'Sesi ujian telah disetujui (Approved) dan nilai dipulihkan!'
-            : 'Sesi ujian telah dibatalkan (Invalidated) karena pelanggaran integritas!';
-        $noticetype = ($decision === 'approved') ? 'success' : 'danger';
+        if ($decision === 'reset') {
+            $notice = 'Sesi ujian siswa berhasil di-ACC & di-reset! Siswa kini dapat mengerjakan kembali dengan status peringatan 0/3.';
+            $noticetype = 'success';
+        } else if ($decision === 'approved') {
+            $notice = 'Sesi ujian telah disetujui (Approved) dan nilai dipulihkan!';
+            $noticetype = 'success';
+        } else {
+            $notice = 'Sesi ujian telah dibatalkan (Invalidated) karena pelanggaran integritas!';
+            $noticetype = 'danger';
+        }
     }
 }
 
@@ -149,9 +155,13 @@ echo $OUTPUT->header();
                             <form method="post" action="exam_review.php?action=resolve" class="d-inline-flex gap-2">
                                 <input type="hidden" name="sesskey" value="<?php echo sesskey(); ?>">
                                 <input type="hidden" name="sessionid" value="<?php echo $item['session_id']; ?>">
+                                <button type="submit" name="decision" value="reset" class="btn btn-sm btn-primary text-white rounded-pill px-3 py-1 font-semibold shadow-xs" title="ACC & Reset Ujian agar murid dapat mengulang dari status bersih 0/3">
+                                    <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: -2px;">restart_alt</span>
+                                    ACC &amp; Reset (0/3)
+                                </button>
                                 <button type="submit" name="decision" value="approved" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 font-semibold" title="Pulihkan dan loloskan hasil ujian">
                                     <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: -2px;">check</span>
-                                    Setujui
+                                    Loloskan
                                 </button>
                                 <button type="submit" name="decision" value="invalidated" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 font-semibold" title="Batalkan nilai siswa karena kecurangan fatal">
                                     <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: -2px;">close</span>

@@ -2362,6 +2362,169 @@ body.pagelayout-admin {
     }
 }
 
+/* --- Lumina Modern Calendar Event Cards (Completed Green vs Pending Orange) --- */
+.calendarwrapper .event,
+.calendar_event_course,
+.calendar_event_site,
+.calendar_event_user,
+.calendar_event_group,
+.event[data-type="event"],
+.event[data-event-id],
+.maincalendar .event {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-top: 1.25rem !important;
+}
+
+.event > .card,
+.calendarwrapper .card,
+.maincalendar .card,
+.lumina-calendar-card {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    transition: all 0.25s ease !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #E2E8F0 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+
+    > .card-header {
+        padding: 1rem 1.25rem !important;
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+
+        .name {
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+        }
+    }
+
+    > .card-body {
+        padding: 1.25rem !important;
+        background: #FFFFFF !important;
+        color: #334155 !important;
+        border: none !important;
+    }
+
+    > .card-footer {
+        padding: 0.85rem 1.25rem !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+    }
+}
+
+/* STATE 1: PENDING / BELUM KELAR (ORANGE) */
+.event.lumina-event-pending > .card,
+.card.lumina-card-pending {
+    border: 1.5px solid #FED7AA !important;
+    border-left: 6px solid #F97316 !important;
+    box-shadow: 0 4px 18px rgba(249, 115, 22, 0.1) !important;
+
+    > .card-header {
+        background: #FFF7ED !important;
+        border-bottom: 1px solid #FFEDD5 !important;
+        color: #9A3412 !important;
+
+        .name {
+            color: #7C2D12 !important;
+        }
+    }
+
+    > .card-footer {
+        background: #FFFBF7 !important;
+        border-top: 1px solid #FFEDD5 !important;
+    }
+}
+
+.lumina-btn-pending {
+    background: #F97316 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 0.4rem 1.15rem !important;
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3) !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+
+    &:hover {
+        background: #EA580C !important;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.45) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+    }
+}
+
+/* STATE 2: COMPLETED / KELAR (HIJAU / GREEN) */
+.event.lumina-event-completed > .card,
+.card.lumina-card-completed {
+    border: 1.5px solid #BBF7D0 !important;
+    border-left: 6px solid #10B981 !important;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.1) !important;
+
+    > .card-header {
+        background: #F0FDF4 !important;
+        border-bottom: 1px solid #DCFCE7 !important;
+        color: #166534 !important;
+
+        .name {
+            color: #064E3B !important;
+        }
+    }
+
+    > .card-footer {
+        background: #F8FCF9 !important;
+        border-top: 1px solid #DCFCE7 !important;
+    }
+}
+
+.lumina-btn-completed {
+    background: #10B981 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 0.4rem 1.15rem !important;
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+
+    &:hover {
+        background: #059669 !important;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+    }
+}
+
 /* --- Grades Pages: Overview + User Report + Grader — Full Lumina Restyle --- */
 
 /* Shared: wrap grade report content in a card-like shell */

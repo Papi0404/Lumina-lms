@@ -471,67 +471,311 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
         }
     } catch (\Throwable $ce) { }
 
-    if (!empty($completedcmids) || !empty($completednames)) {
-        $quizguidehtml .= '
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var completedIds = ' . json_encode($completedcmids) . ';
-            var completedNames = ' . json_encode($completednames) . ';
+    // Calendar Modern Events Helper: Completed (Green) vs Pending (Orange)
+    $quizguidehtml .= '
+    <style>
+    /* Reset outer wrapper .event to ensure NO overlapping borders or backgrounds */
+    .calendarwrapper .event,
+    .calendar_event_course,
+    .calendar_event_site,
+    .calendar_event_user,
+    .calendar_event_group,
+    .event[data-type="event"],
+    .event[data-event-id],
+    .maincalendar .event {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin-top: 1.25rem !important;
+    }
 
-            function tagCompletedEvents() {
-                var eventNodes = document.querySelectorAll(".calendar_event_course, .event, [data-event-id], .eventlist .row");
-                eventNodes.forEach(function(node) {
-                    if (node.getAttribute("data-lumina-tagged")) return;
-                    var text = (node.innerText || "").toLowerCase();
-                    var links = node.querySelectorAll("a[href*=\'id=\']");
-                    var isCompleted = false;
+    /* Base event card styling */
+    .event > .card,
+    .calendarwrapper .card,
+    .maincalendar .card,
+    .lumina-calendar-card {
+        border-radius: 16px !important;
+        overflow: hidden !important;
+        transition: all 0.25s ease !important;
+        background: #FFFFFF !important;
+        border: 1.5px solid #E2E8F0 !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    }
 
-                    links.forEach(function(a) {
-                        var match = a.href.match(/id=(\d+)/);
-                        if (match && completedIds.indexOf(parseInt(match[1])) !== -1) {
-                            isCompleted = true;
-                        }
-                    });
+    /* Card Header inside event */
+    .event > .card > .card-header,
+    .calendarwrapper .card > .card-header,
+    .maincalendar .card > .card-header,
+    .lumina-calendar-card > .card-header {
+        padding: 1rem 1.25rem !important;
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
 
-                    if (!isCompleted) {
-                        for (var i = 0; i < completedNames.length; i++) {
-                            if (completedNames[i] && text.indexOf(completedNames[i]) !== -1) {
-                                isCompleted = true;
-                                break;
-                            }
-                        }
-                    }
+    .event > .card > .card-header .name,
+    .calendarwrapper .card > .card-header .name,
+    .maincalendar .card > .card-header .name,
+    .lumina-calendar-card > .card-header .name {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
 
-                    if (isCompleted) {
-                        node.setAttribute("data-lumina-tagged", "true");
-                        node.style.borderLeft = "4px solid #10B981";
-                        node.style.background = "#F0FDF4";
-                        node.style.borderRadius = "12px";
+    /* Card Body */
+    .event > .card > .card-body,
+    .calendarwrapper .card > .card-body,
+    .maincalendar .card > .card-body,
+    .lumina-calendar-card > .card-body {
+        padding: 1.25rem !important;
+        background: #FFFFFF !important;
+        color: #334155 !important;
+        border: none !important;
+    }
 
-                        var titleNode = node.querySelector("h3, h4, h5, .name, .eventname, a.card-link");
-                        if (titleNode && !titleNode.querySelector(".lumina-completed-badge")) {
-                            var badge = document.createElement("span");
-                            badge.className = "lumina-completed-badge badge bg-success text-white rounded-pill ms-2 px-2-5 py-1 font-semibold";
-                            badge.style.fontSize = "0.72rem";
-                            badge.innerHTML = "✓ Sudah Selesai &amp; Dikumpulkan";
-                            titleNode.appendChild(badge);
-                        }
+    /* Card Footer */
+    .event > .card > .card-footer,
+    .calendarwrapper .card > .card-footer,
+    .maincalendar .card > .card-footer,
+    .lumina-calendar-card > .card-footer {
+        padding: 0.85rem 1.25rem !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+    }
 
-                        var actionBtn = node.querySelector(".card-footer a, a.btn, .commands a");
-                        if (actionBtn && actionBtn.innerText.indexOf("Go to") !== -1) {
-                            actionBtn.className = "btn btn-sm btn-outline-success rounded-pill px-3 py-1 font-semibold";
-                            actionBtn.innerHTML = "✓ Selesai (Lihat Aktivitas)";
-                        }
-                    }
-                });
+    /* ========================================================== */
+    /* STATE 1: PENDING / BELUM KELAR (ORANGE THEME)              */
+    /* ========================================================== */
+    .event.lumina-event-pending > .card,
+    .card.lumina-card-pending {
+        border: 1.5px solid #FED7AA !important;
+        border-left: 6px solid #F97316 !important;
+        box-shadow: 0 4px 18px rgba(249, 115, 22, 0.1) !important;
+    }
+
+    .event.lumina-event-pending > .card > .card-header,
+    .card.lumina-card-pending > .card-header {
+        background: #FFF7ED !important;
+        border-bottom: 1px solid #FFEDD5 !important;
+        color: #9A3412 !important;
+    }
+
+    .event.lumina-event-pending > .card > .card-header .name,
+    .card.lumina-card-pending > .card-header .name {
+        color: #7C2D12 !important;
+    }
+
+    .event.lumina-event-pending > .card > .card-footer,
+    .card.lumina-card-pending > .card-footer {
+        background: #FFFBF7 !important;
+        border-top: 1px solid #FFEDD5 !important;
+    }
+
+    .lumina-btn-pending {
+        background: #F97316 !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 9999px !important;
+        padding: 0.4rem 1.15rem !important;
+        font-size: 0.8125rem !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3) !important;
+        text-decoration: none !important;
+        transition: all 0.15s ease !important;
+    }
+    .lumina-btn-pending:hover {
+        background: #EA580C !important;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.45) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+    }
+
+    /* ========================================================== */
+    /* STATE 2: COMPLETED / KELAR (HIJAU / GREEN THEME)          */
+    /* ========================================================== */
+    .event.lumina-event-completed > .card,
+    .card.lumina-card-completed {
+        border: 1.5px solid #BBF7D0 !important;
+        border-left: 6px solid #10B981 !important;
+        box-shadow: 0 4px 18px rgba(16, 185, 129, 0.1) !important;
+    }
+
+    .event.lumina-event-completed > .card > .card-header,
+    .card.lumina-card-completed > .card-header {
+        background: #F0FDF4 !important;
+        border-bottom: 1px solid #DCFCE7 !important;
+        color: #166534 !important;
+    }
+
+    .event.lumina-event-completed > .card > .card-header .name,
+    .card.lumina-card-completed > .card-header .name {
+        color: #064E3B !important;
+    }
+
+    .event.lumina-event-completed > .card > .card-footer,
+    .card.lumina-card-completed > .card-footer {
+        background: #F8FCF9 !important;
+        border-top: 1px solid #DCFCE7 !important;
+    }
+
+    .lumina-btn-completed {
+        background: #10B981 !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 9999px !important;
+        padding: 0.4rem 1.15rem !important;
+        font-size: 0.8125rem !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+        text-decoration: none !important;
+        transition: all 0.15s ease !important;
+    }
+    .lumina-btn-completed:hover {
+        background: #059669 !important;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+    }
+    </style>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var completedIds = ' . json_encode($completedcmids) . ';
+        var completedNames = ' . json_encode($completednames) . ';
+
+        function tagCalendarEvents() {
+            var eventEls = document.querySelectorAll(".event, [data-region=\'event-item\'], .maincalendar .event");
+            if (!eventEls.length) {
+                eventEls = document.querySelectorAll("[data-type=\'event\'], [data-event-id]");
             }
 
-            tagCompletedEvents();
-            setTimeout(tagCompletedEvents, 400);
-            setTimeout(tagCompletedEvents, 1200);
-        });
-        </script>';
-    }
+            var processedCards = new Set();
+
+            eventEls.forEach(function(eventEl) {
+                // Ensure outer wrapper has NO background or borders that could overlay or clash
+                eventEl.style.border = "none";
+                eventEl.style.background = "transparent";
+                eventEl.style.padding = "0";
+                eventEl.style.boxShadow = "none";
+
+                var card = eventEl.classList.contains("card") ? eventEl : eventEl.querySelector(".card");
+                if (!card) return;
+                if (processedCards.has(card)) return;
+                processedCards.add(card);
+
+                // Reset any previously applied inline styles so CSS classes take full clean effect
+                card.style.borderLeft = "";
+                card.style.background = "";
+                card.style.borderRadius = "";
+
+                var text = (eventEl.innerText || "").toLowerCase();
+                var links = eventEl.querySelectorAll("a[href*=\'id=\']");
+                var isCompleted = false;
+
+                links.forEach(function(a) {
+                    var match = a.href.match(/id=(\d+)/);
+                    if (match && completedIds.indexOf(parseInt(match[1])) !== -1) {
+                        isCompleted = true;
+                    }
+                });
+
+                if (!isCompleted) {
+                    for (var i = 0; i < completedNames.length; i++) {
+                        if (completedNames[i] && text.indexOf(completedNames[i]) !== -1) {
+                            isCompleted = true;
+                            break;
+                        }
+                    }
+                }
+
+                var titleNode = card.querySelector("h3, h4, h5, .name, .eventname");
+                var actionBtn = card.querySelector(".card-footer a, a.card-link, .commands a");
+
+                if (isCompleted) {
+                    eventEl.classList.remove("lumina-event-pending");
+                    eventEl.classList.add("lumina-event-completed");
+                    card.classList.remove("lumina-card-pending");
+                    card.classList.add("lumina-card-completed");
+
+                    if (titleNode) {
+                        var existingBadge = titleNode.querySelector(".lumina-status-badge");
+                        if (!existingBadge) {
+                            existingBadge = document.createElement("span");
+                            titleNode.appendChild(existingBadge);
+                        }
+                        existingBadge.className = "lumina-status-badge badge rounded-pill ms-2 px-2-5 py-1 font-semibold";
+                        existingBadge.style.cssText = "background: #10B981 !important; color: #FFFFFF !important; font-size: 0.72rem !important; vertical-align: middle !important; display: inline-flex !important; align-items: center !important; gap: 4px !important;";
+                        existingBadge.innerHTML = "✓ Sudah Selesai &amp; Dikumpulkan";
+                    }
+
+                    if (actionBtn) {
+                        actionBtn.className = "lumina-btn-completed text-decoration-none";
+                        actionBtn.innerHTML = "<span class=\'material-symbols-outlined\' style=\'font-size: 16px; vertical-align: -2px;\'>task_alt</span> ✓ Sudah Selesai (Lihat Aktivitas)";
+                    }
+                } else {
+                    // Pending / Belum Selesai -> ORANGE
+                    eventEl.classList.remove("lumina-event-completed");
+                    eventEl.classList.add("lumina-event-pending");
+                    card.classList.remove("lumina-card-completed");
+                    card.classList.add("lumina-card-pending");
+
+                    if (titleNode) {
+                        var existingBadge = titleNode.querySelector(".lumina-status-badge");
+                        if (!existingBadge) {
+                            existingBadge = document.createElement("span");
+                            titleNode.appendChild(existingBadge);
+                        }
+                        existingBadge.className = "lumina-status-badge badge rounded-pill ms-2 px-2-5 py-1 font-semibold";
+                        existingBadge.style.cssText = "background: #F97316 !important; color: #FFFFFF !important; font-size: 0.72rem !important; vertical-align: middle !important; display: inline-flex !important; align-items: center !important; gap: 4px !important;";
+                        existingBadge.innerHTML = "⏳ Belum Dikerjakan";
+                    }
+
+                    if (actionBtn && (actionBtn.innerText.indexOf("Go to") !== -1 || actionBtn.innerText.indexOf("activity") !== -1 || actionBtn.classList.contains("card-link"))) {
+                        actionBtn.className = "lumina-btn-pending text-decoration-none";
+                        actionBtn.innerHTML = "<span class=\'material-symbols-outlined\' style=\'font-size: 16px; vertical-align: -2px;\'>arrow_forward</span> Kerjakan Sekarang";
+                    }
+                }
+            });
+        }
+
+        tagCalendarEvents();
+        setTimeout(tagCalendarEvents, 300);
+        setTimeout(tagCalendarEvents, 800);
+        setTimeout(tagCalendarEvents, 1800);
+
+        // MutationObserver for AJAX pagination or filter switches
+        var calWrapper = document.querySelector(\'[data-region="calendar"]\') || document.querySelector(\'.calendarwrapper\') || document.querySelector(\'.maincalendar\');
+        if (calWrapper && window.MutationObserver) {
+            var observer = new MutationObserver(function() {
+                tagCalendarEvents();
+            });
+            observer.observe(calWrapper, { childList: true, subtree: true });
+        }
+    });
+    </script>';
 }
 
 // 3. Smart Resource Library URL (Role & Course-isolated)

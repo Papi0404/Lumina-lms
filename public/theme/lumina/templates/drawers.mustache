@@ -382,11 +382,17 @@
                                         <div>
                                             <h6 class="student-name mb-0">{{ student_name }}</h6>
                                             <span class="assignment-meta">{{ course_name }} &bull; {{ assignment_name }}</span>
+                                            {{#submission_stats}}
+                                            <div class="mt-1 d-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-users text-primary" style="font-size: 0.72rem;"></i>
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2 py-0-5 font-semibold" style="font-size: 0.7rem;">{{ submission_stats }}</span>
+                                            </div>
+                                            {{/submission_stats}}
                                         </div>
                                     </div>
                                     <div class="queue-actions">
                                         <span class="submission-time text-muted"><i class="fa-regular fa-clock me-1"></i>{{ submitted_ago }}</span>
-                                        <a href="{{{ grade_url }}}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1">Beri Nilai</a>
+                                        <a href="{{{ grade_url }}}" class="btn btn-sm btn-primary text-white rounded-pill px-3 py-1 font-semibold shadow-xs">Beri Nilai</a>
                                     </div>
                                 </div>
                                 {{/lumina_teacher.pending_submissions}}
@@ -523,12 +529,17 @@
                             <span class="action-subtitle">Ruang 100% rahasia mandiri</span>
                         </div>
                     </a>
-                    <a href="{{{ lumina_nav.virtualclass_url }}}" class="quick-action-card">
-                        <div class="action-icon bg-green">
+                    <a href="{{{ lumina_nav.virtualclass_url }}}" class="quick-action-card {{#lumina_nav.virtualclass_is_active}}border-success shadow-sm{{/lumina_nav.virtualclass_is_active}}">
+                        <div class="action-icon {{#lumina_nav.virtualclass_is_active}}bg-success text-white{{/lumina_nav.virtualclass_is_active}}{{^lumina_nav.virtualclass_is_active}}bg-green{{/lumina_nav.virtualclass_is_active}}">
                             <span class="material-symbols-outlined">{{ lumina_nav.virtualclass_icon }}</span>
                         </div>
                         <div class="action-meta">
-                            <span class="action-title">{{ lumina_nav.virtualclass_title }}</span>
+                            <span class="action-title d-flex align-items-center gap-1">
+                                {{ lumina_nav.virtualclass_title }}
+                                {{#lumina_nav.virtualclass_is_active}}
+                                <span class="badge bg-danger text-white rounded-pill px-1-5 py-0-5 font-bold" style="font-size: 0.62rem; animation: pulse 1.5s infinite;">LIVE</span>
+                                {{/lumina_nav.virtualclass_is_active}}
+                            </span>
                             <span class="action-subtitle">{{ lumina_nav.virtualclass_subtitle }}</span>
                         </div>
                     </a>
@@ -968,6 +979,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 200);
     }
+
+    // Auto-detect sticky footer presence and add hasstickyfooter class to body & #page
+    function checkStickyFooter() {
+        if (document.querySelector('.stickyfooter, #fgroup_id_buttonar, .fitem_actionbuttons')) {
+            document.body.classList.add('hasstickyfooter');
+            var pageEl = document.getElementById('page');
+            if (pageEl) pageEl.classList.add('hasstickyfooter');
+        }
+    }
+    checkStickyFooter();
+    setTimeout(checkStickyFooter, 300);
 });
 </script>
 

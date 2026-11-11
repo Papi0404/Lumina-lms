@@ -262,12 +262,44 @@ class theme_lumina_role_resolver {
                 $submissions = $DB->get_records_sql($pendingsql, $params, 0, 8);
                 $pendinggradingcount = count($submissions);
 
+                $course_student_counts = [];
+                $assign_submitted_counts = [];
+
                 foreach ($submissions as $sub) {
-                    // Build a safe grade URL using the course module ID (cmid).
-                    // /mod/assign/view.php requires id=cmid, not the assign record id.
+                    // Compute course enrollment count.
+                    if (!isset($course_student_counts[$sub->courseid])) {
+                        $course_student_counts[$sub->courseid] = (int)$DB->count_records_sql(
+                            "SELECT COUNT(DISTINCT ra.userid)
+                               FROM {role_assignments} ra
+                               JOIN {context} ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+                               JOIN {role} r ON r.id = ra.roleid
+                              WHERE ctx.instanceid = ? AND r.archetype = 'student'",
+                            [$sub->courseid]
+                        );
+                    }
+                    $enrolled_total = $course_student_counts[$sub->courseid];
+
+                    // Compute total submitted students for this assignment.
+                    if (!isset($assign_submitted_counts[$sub->assignment])) {
+                        $assign_submitted_counts[$sub->assignment] = (int)$DB->count_records('assign_submission', [
+                            'assignment' => $sub->assignment,
+                            'status'     => 'submitted',
+                            'latest'     => 1,
+                        ]);
+                    }
+                    $submitted_total = $assign_submitted_counts[$sub->assignment];
+                    $submission_stats = "$submitted_total dari $enrolled_total murid telah mengumpulkan tugas";
+
+                    // Build direct grade URL to single student grader.
                     $gradeurl = '#';
+                    $gradingurl = '#';
                     if (!empty($sub->cmid)) {
                         $gradeurl = (new \core\url('/mod/assign/view.php', [
+                            'id' => $sub->cmid,
+                            'action' => 'grader',
+                            'userid' => $sub->userid,
+                        ]))->out(false);
+                        $gradingurl = (new \core\url('/mod/assign/view.php', [
                             'id' => $sub->cmid,
                             'action' => 'grading',
                         ]))->out(false);
@@ -279,7 +311,11 @@ class theme_lumina_role_resolver {
                         'course_name'      => format_string($sub->course_shortname ?: $sub->course_name),
                         'student_name'     => fullname($sub),
                         'submitted_ago'    => self::time_ago($sub->timemodified),
+                        'submission_stats' => $submission_stats,
+                        'submitted_total'  => $submitted_total,
+                        'enrolled_total'   => $enrolled_total,
                         'grade_url'        => $gradeurl,
+                        'grading_url'      => $gradingurl,
                     ];
                 }
 

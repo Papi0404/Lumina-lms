@@ -4969,12 +4969,17 @@ body.lumina-rail-collapsed .stickyfooter {
 }
 
 /* Content clearance so bottom-most form fields are never obscured by sticky footer */
-body.hasstickyfooter {
+body.hasstickyfooter,
+#page.hasstickyfooter,
+body:has(.stickyfooter),
+body:has(#fgroup_id_buttonar) {
     #page,
     .lumina-main-viewport,
     #region-main,
-    #topofscroll {
-        padding-bottom: 95px !important;
+    #topofscroll,
+    #region-main-box,
+    form.mform {
+        padding-bottom: 120px !important;
     }
 }
 
@@ -5106,10 +5111,13 @@ body.hasstickyfooter {
    ========================================================================== */
 
 /* Raise Lumina AI FAB when sticky footer is present so it never covers action buttons */
-body.hasstickyfooter {
+body.hasstickyfooter,
+#page.hasstickyfooter,
+body:has(.stickyfooter),
+body:has(#fgroup_id_buttonar) {
     .lumina-ai-fab,
     #luminaAiFab {
-        bottom: calc(var(--stickyfooter-height, 65px) + 24px) !important;
+        bottom: calc(var(--stickyfooter-height, 65px) + 30px) !important;
         transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 }

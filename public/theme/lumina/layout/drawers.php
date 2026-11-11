@@ -242,22 +242,37 @@ $admincreatecourseurl = $firstcategoryid
     ? (new \core\url('/course/edit.php', ['category' => $firstcategoryid]))->out(false)
     : (new \core\url('/course/management.php'))->out(false);
 
-// Check if any BigBlueButton virtual class exists
-$hasbbb = false;
-$bbbcmid = null;
-if ($activecourseid) {
-    $bbbcmid = $DB->get_field_sql(
-        "SELECT cm.id FROM {course_modules} cm
-         JOIN {modules} m ON m.id = cm.module
-         WHERE cm.course = ? AND m.name = 'bigbluebuttonbn' AND cm.deletioninprogress = 0",
-        [$activecourseid]
-    );
-    $hasbbb = !empty($bbbcmid);
+// Check Virtual Class (Zoom / Google Meet) via Lumina Core Manager
+$virtualclassurl = (new \core\url('/local/lumina_core/virtual_class.php'))->out(false);
+$virtualclasstitle = 'Kelas Virtual';
+$virtualclasssub   = 'Zoom & Google Meet';
+$virtualclassicon  = 'videocam';
+$virtualclassisactive = false;
+
+if (class_exists('\local_lumina_core\virtual_class_manager')) {
+    if ($is_teacher || $is_admin) {
+        $virtualclassurl   = (new \core\url('/local/lumina_core/virtual_class.php'))->out(false);
+        $virtualclasstitle = 'Buka Kelas Virtual';
+        $virtualclasssub   = 'Kelola Zoom & Google Meet';
+        $virtualclassicon  = 'videocam';
+    } else if ($is_student) {
+        $activemeets = \local_lumina_core\virtual_class_manager::get_student_active_meetings($USER->id);
+        if (!empty($activemeets)) {
+            $virtualclassisactive = true;
+            if (count($activemeets) === 1) {
+                $virtualclassurl   = $activemeets[0]['url'];
+                $virtualclasstitle = $activemeets[0]['platform'] . ': ' . $activemeets[0]['course_shortname'];
+                $virtualclasssub   = 'Sesi Tatap Muka Aktif (Klik Masuk)';
+                $virtualclassicon  = 'video_camera_front';
+            } else {
+                $virtualclassurl   = (new \core\url('/local/lumina_core/virtual_class.php'))->out(false);
+                $virtualclasstitle = count($activemeets) . ' Kelas Daring Aktif';
+                $virtualclasssub   = 'Pilih ruang tatap muka aktif';
+                $virtualclassicon  = 'video_camera_front';
+            }
+        }
+    }
 }
-$virtualclassurl = $hasbbb ? (new \core\url('/mod/bigbluebuttonbn/view.php', ['id' => $bbbcmid]))->out(false) : $forumurl;
-$virtualclasstitle = $hasbbb ? 'Kelas Virtual' : 'Forum Diskusi';
-$virtualclasssub   = $hasbbb ? 'Ruang temu aktif' : 'Tanya jawab dosen & rekan';
-$virtualclassicon  = $hasbbb ? 'video_camera_front' : 'forum';
 
 $is_server_settings = (strpos($currentpagepath, '/admin/category.php') !== false && optional_param('category', '', PARAM_SAFEDIR) === 'server');
 $is_admin_search = (strpos($currentpagepath, '/admin/search.php') !== false || (strpos($currentpagepath, '/admin') !== false && strpos($currentpagepath, '/admin/user.php') === false && !$is_server_settings));
@@ -353,6 +368,7 @@ $templatecontext = [
         'virtualclass_title' => $virtualclasstitle,
         'virtualclass_subtitle' => $virtualclasssub,
         'virtualclass_icon' => $virtualclassicon,
+        'virtualclass_is_active' => $virtualclassisactive,
     ],
     'lumina_semester'            => $luminadata['semester_label'] ?? 'Semester Ganjil 2026/2027',
     'lumina_upcoming_assignments'=> $luminadata['upcoming_assignments'] ?? [],

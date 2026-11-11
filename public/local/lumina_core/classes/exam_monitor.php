@@ -113,11 +113,30 @@ class exam_monitor {
         $newwarning = min(3, (int)$session->warningcount + 1);
         $session->warningcount = $newwarning;
 
+        $reasonlabel = 'Terdeteksi meninggalkan layar ujian';
+        if ($eventtype === 'keyboard_attempt') {
+            $reasonlabel = 'Papan ketik (Keyboard) ditekan (Dilarang, hanya mouse yang diizinkan)';
+        } else if ($eventtype === 'three_finger_gesture' || $eventtype === 'three_finger_gesture_or_minimize') {
+            $reasonlabel = 'Percobaan gesture 3 jari touchpad / meminimalkan jendela ujian';
+        } else if ($eventtype === 'trackpad_gesture') {
+            $reasonlabel = 'Percobaan gesture zoom / swipe pada trackpad';
+        } else if ($eventtype === 'fullscreen_exit') {
+            $reasonlabel = 'Keluar dari mode Layar Penuh (Fullscreen)';
+        } else if ($eventtype === 'blur') {
+            $reasonlabel = 'Jendela browser diminimalkan / beralih aplikasi (Alt+Tab / Gesture)';
+        } else if ($eventtype === 'visibility_hidden') {
+            $reasonlabel = 'Tab browser disembunyikan / beralih tab lain';
+        } else if ($eventtype === 'mouseleave') {
+            $reasonlabel = 'Kursor mouse meninggalkan batas layar ujian';
+        } else if ($eventtype === 'clipboard_copy') {
+            $reasonlabel = 'Percobaan menyalin teks / copy-paste soal';
+        }
+
         // Record warning log
         $w = new stdClass();
         $w->sessionid = $sessionid;
         $w->warninglevel = $newwarning;
-        $w->reason = 'Terdeteksi meninggalkan layar ujian: ' . $eventtype;
+        $w->reason = $reasonlabel . (!empty($metadata) ? " ($metadata)" : '');
         $w->issuedat = $now;
         $DB->insert_record('local_lumina_exam_warnings', $w);
 
@@ -131,9 +150,9 @@ class exam_monitor {
         $DB->update_record('local_lumina_exam_sessions', $session);
 
         $messages = [
-            1 => 'Peringatan 1 dari 3: Jangan meninggalkan layar ujian! Setiap perpindahan jendela tercatat dalam sistem.',
-            2 => 'Peringatan 2 dari 3: Pelanggaran terdeteksi! Satu kali lagi meninggalkan layar, ujian Anda akan otomatis ditangguhkan ke Administrator!',
-            3 => 'Peringatan 3 dari 3: Ujian Anda telah ditangguhkan dan dikunci. Nilai Anda diserahkan ke Administrator untuk ditinjau.',
+            1 => 'Peringatan 1 dari 3: ' . $reasonlabel . '. Tetap di layar ujian & gunakan mouse!',
+            2 => 'Peringatan 2 dari 3: Pelanggaran terdeteksi (' . $reasonlabel . ')! Satu pelanggaran lagi, ujian Anda akan otomatis dikunci & ditangguhkan ke Administrator!',
+            3 => 'Peringatan 3 dari 3: Batas pelanggaran tercapai. Ujian Anda telah ditangguhkan dan dikunci untuk peninjauan Administrator.',
         ];
 
         return [
@@ -145,7 +164,156 @@ class exam_monitor {
     }
 
     /**
+     * Human readable event type labels.
+     *
+     * @param string $eventtype
+     * @return string
+     */
+    public static function get_event_label(string $eventtype): string {
+        $labels = [
+            'keyboard_attempt' => 'Papan Ketik Ditekan (Diblokir)',
+            'three_finger_gesture' => 'Gesture 3 Jari Touchpad',
+            'three_finger_gesture_or_minimize' => 'Percobaan Minimize Layar',
+            'trackpad_gesture' => 'Gesture Trackpad / Pinch Zoom',
+            'fullscreen_exit' => 'Keluar Layar Penuh (Fullscreen)',
+            'blur' => 'Pindah Jendela / Alt+Tab',
+            'visibility_hidden' => 'Pindah Tab Browser',
+            'mouseleave' => 'Kursor Keluar Layar',
+            'clipboard_copy' => 'Percobaan Copy / Salin Teks',
+            'exam_submitted' => 'Ujian Dikumpulkan',
+        ];
+        return $labels[$eventtype] ?? ('Pelanggaran (' . $eventtype . ')');
+    }
+
+    /**
+     * Badge CSS class for event type.
+     *
+     * @param string $eventtype
+     * @return string
+     */
+    public static function get_event_badge_class(string $eventtype): string {
+        $classes = [
+            'keyboard_attempt' => 'bg-danger text-white',
+            'three_finger_gesture' => 'bg-danger text-white',
+            'three_finger_gesture_or_minimize' => 'bg-danger text-white',
+            'fullscreen_exit' => 'bg-danger text-white',
+            'trackpad_gesture' => 'bg-warning text-dark',
+            'blur' => 'bg-warning text-dark',
+            'visibility_hidden' => 'bg-warning text-dark',
+            'mouseleave' => 'bg-secondary text-white',
+            'clipboard_copy' => 'bg-danger text-white',
+        ];
+        return $classes[$eventtype] ?? 'bg-secondary text-white';
+    }
+
+    /**
+     * Material symbol icon for event type.
+     *
+     * @param string $eventtype
+     * @return string
+     */
+    public static function get_event_icon(string $eventtype): string {
+        $icons = [
+            'keyboard_attempt' => 'keyboard_off',
+            'three_finger_gesture' => 'pan_tool',
+            'three_finger_gesture_or_minimize' => 'minimize',
+            'trackpad_gesture' => 'pinch',
+            'fullscreen_exit' => 'fullscreen_exit',
+            'blur' => 'tab_unselected',
+            'visibility_hidden' => 'visibility_off',
+            'mouseleave' => 'mouse',
+            'clipboard_copy' => 'content_copy',
+        ];
+        return $icons[$eventtype] ?? 'warning';
+    }
+
+    /**
+     * Get all events for a specific exam session.
+     *
+     * @param int $sessionid
+     * @return array
+     */
+    public static function get_session_events(int $sessionid): array {
+        global $DB;
+
+        $events = $DB->get_records_select(
+            'local_lumina_exam_events',
+            'sessionid = ? AND eventtype != ?',
+            [$sessionid, 'exam_submitted'],
+            'id DESC',
+            '*',
+            0,
+            100
+        );
+
+        $list = [];
+        foreach ($events as $ev) {
+            $list[] = [
+                'id' => (int)$ev->id,
+                'eventtype' => $ev->eventtype,
+                'label' => self::get_event_label($ev->eventtype),
+                'badge_class' => self::get_event_badge_class($ev->eventtype),
+                'icon' => self::get_event_icon($ev->eventtype),
+                'time' => userdate($ev->eventtime, '%H:%M:%S WIB'),
+                'date' => userdate($ev->eventtime, '%d %b %Y, %H:%M:%S'),
+                'metadata' => format_string($ev->metadata ?: '-'),
+            ];
+        }
+        return $list;
+    }
+
+    /**
+     * Get live audit feed of all recent violations.
+     *
+     * @param int $since
+     * @return array
+     */
+    public static function get_live_audit_feed(int $since = 0): array {
+        global $DB;
+
+        $params = ['exam_submitted'];
+        $where = "ev.eventtype != ?";
+        if ($since > 0) {
+            $where .= " AND ev.eventtime > ?";
+            $params[] = $since;
+        }
+
+        $sql = "SELECT ev.id, ev.sessionid, ev.userid, ev.eventtype, ev.eventtime, ev.metadata,
+                       u.firstname, u.lastname, u.email,
+                       s.warningcount, s.status,
+                       c.shortname AS courseshortname
+                  FROM {local_lumina_exam_events} ev
+                  JOIN {user} u ON u.id = ev.userid
+                  JOIN {local_lumina_exam_sessions} s ON s.id = ev.sessionid
+                  JOIN {course} c ON c.id = s.courseid
+                 WHERE $where
+              ORDER BY ev.id DESC";
+
+        $records = $DB->get_records_sql($sql, $params, 0, 50);
+        $feed = [];
+        foreach ($records as $r) {
+            $feed[] = [
+                'id' => (int)$r->id,
+                'sessionid' => (int)$r->sessionid,
+                'student_name' => fullname($r),
+                'student_email' => $r->email,
+                'course' => format_string($r->courseshortname),
+                'warning_count' => (int)$r->warningcount,
+                'eventtype' => $r->eventtype,
+                'label' => self::get_event_label($r->eventtype),
+                'icon' => self::get_event_icon($r->eventtype),
+                'badge_class' => self::get_event_badge_class($r->eventtype),
+                'metadata' => format_string($r->metadata ?: '-'),
+                'time_formatted' => userdate($r->eventtime, '%H:%M:%S WIB'),
+                'timestamp' => (int)$r->eventtime,
+            ];
+        }
+        return $feed;
+    }
+
+    /**
      * Get all exam sessions flagged for admin review.
+     * Shows sessions with 1+ warnings or any logged violations!
      *
      * @return array
      */
@@ -159,14 +327,21 @@ class exam_monitor {
                   FROM {local_lumina_exam_sessions} s
                   JOIN {user} u ON u.id = s.userid
                   JOIN {course} c ON c.id = s.courseid
-                 WHERE s.status IN ('under_review', 'invalidated') OR s.warningcount >= 3
-              ORDER BY s.id DESC";
+                 WHERE s.status IN ('under_review', 'invalidated')
+                    OR s.warningcount >= 1
+                    OR EXISTS (
+                        SELECT 1 FROM {local_lumina_exam_events} ev
+                         WHERE ev.sessionid = s.id AND ev.eventtype != 'exam_submitted'
+                    )
+              ORDER BY s.warningcount DESC, s.id DESC";
 
         $rows = $DB->get_records_sql($sql);
         $result = [];
 
         foreach ($rows as $r) {
-            $eventcount = $DB->count_records('local_lumina_exam_events', ['sessionid' => $r->id]);
+            $eventcount = $DB->count_records_select('local_lumina_exam_events', 'sessionid = ? AND eventtype != ?', [$r->id, 'exam_submitted']);
+            $latestevents = $DB->get_records_select('local_lumina_exam_events', 'sessionid = ? AND eventtype != ?', [$r->id, 'exam_submitted'], 'id DESC', 'eventtype, metadata, eventtime', 0, 1);
+            $latestevent = !empty($latestevents) ? reset($latestevents) : null;
             $activityname = $DB->get_field_sql(
                 "SELECT COALESCE(h.name, a.name, 'Ujian H5P / Kuis')
                    FROM {course_modules} cm
@@ -176,17 +351,27 @@ class exam_monitor {
                 [$r->activityid]
             );
 
+            $latestlabel = '-';
+            $latesttime = '-';
+            if ($latestevent) {
+                $latestlabel = self::get_event_label($latestevent->eventtype) . (!empty($latestevent->metadata) ? ' (' . $latestevent->metadata . ')' : '');
+                $latesttime = userdate($latestevent->eventtime, '%H:%M:%S WIB');
+            }
+
             $result[] = [
-                'session_id'    => $r->id,
-                'course_name'   => format_string($r->coursename),
-                'activity_name' => format_string($activityname ?: 'Ujian Interaktif H5P'),
-                'student_name'  => fullname($r),
-                'student_email' => $r->email,
-                'warning_count' => $r->warningcount,
-                'event_count'   => $eventcount,
-                'start_time'    => userdate($r->timestart, '%d %b %Y, %H:%M'),
-                'finish_time'   => $r->timefinish ? userdate($r->timefinish, '%d %b %Y, %H:%M') : '-',
-                'status'        => $r->status,
+                'session_id'       => $r->id,
+                'course_name'      => format_string($r->coursename),
+                'activity_name'    => format_string($activityname ?: 'Ujian Interaktif H5P'),
+                'student_name'     => fullname($r),
+                'student_email'    => $r->email,
+                'warning_count'    => (int)$r->warningcount,
+                'event_count'      => $eventcount,
+                'latest_violation' => $latestlabel,
+                'latest_time'      => $latesttime,
+                'start_time'       => userdate($r->timestart, '%d %b %Y, %H:%M'),
+                'finish_time'      => $r->timefinish ? userdate($r->timefinish, '%d %b %Y, %H:%M') : 'Sedang Berlangsung',
+                'status'           => $r->status,
+                'events'           => self::get_session_events((int)$r->id),
             ];
         }
 

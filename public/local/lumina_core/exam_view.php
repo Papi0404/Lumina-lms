@@ -470,6 +470,12 @@ body {
                 Layar Penuh Terkunci
             </span>
 
+            <!-- Mouse Only Mode Badge -->
+            <span class="badge bg-info bg-opacity-25 text-cyan border border-info border-opacity-50 rounded-pill px-3 py-1 font-semibold d-none d-md-inline-flex align-items-center gap-1" title="Papan ketik dinonaktifkan sistem. Hanya mouse yang diizinkan untuk navigasi dan menjawab soal.">
+                <span class="material-symbols-outlined" style="font-size: 14px;">mouse</span>
+                Mode Mouse Saja
+            </span>
+
             <!-- Top Submit Button -->
             <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold" onclick="openSubmitModal()">
                 Kumpulkan Ujian
@@ -596,12 +602,12 @@ body {
             </p>
 
             <div class="alert alert-light border rounded-2xl text-start small mb-4 p-3" style="background: #F8FAFC;">
-                <div class="fw-bold mb-2 text-dark">Aturan Pengawasan:</div>
+                <div class="fw-bold mb-2 text-dark">Protokol Keamanan &amp; Audit Ujian:</div>
                 <ul class="mb-0 ps-3 text-muted">
-                    <li>Dilarang keluar dari mode Layar Penuh (tombol Esc, F11, dll).</li>
-                    <li>Dilarang membuka tab baru, berpindah jendela, atau aplikasi lain (Alt+Tab).</li>
-                    <li>Dilarang menggerakkan kursor keluar dari batas layar peramban.</li>
-                    <li>Sistem memberikan batas toleransi maksimal <strong>3 peringatan</strong> sebelum ujian ditangguhkan ke Administrator.</li>
+                    <li><strong>Mode Mouse Saja:</strong> Seluruh tombol keyboard (papan ketik) dinonaktifkan sistem hingga Anda mengumpulkan ujian. Gunakan mouse untuk menjawab dan navigasi.</li>
+                    <li><strong>Anti-Minimize &amp; Gesture 3 Jari:</strong> Dilarang menggunakan swipe 3 jari pada touchpad atau meminimalkan layar. Pelanggaran langsung dicatat secara real-time pada audit pengawas.</li>
+                    <li><strong>Layar Penuh Wajib:</strong> Anda dilarang keluar dari mode Layar Penuh (Esc, F11, dll). Keluar layar penuh akan langsung mengunci tampilan soal.</li>
+                    <li><strong>Audit Real-Time:</strong> Setiap pelanggaran (walau hanya 1 kali) tercatat ke log sistem. Batas maksimal <strong>3 peringatan</strong> sebelum ujian ditangguhkan ke Administrator.</li>
                 </ul>
             </div>
 
@@ -1161,7 +1167,71 @@ body {
             });
     };
 
-    // Fullscreen Change Listener: GA BISA GA DI FULL SCREEN
+    // =========================================================================
+    // 1. STRICT KEYBOARD DISABLE (MOUSE ONLY MODE - NO KEYBOARD ALLOWED)
+    // =========================================================================
+    function blockKeyboardInput(e) {
+        if (isCompleted) return; // Allow keyboard after exam submission
+
+        // Instantly suppress and cancel keyboard event across capturing phase
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+        // Warn and log to real-time proctor audit
+        if (hasStarted && !isSuspended && !isCompleted) {
+            const pressedKey = e.key || e.code || 'Tombol';
+            showWarningToast(currentWarnCount, 'Papan ketik (Keyboard) dinonaktifkan! Ujian ini hanya menggunakan mouse untuk menjawab.');
+            reportViolation('keyboard_attempt', 'Menekan tombol keyboard: ' + pressedKey);
+        }
+        return false;
+    }
+
+    // Intercept in capturing phase (true) to block BEFORE any browser default or input handling
+    window.addEventListener('keydown', blockKeyboardInput, true);
+    window.addEventListener('keyup', blockKeyboardInput, true);
+    window.addEventListener('keypress', blockKeyboardInput, true);
+
+    // =========================================================================
+    // 2. ANTI-MINIMIZE & MULTI-TOUCH / 3-FINGER GESTURE DETECTION
+    // =========================================================================
+    function handleMultiTouchGesture(e) {
+        if (isCompleted) return;
+        if (e.touches && e.touches.length >= 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+            if (hasStarted && !isSuspended && !isCompleted) {
+                showWarningToast(currentWarnCount, 'Gesture 3 jari terdeteksi & dilarang! Tetap fokus pada layar ujian.');
+                reportViolation('three_finger_gesture', 'Percobaan gesture 3 jari / multi-touch untuk meminimalkan layar');
+            }
+        }
+    }
+    window.addEventListener('touchstart', handleMultiTouchGesture, { passive: false, capture: true });
+    window.addEventListener('touchmove', handleMultiTouchGesture, { passive: false, capture: true });
+
+    // Trackpad pinch-to-zoom (wheel + ctrlKey)
+    window.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            if (hasStarted && !isSuspended && !isCompleted) {
+                reportViolation('trackpad_gesture', 'Percobaan zoom / pinch pada trackpad');
+            }
+        }
+    }, { passive: false, capture: true });
+
+    // Webkit gestures
+    window.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+        if (hasStarted && !isSuspended && !isCompleted) {
+            reportViolation('trackpad_gesture', 'Percobaan gesture swipe/pinch trackpad');
+        }
+    }, { passive: false, capture: true });
+    window.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false, capture: true });
+    window.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false, capture: true });
+
+    // Fullscreen Change Listener: Wajib Layar Penuh
     function handleFullscreenChange() {
         if (!hasStarted || isSuspended || isCompleted) return;
 
@@ -1169,7 +1239,7 @@ body {
             // Student exited fullscreen -> Lock screen immediately & record violation!
             const lock = document.getElementById('fullscreenLockOverlay');
             if (lock) lock.style.display = 'flex';
-            reportViolation('fullscreen_exit', 'Siswa keluar dari mode Layar Penuh (Fullscreen)');
+            reportViolation('fullscreen_exit', 'Terdeteksi meminimalkan jendela / keluar fullscreen (Gesture 3 jari / Esc / Minimize)');
         } else {
             // Student entered fullscreen -> Hide lockout overlay
             const lock = document.getElementById('fullscreenLockOverlay');
@@ -1181,10 +1251,14 @@ body {
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 
-    // 1. Detect Window Blur / Alt+Tab
+    // 1. Detect Window Blur / Alt+Tab / Trackpad 3-Finger Minimize
     window.addEventListener('blur', function() {
         if (!hasStarted || isSuspended || isCompleted) return;
-        reportViolation('blur', 'Jendela browser kehilangan fokus / berpindah aplikasi');
+        const lock = document.getElementById('fullscreenLockOverlay');
+        if (lock && !getFullscreenElement()) {
+            lock.style.display = 'flex';
+        }
+        reportViolation('blur', 'Jendela diminimalkan atau beralih aplikasi (Gesture 3 jari / Alt+Tab / Task switch)');
     });
 
     // 2. Detect Tab Visibility Change

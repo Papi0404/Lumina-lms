@@ -293,7 +293,7 @@ class theme_lumina_role_resolver {
                         [$c->id]
                     );
 
-                    $teachercourses[] = [
+                    $teachercourses[$c->id] = [
                         'id'             => $c->id,
                         'fullname'       => format_string($c->fullname),
                         'shortname'      => format_string($c->shortname),

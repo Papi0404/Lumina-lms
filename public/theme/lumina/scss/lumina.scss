@@ -29,7 +29,7 @@
   --lumina-error-light: #ef4444;
   --lumina-error-container: #ffdad6;
   --lumina-on-error-container: #93000a;
-  --lumina-surface: #f8f9ff;
+  --lumina-surface: #F8FAFC;
   --lumina-surface-card: #ffffff;
   --lumina-surface-low: #eff4ff;
   --lumina-surface-container: #e5eeff;
@@ -686,13 +686,11 @@ body.lumina-rail-collapsed {
     margin-left: calc(var(--lumina-sidebar-collapsed-width) + 315px) !important;
   }
 
-  /* Clearance when Course Index is minimized/closed */
-  #page.drawers:not(.show-drawer-left) #topofscroll {
-    padding-left: 4.5rem !important;
-  }
-
-  body.lumina-rail-collapsed #page.drawers:not(.show-drawer-left) #topofscroll {
-    padding-left: 4.5rem !important;
+  /* Balanced, symmetrical canvas spacing */
+  #page.drawers #topofscroll {
+    max-width: 1540px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem 2rem !important;
   }
 
   /* Elevated Drawer Toggler Buttons (Course Index & Blocks) */
@@ -768,9 +766,9 @@ body.lumina-rail-collapsed {
     margin-left: 0 !important;
   }
 
-  #page.drawers:not(.show-drawer-left) #topofscroll {
-    padding-left: 3.75rem !important;
-    padding-right: 1.25rem !important;
+  #page.drawers #topofscroll {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
   }
 }
 
@@ -5102,4 +5100,156 @@ body.hasstickyfooter {
     margin-top: 2rem !important;
     border-top: 1px solid var(--lumina-border, #E2E8F0) !important;
 }
+
+/* ==========================================================================
+   42. Lumina Floating AI Widget Clearance & Grader Report Polish
+   ========================================================================== */
+
+/* Raise Lumina AI FAB when sticky footer is present so it never covers action buttons */
+body.hasstickyfooter {
+    .lumina-ai-fab,
+    #luminaAiFab {
+        bottom: calc(var(--stickyfooter-height, 65px) + 24px) !important;
+        transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+}
+
+/* Grader Report: Prevent table & submit button clipping */
+.path-grade-report-grader {
+    .stickyfooter {
+        padding-right: 6rem !important;
+
+        #gradersubmit {
+            min-height: 42px !important;
+            border-radius: 9999px !important;
+            padding: 0.55rem 1.75rem !important;
+            font-weight: 600 !important;
+            font-size: 0.875rem !important;
+            background: var(--lumina-primary, #4338CA) !important;
+            border: 1px solid #3730A3 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 2px 8px rgba(67, 56, 202, 0.25) !important;
+            cursor: pointer !important;
+            position: relative !important;
+            z-index: 1030 !important;
+
+            &:hover {
+                background: #3730A3 !important;
+                box-shadow: 0 4px 14px rgba(67, 56, 202, 0.35) !important;
+                transform: translateY(-1px) !important;
+            }
+        }
+    }
+}
+
+/* ==========================================================================
+   43. Course Linear Navigation & Activity Navigation (Previous / Next)
+   ========================================================================== */
+
+/* Linear Course Navigation inside Sticky Footer */
+.stickyfooter {
+    .course-linear-navigation {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    .course-linear-navigation-footer-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 1.5rem !important;
+        padding: 0 0.5rem !important;
+
+        .course-linear-navigation-link {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            padding: 0.5rem 1.25rem !important;
+            border-radius: 9999px !important;
+            background: #F8FAFC !important;
+            border: 1px solid #CBD5E1 !important;
+            color: var(--lumina-primary, #4338CA) !important;
+            font-weight: 600 !important;
+            font-size: 0.875rem !important;
+            text-decoration: none !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+            white-space: nowrap !important;
+
+            &:hover {
+                background: #FFFFFF !important;
+                border-color: var(--lumina-primary, #4338CA) !important;
+                color: #3730A3 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 3px 8px rgba(67, 56, 202, 0.15) !important;
+            }
+        }
+    }
+}
+
+/* Activity Navigation within main page body */
+.activity-navigation {
+    margin-top: 2rem !important;
+    padding: 1rem 0 !important;
+
+    .btn-link,
+    a.btn-link {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        padding: 0.5rem 1.25rem !important;
+        border-radius: 9999px !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        color: var(--lumina-primary, #4338CA) !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+        white-space: nowrap !important;
+
+        &:hover {
+            background: #F8FAFC !important;
+            border-color: var(--lumina-primary, #4338CA) !important;
+            color: #3730A3 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 3px 8px rgba(67, 56, 202, 0.15) !important;
+        }
+    }
+}
+
+/* ==========================================================================
+   44. Solid Canvas Layout & Card Integrity (Eliminate Patchy Borders)
+   ========================================================================== */
+
+#page.drawers,
+.lumina-main-viewport {
+    background-color: var(--lumina-surface, #F8FAFC) !important;
+}
+
+#page-content,
+#region-main-box {
+    background-color: transparent !important;
+}
+
+/* Clean, solid card styling on content & module settings pages */
+body.pagelayout-incourse,
+body.pagelayout-standard,
+body.pagelayout-admin {
+    #region-main {
+        background: #FFFFFF !important;
+        border: 1px solid var(--lumina-border, #E2E8F0) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 6px 20px rgba(15, 23, 42, 0.04) !important;
+        padding: 2rem !important;
+    }
+}
+
 

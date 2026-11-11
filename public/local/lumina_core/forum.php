@@ -42,19 +42,27 @@ if ($roleinfo['is_admin']) {
     $accessiblecourses = $DB->get_records_select('course', 'id > 1', null, 'fullname ASC');
 } else if ($roleinfo['is_teacher']) {
     $tdata = theme_lumina_role_resolver::get_teacher_dashboard_data($USER);
-    $accessiblecourses = $tdata['courses'];
+    foreach ($tdata['courses'] as $c) {
+        $cid = (int)(is_object($c) ? $c->id : $c['id']);
+        $accessiblecourses[$cid] = $c;
+    }
 } else {
     $accessiblecourses = enrol_get_all_users_courses($USER->id, true);
 }
 
-// Fallback course selection
-if ($courseid > 0 && !isset($accessiblecourses[$courseid]) && !$roleinfo['is_admin']) {
+// Fallback course selection with reliable courseid resolution
+$validcourseids = [];
+foreach ($accessiblecourses as $c) {
+    $validcourseids[] = (int)(is_object($c) ? $c->id : $c['id']);
+}
+
+if ($courseid > 0 && !in_array((int)$courseid, $validcourseids, true) && !$roleinfo['is_admin']) {
     // Security check: Student cannot tamper courseid to inspect other courses!
     $firstcourse = !empty($accessiblecourses) ? reset($accessiblecourses) : null;
-    $courseid = $firstcourse ? (is_object($firstcourse) ? $firstcourse->id : $firstcourse['id']) : 0;
+    $courseid = $firstcourse ? (int)(is_object($firstcourse) ? $firstcourse->id : $firstcourse['id']) : 0;
 } else if (!$courseid && !empty($accessiblecourses)) {
     $firstcourse = reset($accessiblecourses);
-    $courseid = is_object($firstcourse) ? $firstcourse->id : $firstcourse['id'];
+    $courseid = (int)(is_object($firstcourse) ? $firstcourse->id : $firstcourse['id']);
 }
 
 $course = $courseid ? $DB->get_record('course', ['id' => $courseid]) : null;
@@ -70,6 +78,11 @@ $noticetype = 'info';
 
 // Process Actions (Create Discussion / Add Reply)
 if (data_submitted() && confirm_sesskey()) {
+    $targetcid = optional_param('target_courseid', $courseid, PARAM_INT);
+    if ($targetcid > 0 && (in_array($targetcid, $validcourseids, true) || $roleinfo['is_admin'])) {
+        $courseid = $targetcid;
+    }
+
     if ($action === 'create_discussion' && $courseid > 0) {
         $subject = required_param('subject', PARAM_TEXT);
         $message = required_param('message', PARAM_RAW);
@@ -313,6 +326,25 @@ echo $OUTPUT->header();
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <?php if (count($accessiblecourses) > 1): ?>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Pilih Kelas / Mata Kuliah</label>
+                        <select name="target_courseid" class="form-select rounded-2xl">
+                            <?php foreach ($accessiblecourses as $ac): ?>
+                                <?php
+                                $acid = is_object($ac) ? $ac->id : $ac['id'];
+                                $acname = is_object($ac) ? $ac->fullname : $ac['fullname'];
+                                $acshort = is_object($ac) ? $ac->shortname : $ac['shortname'];
+                                ?>
+                                <option value="<?php echo $acid; ?>" <?php echo ($acid == $courseid) ? 'selected' : ''; ?>>
+                                    <?php echo format_string($acname); ?> (<?php echo format_string($acshort); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php else: ?>
+                    <input type="hidden" name="target_courseid" value="<?php echo $courseid; ?>">
+                    <?php endif; ?>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-muted">Judul Pertanyaan / Pokok Diskusi</label>
                         <input type="text" name="subject" class="form-control rounded-2xl" placeholder="Contoh: Bagaimana cara optimasi responsive grid di mobile?" required>

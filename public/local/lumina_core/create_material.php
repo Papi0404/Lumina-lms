@@ -47,12 +47,17 @@ if ($roleinfo['is_admin']) {
 
 // 2. Resolve selected course ID
 $courseid = optional_param('courseid', 0, PARAM_INT);
-if ($courseid > 0 && !isset($accessiblecourses[$courseid]) && !$roleinfo['is_admin']) {
+$validcourseids = [];
+foreach ($accessiblecourses as $c) {
+    $validcourseids[] = (int)(is_object($c) ? $c->id : $c['id']);
+}
+
+if ($courseid > 0 && !in_array((int)$courseid, $validcourseids, true) && !$roleinfo['is_admin']) {
     $firstcourse = !empty($accessiblecourses) ? reset($accessiblecourses) : null;
-    $courseid = $firstcourse ? (is_object($firstcourse) ? $firstcourse->id : $firstcourse['id']) : 0;
+    $courseid = $firstcourse ? (int)(is_object($firstcourse) ? $firstcourse->id : $firstcourse['id']) : 0;
 } else if (!$courseid && !empty($accessiblecourses)) {
     $firstcourse = reset($accessiblecourses);
-    $courseid = is_object($firstcourse) ? $firstcourse->id : $firstcourse['id'];
+    $courseid = (int)(is_object($firstcourse) ? $firstcourse->id : $firstcourse['id']);
 }
 
 $course = $courseid ? $DB->get_record('course', ['id' => $courseid]) : null;

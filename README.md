@@ -1,48 +1,60 @@
-# Moodle
+# Lumina LMS — Modern Enterprise Learning Management System
 
-<p align="center"><a href="https://moodle.org" target="_blank" title="Moodle Website">
-  <img src="https://raw.githubusercontent.com/moodle/moodle/main/.github/moodlelogo.svg" alt="The Moodle Logo">
-</a></p>
+<p align="center">
+  <img src="https://img.shields.io/badge/Release-v5.3%20Enterprise-4F46E5?style=for-the-badge&logo=rocket" alt="Release">
+  <img src="https://img.shields.io/badge/Security-CBT%20Live%20Proctoring-10B981?style=for-the-badge&logo=shield" alt="Security">
+  <img src="https://img.shields.io/badge/Lead%20Developer-Januar%20Zidane%20Tinendeng-0A31FA?style=for-the-badge" alt="Lead Developer">
+  <img src="https://img.shields.io/badge/License-Proprietary%20Private-EF4444?style=for-the-badge" alt="License">
+</p>
 
-[Moodle][1] is the World's Open Source Learning Platform, widely used around the world by countless universities, schools, companies, and all manner of organisations and individuals.
+---
 
-Moodle is designed to allow educators, administrators and learners to create personalised learning environments with a single robust, secure and integrated system.
+## 📌 Tentang Proyek
+**Lumina LMS** adalah platform sistem manajemen pembelajaran (*Learning Management System*) enterprise generasi terbaru yang dibangun di atas fondasi Moodle 5.3+. Platform ini dirancang dengan estetika antarmuka SaaS modern, performa tinggi (*Time to First Byte* < 180ms), serta dipersenjatai sistem pengawasan ujian daring terproteksi (**CBT Live Proctoring**) dan tutor cerdas berbasis AI.
 
-## Documentation
+---
 
-- Read our [User documentation][3]
-- Discover our [developer documentation][5]
-- Take a look at our [demo site][4]
+## 👨‍💻 Kontributor & Pengembang Utama
+* **Lead Architect & Developer:** **Januar Zidane Tinendeng** ([@Papi0404](https://github.com/Papi0404))
+* **Email:** `papijanuar147@gmail.com` / `januarzidane6@gmail.com`
+* **Peran:** Perancangan Arsitektur Sistem, Rekayasa CBT Proctoring, Pembuatan Tema SaaS Lumina, Desain Antarmuka Multi-Role, serta Optimasi Integritas Basis Data.
 
-## Community
+---
 
-[moodle.org][1] is the central hub for the Moodle Community, with spaces for educators, administrators and developers to meet and work together.
+## 🚀 Fitur Unggulan Sistem
 
-You may also be interested in:
+### 1. 🛡️ CBT Live Proctoring & Security Engine (`local_lumina_core`)
+* **Forced Fullscreen Gate:** Mengunci otomatis browser siswa ke mode layar penuh sebelum butir soal terbuka.
+* **Hardware & OS Trap:** Mencegat shortcut `Alt+Tab`, hilangnya fokus jendela (*blur*), gesture touchpad swipe 3-4 jari (macOS & Windows), klik kanan, dan pintasan inspeksi element `F12`.
+* **3-Strike Progressive Penalty:** Peringatan otomatis bertingkat (1/3 dan 2/3) hingga penangguhan permanen (*auto-lockout*) pada pelanggaran ke-3.
+* **Live Audit Stream:** Dasbor pengawasan langsung bagi Admin/Pengawas untuk memantau linimasa kecurangan real-time dengan aksi *Unlock* dan *ACC Nilai Sah*.
+* **Simulasi Uji Coba Pengajar:** Pengecekan kapabilitas dengan fitur *Self-Reset* mandiri bagi guru yang mencoba soal ujian.
 
-- attending a [Moodle Moot][6]
-- our regular series of [developer meetings][7]
-- the [Moodle User Association][8]
+### 2. 🎨 Modern SaaS UI/UX Overhaul (`theme_lumina`)
+* **Fast Grader PDF:** Antarmuka penilaian tugas modern bebas tabrakan teks, kanvas slate berbayangan kertas, dan buffer scroll formulir nilai.
+* **Sticky Submissions Table:** Kolom checkbox dan identitas siswa (nama & avatar) dikunci permanen di sisi kiri saat tabel digeser horizontal.
+* **Instant Live User Search:** Fitur pencarian pengguna langsung tanpa reload halaman di panel administrasi.
+* **Precompiled CSS Engine:** Membaca file CSS terkompilasi langsung untuk mengeliminasi beban runtime SCSS, menghasilkan TTFB < 180 ms.
 
-## Installation and hosting
+### 3. 🤖 AI Academic Tutor (`local_lumina_ai`)
+* Widget asisten pintar mengambang (*draggable floating action button*) yang dapat digeser bebas di layar.
+* **AI Suppression Engine:** Fitur AI dimatikan otomatis selama sesi ujian CBT berlangsung guna mencegah kecurangan.
 
-Moodle is Free, and Open Source software. You can easily [download Moodle][9] and run it on your own web server, however you may prefer to work with one of our experienced [Moodle Partners][10].
+### 4. 👨‍🏫 Teacher Productivity Hub
+* **Material & Module Builder Hub (`create_material.php`):** Penerbitan tugas, kuis, dan materi interaktif secara instan tanpa masuk ke pengaturan Moodle yang rumit.
+* **Presensi Mandiri & Rekap CSV:** Input kehadiran kelas tatap muka dengan fitur ekspor lembar kerja `.csv`.
+* **Konektor Kelas Virtual:** Tautan otomatis terintegrasi ke Zoom dan Google Meet.
 
-Moodle also offers hosting through both [MoodleCloud][11], and our [partner network][10].
+---
 
-## License
+## 📦 Paket Distribusi Plugin
+Seluruh kustomisasi dikemas ke dalam 3 arsip instalasi modular (*zero core modification*):
+1. `theme_lumina.zip` — Tema antarmuka SaaS modern Lumina.
+2. `local_lumina_core.zip` — Modul proctoring CBT, presensi, perpustakaan, dan logika bisnis.
+3. `local_lumina_ai.zip` — Modul tutor AI mengambang.
 
-Moodle is provided freely as open source software, under version 3 of the GNU General Public License. See our [license page][12] for more information.
+---
 
-[1]: https://moodle.org
-[2]: https://moodle.com
-[3]: https://docs.moodle.org/
-[4]: https://sandbox.moodledemo.net/
-[5]: https://moodledev.io
-[6]: https://moodle.com/events/mootglobal/
-[7]: https://moodledev.io/general/community/meetings
-[8]: https://moodleassociation.org/
-[9]: https://download.moodle.org
-[10]: https://moodle.com/partners
-[11]: https://moodle.com/cloud
-[12]: https://moodledev.io/general/license
+## 🔒 Hak Cipta & Lisensi
+Hak Cipta © 2026 **Januar Zidane Tinendeng (Papi0404)**.  
+Seluruh hak cipta dilindungi undang-undang. Proyek ini bersifat *Proprietary & Private*. Dilarang menyalin, mendistribusikan, atau menjual kembali tanpa izin tertulis dari pengembang utama.

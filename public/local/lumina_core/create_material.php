@@ -196,9 +196,9 @@ echo $OUTPUT->header();
             </div>
             <?php if ($course): ?>
             <div>
-                <a href="<?php echo (new moodle_url('/course/view.php', ['id' => $course->id, 'edit' => 1, 'sesskey' => sesskey()]))->out(false); ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-semibold shadow-xs">
+                <a href="<?php echo (new moodle_url('/course/view.php', ['id' => $course->id, 'edit' => 1, 'sesskey' => sesskey()]))->out(false); ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-semibold shadow-xs d-inline-flex align-items-center text-nowrap">
                     <span class="material-symbols-outlined align-middle fs-6 me-1">tune</span>
-                    Atur Tata Letak di Ruang Kelas
+                    Atur Tata Letak (<?php echo s($course->shortname ?: $course->fullname); ?>)
                 </a>
             </div>
             <?php endif; ?>
@@ -211,8 +211,15 @@ echo $OUTPUT->header();
             <form method="get" action="create_material.php" id="material-filter-form">
                 <div class="row g-3 align-items-center">
                     <div class="col-md-6 col-lg-5">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1" style="letter-spacing: 0.05em;">1. Pilih Mata Kuliah / Kelas:</label>
-                        <select name="courseid" class="form-select rounded-3 py-2" style="border-color: #CBD5E1; font-weight: 500;" onchange="this.form.submit()">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-0" style="letter-spacing: 0.05em;">1. Pilih Mata Kuliah / Kelas:</label>
+                            <?php if ($course): ?>
+                            <a href="<?php echo (new moodle_url('/course/view.php', ['id' => $course->id, 'edit' => 1, 'sesskey' => sesskey()]))->out(false); ?>" class="small text-primary fw-semibold text-decoration-none" title="Buka dan tata letak materi kelas ini">
+                                <span class="material-symbols-outlined align-middle" style="font-size: 14px;">tune</span> Atur Tata Letak &rarr;
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                        <select name="courseid" class="form-select rounded-3 py-2" style="border-color: #CBD5E1; font-weight: 500;" onchange="window.location.href='create_material.php?courseid=' + this.value">
                             <?php if (empty($accessiblecourses)): ?>
                                 <option value="">Tidak ada mata kuliah yang diampu</option>
                             <?php else: ?>
@@ -245,7 +252,7 @@ echo $OUTPUT->header();
                     </div>
 
                     <div class="col-12 col-lg-2 text-lg-end pt-lg-4">
-                        <button type="submit" class="btn btn-light border rounded-pill px-4 py-2 w-100 fw-semibold text-secondary">
+                        <button type="submit" class="btn btn-light border rounded-pill px-3 py-2 w-100 fw-semibold text-secondary text-nowrap" style="white-space: nowrap !important;">
                             Terapkan
                         </button>
                     </div>

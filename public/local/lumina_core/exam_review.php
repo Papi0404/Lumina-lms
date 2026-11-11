@@ -185,7 +185,7 @@ echo $OUTPUT->header();
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr style="font-size: 0.8rem;">
-                        <th>Mahasiswa</th>
+                        <th>Peserta Ujian</th>
                         <th>Kursus &amp; Materi Ujian</th>
                         <th>Status Peringatan</th>
                         <th>Pelanggaran Terakhir</th>
@@ -202,7 +202,14 @@ echo $OUTPUT->header();
                                     <?php echo strtoupper(substr($item['student_name'], 0, 1)); ?>
                                 </div>
                                 <div>
-                                    <span class="fw-bold text-dark d-block" style="font-size: 0.88rem;"><?php echo $item['student_name']; ?></span>
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                        <span class="fw-bold text-dark d-block" style="font-size: 0.88rem;"><?php echo $item['student_name']; ?></span>
+                                        <?php if (!empty($item['is_teacher'])): ?>
+                                            <span class="badge bg-warning bg-opacity-15 text-dark border border-warning border-opacity-50 rounded-pill px-2 py-0-5 fw-semibold" style="font-size: 0.68rem;" title="Pengajar / Dosen Pengampu sedang menguji coba simulasi CBT">
+                                                <i class="fa fa-graduation-cap me-1"></i> Pengajar (Uji Coba)
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                     <span class="text-muted small" style="font-size: 0.75rem;"><?php echo $item['student_email']; ?></span>
                                 </div>
                             </div>

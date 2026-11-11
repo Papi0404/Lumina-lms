@@ -495,7 +495,16 @@ body {
             </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <?php if ($ismanager): ?>
+                <span class="badge bg-warning text-dark rounded-pill px-2-5 py-1 font-semibold d-inline-flex align-items-center gap-1 shadow-xs" title="Anda berada dalam mode simulasi pengajar. Ujian ini dapat di-reset ulang sewaktu-waktu.">
+                    <i class="fa fa-graduation-cap"></i> Mode Guru
+                </span>
+                <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $cmid, 'resetsim' => 1]))->out(false); ?>" class="btn btn-sm btn-outline-warning text-white border-warning rounded-pill px-2-5 py-1 font-semibold d-inline-flex align-items-center gap-1" title="Reset ulang simulasi ujian ke kondisi awal (0/3 peringatan)">
+                    <i class="fa fa-refresh"></i> Reset Simulasi
+                </a>
+            <?php endif; ?>
+
             <!-- Warning Meter -->
             <div class="d-flex align-items-center gap-1 bg-dark bg-opacity-50 px-3 py-1 rounded-pill border border-secondary border-opacity-25">
                 <span class="text-white-50 small me-1">Peringatan:</span>

@@ -360,12 +360,17 @@ class exam_monitor {
             }
 
             $sysctx = \context_system::instance();
+            $coursectx = \context_course::instance($r->courseid, IGNORE_MISSING);
+            $isteacher = ($coursectx && (has_capability('moodle/course:manageactivities', $coursectx, $r->userid) || has_capability('moodle/grade:viewall', $coursectx, $r->userid))) || is_siteadmin($r->userid);
+
             $result[] = [
                 'session_id'       => $r->id,
                 'course_name'      => format_string($r->coursename, true, ['context' => $sysctx]),
                 'activity_name'    => format_string($activityname ?: 'Ujian Interaktif H5P', true, ['context' => $sysctx]),
                 'student_name'     => fullname($r),
                 'student_email'    => $r->email,
+                'is_teacher'       => $isteacher,
+                'role_label'       => $isteacher ? 'Pengajar (Uji Coba)' : 'Mahasiswa',
                 'warning_count'    => (int)$r->warningcount,
                 'score'            => $r->score !== null ? (float)$r->score : null,
                 'event_count'      => $eventcount,

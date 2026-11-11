@@ -1,0 +1,63 @@
+{{!
+    Lumina LMS - Assignment Fast Grader Header Navigation Component.
+}}
+<div class="container-fluid px-3 py-2">
+    <div data-region="grading-navigation" class="row align-items-center g-3">
+        <!-- Left Column: Assignment Context & Back Link -->
+        <div data-region="assignment-info" class="col-12 col-md-4">
+            <div class="d-flex flex-column gap-1">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{config.wwwroot}}/course/view.php?id={{courseid}}" class="text-muted text-uppercase fw-bold text-truncate text-decoration-none" style="font-size: 0.72rem; letter-spacing: 0.05em;" title="{{coursename}}">
+                        {{coursename}}
+                    </a>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{config.wwwroot}}/mod/assign/view.php?id={{cmid}}" class="fw-bold text-dark text-truncate text-decoration-none" style="font-size: 0.95rem; letter-spacing: -0.01em;" title="{{name}}">
+                        {{name}}
+                    </a>
+                    {{#caneditsettings}}
+                        <a href="{{config.wwwroot}}/course/modedit.php?update={{cmid}}&return=1" class="text-muted hover-primary small" aria-label="{{#str}}editsettings{{/str}}" title="{{#str}}editsettings{{/str}}">
+                            <i class="icon fa fa-pen fa-fw" style="font-size: 12px;" aria-hidden="true"></i>
+                        </a>
+                    {{/caneditsettings}}
+                </div>
+                <div>
+                    <a href="{{config.wwwroot}}/mod/assign/view.php?id={{cmid}}&action={{actiongrading}}" class="text-primary fw-semibold small text-decoration-none d-inline-flex align-items-center gap-1" style="font-size: 0.8125rem;">
+                        <i class="icon fa fa-arrow-left fa-fw" style="font-size: 11px;" aria-hidden="true"></i>
+                        <span>{{viewgrading}}</span>
+                    </a>
+                </div>
+            </div>
+
+            <div role="tooltip" id="tooltip-{{uniqid}}" class="accesshide">
+                {{#duedate}}
+                    {{#str}}duedatecolon, mod_assign, {{duedatestr}}{{/str}}
+                {{/duedate}}
+                {{#cutoffdate}}
+                    <br>{{cutoffdatestr}}
+                {{/cutoffdate}}
+                {{#duedate}}
+                    <br>{{timeremainingstr}}
+                {{/duedate}}
+            </div>
+        </div>
+
+        <!-- Center Column: User Profile Card (Dynamic via JS) -->
+        <div data-region="user-info" class="col-12 col-md-4 d-flex justify-content-center" data-assignmentid="{{assignmentid}}" data-groupid="{{groupid}}">
+            {{> mod_assign/grading_navigation_user_info }}
+        </div>
+
+        <!-- Right Column: User Switching Widget -->
+        <div data-region="user-selector" class="col-12 col-md-4 d-flex justify-content-md-end justify-content-center">
+            <div class="alignment d-flex align-items-center gap-2">
+                {{> mod_assign/grading_navigation_user_selector }}
+            </div>
+        </div>
+    </div>
+</div>
+{{#js}}
+require(['mod_assign/grading_navigation', 'core/tooltip'], function(GradingNavigation, ToolTip) {
+    new GradingNavigation('[data-region="user-selector"]');
+    new ToolTip('[data-region="assignment-tooltip"]');
+});
+{{/js}}

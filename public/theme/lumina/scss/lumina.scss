@@ -6482,3 +6482,375 @@ body:not(.lumina-role-admin) {
 .course-assist-controls {
     display: none !important;
 }
+
+/* ==========================================================================
+   Lumina LMS - Assignment Fast Grader Overhaul (#page-mod-assign-grader)
+   Resolves text overlapping, fixes layout, modernizes PDF grader UI
+   ========================================================================== */
+#page-mod-assign-grader {
+    background-color: #F8FAFC !important;
+    font-family: var(--lumina-font, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif) !important;
+}
+
+#page-mod-assign-grader [data-region="grading-navigation-panel"] {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    padding: 0.65rem 1.25rem !important;
+    min-height: 64px !important;
+    position: relative !important;
+    z-index: 100 !important;
+}
+
+#page-mod-assign-grader [data-region="assignment-info"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.2rem !important;
+    justify-content: center !important;
+}
+
+#page-mod-assign-grader [data-region="assignment-info"] a[title*="Course"] {
+    color: #64748B !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    text-decoration: none !important;
+}
+
+#page-mod-assign-grader [data-region="assignment-info"] a[title*="Assignment"] {
+    color: #0F172A !important;
+    font-size: 0.9375rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    text-decoration: none !important;
+}
+
+#page-mod-assign-grader [data-region="assignment-info"] a[href*="action=grading"] {
+    color: #4338CA !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+#page-mod-assign-grader [data-region="assignment-info"] a[href*="action=grading"]:hover {
+    color: #312E81 !important;
+    text-decoration: underline !important;
+}
+
+/* User Info Panel (Fixes severe text squishing & overlap) */
+#page-mod-assign-grader [data-region="user-info"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#page-mod-assign-grader [data-region="user-info"] h4 {
+    margin: 0 !important;
+    font-size: 0.9375rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+#page-mod-assign-grader [data-region="user-info"] h4 a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+#page-mod-assign-grader [data-region="user-info"] img.img-rounded {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    border: 2px solid #E2E8F0 !important;
+    flex-shrink: 0 !important;
+}
+
+#page-mod-assign-grader [data-region="user-info"] em.nowrap {
+    display: block !important;
+    font-style: normal !important;
+    line-height: 1.35 !important;
+}
+
+#page-mod-assign-grader [data-region="user-info"] em.nowrap small {
+    color: #64748B !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+}
+
+/* User Selector Widget */
+#page-mod-assign-grader [data-region="user-selector"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+}
+
+#page-mod-assign-grader [data-region="user-selector"] .alignment {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+#page-mod-assign-grader [data-region="user-selector"] a[data-action="previous-user"],
+#page-mod-assign-grader [data-region="user-selector"] a[data-action="next-user"] {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: #F1F5F9 !important;
+    color: #4338CA !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    border: 1px solid #E2E8F0 !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader [data-region="user-selector"] a[data-action="previous-user"]:hover,
+#page-mod-assign-grader [data-region="user-selector"] a[data-action="next-user"]:hover {
+    background: #EEF2FF !important;
+    border-color: #C7D2FE !important;
+    color: #3730A3 !important;
+    transform: translateY(-1px) !important;
+}
+
+#page-mod-assign-grader [data-region="user-selector"] select#change-user-select {
+    border-radius: 9999px !important;
+    border: 1px solid #CBD5E1 !important;
+    padding: 0.35rem 1.25rem 0.35rem 0.85rem !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    background: #FFFFFF !important;
+    color: #1E293B !important;
+}
+
+/* Right Grade Panel */
+#page-mod-assign-grader [data-region="grade-panel"] {
+    background: #FFFFFF !important;
+    border-left: 1px solid #E2E8F0 !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] h3 {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+    letter-spacing: -0.01em !important;
+    margin-bottom: 0.85rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .submissionstatussubmitted,
+#page-mod-assign-grader [data-region="grade-panel"] .submissiongraded,
+#page-mod-assign-grader [data-region="grade-panel"] [data-region="submission-status"] {
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%) !important;
+    border: 1px solid #BBF7D0 !important;
+    border-radius: 14px !important;
+    padding: 0.85rem 1rem !important;
+    color: #166534 !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 3px rgba(22, 101, 52, 0.04) !important;
+    margin-bottom: 1rem !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmission {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.65rem 0.85rem !important;
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] .fileuploadsubmission:hover {
+    background: #EEF2FF !important;
+    border-color: #C7D2FE !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] input[name="grade"] {
+    border-radius: 12px !important;
+    border: 2px solid #CBD5E1 !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #4338CA !important;
+    padding: 0.5rem 0.85rem !important;
+    max-width: 140px !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader [data-region="grade-panel"] input[name="grade"]:focus {
+    border-color: #4338CA !important;
+    box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15) !important;
+}
+
+/* Bottom Grade Actions Panel */
+#page-mod-assign-grader [data-region="grade-actions-panel"] {
+    background: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.03) !important;
+    padding: 0.75rem 1.5rem !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] label {
+    margin: 0 !important;
+    font-size: 0.84rem !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    cursor: pointer !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] button[name="savechanges"] {
+    background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%) !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 1.35rem !important;
+    font-weight: 600 !important;
+    font-size: 0.84rem !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(67, 56, 202, 0.25) !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] button[name="savechanges"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(67, 56, 202, 0.35) !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] button[name="saveandshownext"] {
+    background: #EEF2FF !important;
+    border: 1px solid #C7D2FE !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 1.35rem !important;
+    font-weight: 600 !important;
+    font-size: 0.84rem !important;
+    color: #4338CA !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] button[name="saveandshownext"]:hover {
+    background: #E0E7FF !important;
+    color: #3730A3 !important;
+    transform: translateY(-1px) !important;
+}
+
+#page-mod-assign-grader [data-region="grading-actions-form"] button[name="resetbutton"] {
+    background: #F1F5F9 !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 1.15rem !important;
+    font-weight: 600 !important;
+    font-size: 0.84rem !important;
+    color: #64748B !important;
+}
+
+#page-mod-assign-grader .collapse-buttons .btn-group .btn {
+    border-radius: 10px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #FFFFFF !important;
+    padding: 0.4rem 0.65rem !important;
+}
+
+#page-mod-assign-grader .collapse-buttons .btn-group .btn.active {
+    background: #EEF2FF !important;
+    border-color: #C7D2FE !important;
+}
+
+/* ==========================================================================
+   Lumina LMS - Assignment Submissions Table Overhaul (#page-mod-assign-grading)
+   Hides 9 empty ghost rows, provides sticky student column, polishes toolbar
+   ========================================================================== */
+#page-mod-assign-grading table#submissions tr.emptyrow,
+.path-mod-assign table#submissions tr.emptyrow {
+    display: none !important;
+}
+
+/* Sticky first columns (Checkbox and Student Name) so they NEVER scroll offscreen */
+.path-mod-assign .gradingtable table#submissions {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+.path-mod-assign .gradingtable table#submissions th.c0,
+.path-mod-assign .gradingtable table#submissions td.c0 {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 10 !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    text-align: center !important;
+}
+
+.path-mod-assign .gradingtable table#submissions th.c0 {
+    background: #F8FAFC !important;
+}
+
+.path-mod-assign .gradingtable table#submissions td.c0 {
+    background: #FFFFFF !important;
+}
+
+.path-mod-assign .gradingtable table#submissions th.c1,
+.path-mod-assign .gradingtable table#submissions td.c1 {
+    position: sticky !important;
+    left: 48px !important;
+    z-index: 10 !important;
+    min-width: 220px !important;
+    border-right: 1px solid #E2E8F0 !important;
+    box-shadow: 3px 0 6px rgba(0, 0, 0, 0.03) !important;
+}
+
+.path-mod-assign .gradingtable table#submissions th.c1 {
+    background: #F8FAFC !important;
+}
+
+.path-mod-assign .gradingtable table#submissions td.c1 {
+    background: #FFFFFF !important;
+}
+
+.path-mod-assign .gradingtable table#submissions tr:hover td.c0,
+.path-mod-assign .gradingtable table#submissions tr:hover td.c1 {
+    background: #F8FAFC !important;
+}
+
+/* Clean up grading table header controls & alignment */
+#page-mod-assign-grading .tertiary-navigation {
+    background: #FFFFFF !important;
+    border: 1px solid var(--lumina-border, #E2E8F0) !important;
+    border-radius: 16px !important;
+    padding: 0.85rem 1.25rem !important;
+    margin-bottom: 1.25rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+#page-mod-assign-grading .tertiary-navigation .d-flex {
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+}
+
+#page-mod-assign-grading .tertiary-navigation h2 {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+    margin: 0 !important;
+    letter-spacing: -0.01em !important;
+}

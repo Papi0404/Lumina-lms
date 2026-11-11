@@ -1,0 +1,40 @@
+{{!
+    Lumina LMS - Assignment Fast Grader User Summary Component.
+    Eliminates text squishing and provides modern avatar and typography badges.
+}}
+<div class="d-flex align-items-center gap-3 lumina-grader-user-card py-1">
+    {{#profileimageurl}}
+        <div class="lumina-grader-avatar-wrap position-relative flex-shrink-0">
+            <img src="{{profileimageurl}}" class="rounded-circle border" width="44" height="44" alt="{{fullname}}" style="object-fit: cover; border-color: #E2E8F0 !important;" />
+        </div>
+    {{/profileimageurl}}
+
+    <div class="d-flex flex-column justify-content-center text-start lh-sm min-w-0">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            {{^blindmarking}}
+                <a href="{{globals.config.wwwroot}}/user/view.php?id={{id}}&course={{courseid}}" class="fw-bold text-dark text-truncate text-decoration-none hover-primary" style="font-size: 0.95rem; letter-spacing: -0.01em;">
+                    {{fullname}}
+                </a>
+            {{/blindmarking}}
+            {{#blindmarking}}
+                <span class="fw-bold text-dark text-truncate" style="font-size: 0.95rem;">
+                    {{fullname}}
+                </span>
+            {{/blindmarking}}
+
+            {{#hasidentity}}
+                <span class="text-muted small text-truncate" style="font-size: 0.8rem;" title="{{identity}}">
+                    &bull; {{identity}}
+                </span>
+            {{/hasidentity}}
+        </div>
+
+        {{#duedate}}
+            <div class="mt-1">
+                <span class="badge bg-light text-primary border rounded-pill px-2 py-1 fw-semibold" style="font-size: 0.74rem; background: #EEF2FF !important; color: #4338CA !important; border-color: #C7D2FE !important;">
+                    <i class="icon fa fa-clock fa-fw me-1" aria-hidden="true"></i>{{#str}}duedatecolon, mod_assign, {{duedatestr}}{{/str}}
+                </span>
+            </div>
+        {{/duedate}}
+    </div>
+</div>

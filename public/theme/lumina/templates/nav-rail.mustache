@@ -17,23 +17,6 @@
             </button>
         </div>
 
-        <!-- Role Preview Quick-Switcher for Administrators -->
-        {{#lumina_user.can_switch_preview}}
-        <div class="lumina-role-preview-bar d-print-none">
-            <div class="preview-bar-label">
-                <span class="material-symbols-outlined" style="font-size: 14px;">visibility</span>
-                <span>Preview Role:</span>
-            </div>
-            <div class="preview-pills-group">
-                <a href="?lumina_preview_role=admin" class="preview-pill {{#lumina_role.is_admin}}active{{/lumina_role.is_admin}}" title="Preview sebagai Administrator">Admin</a>
-                <a href="?lumina_preview_role=teacher" class="preview-pill {{#lumina_role.is_teacher}}active{{/lumina_role.is_teacher}}" title="Preview sebagai Guru / Instruktur">Guru</a>
-                <a href="?lumina_preview_role=student" class="preview-pill {{#lumina_role.is_student}}active{{/lumina_role.is_student}}" title="Preview sebagai Murid / Siswa">Murid</a>
-                {{#lumina_role.is_preview_active}}
-                <a href="?lumina_preview_role=reset" class="preview-pill reset" title="Reset ke role asli">&#x2715;</a>
-                {{/lumina_role.is_preview_active}}
-            </div>
-        </div>
-        {{/lumina_user.can_switch_preview}}
 
         <!-- 1. ADMINISTRATOR SIDEBAR -->
         {{#lumina_role.is_admin}}

@@ -53,23 +53,14 @@ class theme_lumina_role_resolver {
         }
 
         $isrealadmin = is_siteadmin($user->id);
-        $previewparam = optional_param('lumina_preview_role', null, PARAM_ALPHA);
 
-        if ($isrealadmin && $previewparam !== null) {
-            if (in_array($previewparam, ['admin', 'teacher', 'student'], true)) {
-                $SESSION->lumina_preview_role = $previewparam;
-            } else if ($previewparam === 'reset') {
-                unset($SESSION->lumina_preview_role);
-            }
+        // Clear any legacy preview session.
+        if (isset($SESSION->lumina_preview_role)) {
+            unset($SESSION->lumina_preview_role);
         }
 
-        $activepreview = ($isrealadmin && !empty($SESSION->lumina_preview_role)) ? $SESSION->lumina_preview_role : null;
-
-        if ($activepreview !== null) {
-            $rolekey = $activepreview;
-        } else {
-            $rolekey = self::detect_role_from_claims($user);
-        }
+        // Always resolve to the user's authentic role (no preview impersonation).
+        $rolekey = self::detect_role_from_claims($user);
 
         $labels = [
             'admin'   => 'Administrator',
@@ -84,9 +75,9 @@ class theme_lumina_role_resolver {
             'is_admin'            => ($rolekey === 'admin'),
             'is_teacher'          => ($rolekey === 'teacher'),
             'is_student'          => ($rolekey === 'student'),
-            'can_switch_preview'  => $isrealadmin,
-            'active_preview_role' => $activepreview,
-            'is_preview_active'   => !empty($activepreview),
+            'can_switch_preview'  => false,
+            'active_preview_role' => null,
+            'is_preview_active'   => false,
         ];
     }
 

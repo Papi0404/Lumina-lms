@@ -1420,3 +1420,8 @@
     color: #4338CA !important;
     border-color: #C7D2FE !important;
 }
+
+/* Disabled Role Preview Bar */
+.lumina-role-preview-bar {
+    display: none !important;
+}

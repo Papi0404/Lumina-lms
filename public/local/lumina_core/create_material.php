@@ -27,6 +27,7 @@ require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/theme/lumina/classes/role_resolver.php');
 
 require_login();
+$PAGE->set_context(context_system::instance());
 
 $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
 if (!$roleinfo['is_teacher'] && !$roleinfo['is_admin']) {

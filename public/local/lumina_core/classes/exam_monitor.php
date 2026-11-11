@@ -279,7 +279,7 @@ class exam_monitor {
         }
 
         $sql = "SELECT ev.id, ev.sessionid, ev.userid, ev.eventtype, ev.eventtime, ev.metadata,
-                       u.firstname, u.lastname, u.email,
+                       u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email,
                        s.warningcount, s.status,
                        c.shortname AS courseshortname
                   FROM {local_lumina_exam_events} ev
@@ -291,19 +291,20 @@ class exam_monitor {
 
         $records = $DB->get_records_sql($sql, $params, 0, 50);
         $feed = [];
+        $sysctx = \context_system::instance();
         foreach ($records as $r) {
             $feed[] = [
                 'id' => (int)$r->id,
                 'sessionid' => (int)$r->sessionid,
                 'student_name' => fullname($r),
                 'student_email' => $r->email,
-                'course' => format_string($r->courseshortname),
+                'course' => format_string($r->courseshortname, true, ['context' => $sysctx]),
                 'warning_count' => (int)$r->warningcount,
                 'eventtype' => $r->eventtype,
                 'label' => self::get_event_label($r->eventtype),
                 'icon' => self::get_event_icon($r->eventtype),
                 'badge_class' => self::get_event_badge_class($r->eventtype),
-                'metadata' => format_string($r->metadata ?: '-'),
+                'metadata' => format_string($r->metadata ?: '-', true, ['context' => $sysctx]),
                 'time_formatted' => userdate($r->eventtime, '%H:%M:%S WIB'),
                 'timestamp' => (int)$r->eventtime,
             ];
@@ -322,7 +323,7 @@ class exam_monitor {
 
         $sql = "SELECT s.id, s.courseid, s.activityid, s.userid, s.status, s.warningcount,
                        s.score, s.timestart, s.timefinish,
-                       u.firstname, u.lastname, u.email,
+                       u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email,
                        c.fullname AS coursename, c.shortname AS courseshortname
                   FROM {local_lumina_exam_sessions} s
                   JOIN {user} u ON u.id = s.userid
@@ -358,10 +359,11 @@ class exam_monitor {
                 $latesttime = userdate($latestevent->eventtime, '%H:%M:%S WIB');
             }
 
+            $sysctx = \context_system::instance();
             $result[] = [
                 'session_id'       => $r->id,
-                'course_name'      => format_string($r->coursename),
-                'activity_name'    => format_string($activityname ?: 'Ujian Interaktif H5P'),
+                'course_name'      => format_string($r->coursename, true, ['context' => $sysctx]),
+                'activity_name'    => format_string($activityname ?: 'Ujian Interaktif H5P', true, ['context' => $sysctx]),
                 'student_name'     => fullname($r),
                 'student_email'    => $r->email,
                 'warning_count'    => (int)$r->warningcount,

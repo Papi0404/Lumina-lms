@@ -83,7 +83,7 @@ class attendance_manager {
         global $DB;
 
         $context = context_course::instance($courseid);
-        $sql = "SELECT u.id, u.firstname, u.lastname, u.email, u.picture, u.imagealt
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email, u.picture, u.imagealt
                   FROM {user} u
                   JOIN {role_assignments} ra ON ra.userid = u.id
                   JOIN {role} r ON r.id = ra.roleid
@@ -272,7 +272,7 @@ class attendance_manager {
         global $DB;
 
         $context = context_course::instance($courseid);
-        $sql = "SELECT u.id, u.firstname, u.lastname, u.email, u.idnumber
+        $sql = "SELECT u.id, u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email, u.idnumber
                   FROM {user} u
                   JOIN {role_assignments} ra ON ra.userid = u.id
                   JOIN {role} r ON r.id = ra.roleid

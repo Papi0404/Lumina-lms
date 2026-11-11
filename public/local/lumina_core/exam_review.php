@@ -33,6 +33,11 @@ use local_lumina_core\exam_monitor;
 require_login();
 
 $systemcontext = context_system::instance();
+$PAGE->set_url('/local/lumina_core/exam_review.php');
+$PAGE->set_context($systemcontext);
+$PAGE->set_title('Pusat Audit Integritas Ujian Real-Time');
+$PAGE->set_heading('Pusat Audit Integritas & Anti-Curang CBT');
+
 $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
 
 // Only Admin or Exam Reviewers allowed
@@ -69,11 +74,6 @@ $reviewlist = exam_monitor::get_sessions_for_review();
 
 // Real-time live feed of recent 20 events
 $livefeed = exam_monitor::get_live_audit_feed(0);
-
-$PAGE->set_url('/local/lumina_core/exam_review.php');
-$PAGE->set_context($systemcontext);
-$PAGE->set_title('Pusat Audit Integritas Ujian Real-Time');
-$PAGE->set_heading('Pusat Audit Integritas & Anti-Curang CBT');
 
 echo $OUTPUT->header();
 ?>

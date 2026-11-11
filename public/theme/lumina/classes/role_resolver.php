@@ -245,7 +245,7 @@ class theme_lumina_role_resolver {
                 // Fetch pending assignment submissions waiting for grading.
                 $pendingsql = "SELECT s.id, s.assignment, s.userid, s.timemodified,
                                       a.name AS assignment_name, a.course AS courseid, c.fullname AS course_name, c.shortname AS course_shortname,
-                                      u.firstname, u.lastname, u.email,
+                                      u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email,
                                       cm.id AS cmid
                                  FROM {assign_submission} s
                                  JOIN {assign} a ON a.id = s.assignment
@@ -305,10 +305,11 @@ class theme_lumina_role_resolver {
                         ]))->out(false);
                     }
 
+                    $sysctx = \context_system::instance();
                     $pendingsubmissions[] = [
                         'id'               => $sub->id,
-                        'assignment_name'  => format_string($sub->assignment_name),
-                        'course_name'      => format_string($sub->course_shortname ?: $sub->course_name),
+                        'assignment_name'  => format_string($sub->assignment_name, true, ['context' => $sysctx]),
+                        'course_name'      => format_string($sub->course_shortname ?: $sub->course_name, true, ['context' => $sysctx]),
                         'student_name'     => fullname($sub),
                         'submitted_ago'    => self::time_ago($sub->timemodified),
                         'submission_stats' => $submission_stats,
@@ -320,6 +321,7 @@ class theme_lumina_role_resolver {
                 }
 
                 foreach ($courses as $c) {
+                    $cctx = \context_course::instance($c->id);
                     $studentcount = (int)$DB->count_records_sql(
                         "SELECT COUNT(DISTINCT ra.userid)
                            FROM {role_assignments} ra
@@ -331,8 +333,8 @@ class theme_lumina_role_resolver {
 
                     $teachercourses[$c->id] = [
                         'id'             => $c->id,
-                        'fullname'       => format_string($c->fullname),
-                        'shortname'      => format_string($c->shortname),
+                        'fullname'       => format_string($c->fullname, true, ['context' => $cctx]),
+                        'shortname'      => format_string($c->shortname, true, ['context' => $cctx]),
                         'students_count' => $studentcount,
                         'view_url'       => (new \core\url('/course/view.php', ['id' => $c->id]))->out(false),
                         'edit_url'       => (new \core\url('/course/view.php', ['id' => $c->id, 'edit' => 1, 'sesskey' => sesskey()]))->out(false),
@@ -361,7 +363,7 @@ class theme_lumina_role_resolver {
             foreach ($events as $ev) {
                 $todayschedule[] = [
                     'id'        => $ev->id,
-                    'title'     => format_string($ev->name),
+                    'title'     => format_string($ev->name, true, ['context' => \context_system::instance()]),
                     'time_str'  => userdate($ev->timestart, '%H:%M WIB'),
                     'is_live'   => (time() >= $ev->timestart && time() <= ($ev->timestart + max(3600, $ev->timeduration))),
                 ];
@@ -433,9 +435,10 @@ class theme_lumina_role_resolver {
                             'url'      => 'Tautan Web',
                         ];
 
+                        $cctx = \context_course::instance($courseid);
                         $materials[] = [
                             'id'         => $cm->id,
-                            'name'       => format_string($cm->name),
+                            'name'       => format_string($cm->name, true, ['context' => $cctx]),
                             'modname'    => $cm->modname,
                             'type_label' => $typemap[$cm->modname] ?? 'Materi Modul',
                             'icon'       => $iconmap[$cm->modname] ?? 'article',
@@ -447,10 +450,11 @@ class theme_lumina_role_resolver {
                 // Silently skip if modinfo fails.
             }
 
+            $cctx = \context_course::instance($courseid);
             $library[] = [
                 'course_id'       => $courseid,
-                'course_fullname' => format_string($c->fullname),
-                'course_shortname'=> format_string($c->shortname),
+                'course_fullname' => format_string($c->fullname, true, ['context' => $cctx]),
+                'course_shortname'=> format_string($c->shortname, true, ['context' => $cctx]),
                 'materials'       => $materials,
                 'materials_count' => count($materials),
                 'has_materials'   => !empty($materials),

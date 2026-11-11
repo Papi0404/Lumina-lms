@@ -104,7 +104,7 @@ class forum_manager {
         $forum = self::ensure_general_forum($courseid);
 
         $sql = "SELECT d.id, d.name, d.firstpost, d.userid, d.timemodified, d.pinned,
-                       u.firstname, u.lastname, u.email,
+                       u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email,
                        (SELECT COUNT(*) FROM {forum_posts} p WHERE p.discussion = d.id AND p.deleted = 0) - 1 AS replies_count,
                        (SELECT p.message FROM {forum_posts} p WHERE p.id = d.firstpost) AS firstmessage,
                        (SELECT p.created FROM {forum_posts} p WHERE p.id = d.firstpost) AS createdtime
@@ -154,7 +154,7 @@ class forum_manager {
         $course = $DB->get_record('course', ['id' => $discussion->course]);
 
         $sql = "SELECT p.id, p.parent, p.userid, p.created, p.modified, p.subject, p.message,
-                       u.firstname, u.lastname, u.email
+                       u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email
                   FROM {forum_posts} p
                   JOIN {user} u ON u.id = p.userid
                  WHERE p.discussion = ? AND p.deleted = 0

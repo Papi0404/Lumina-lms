@@ -1018,6 +1018,51 @@ if ($isadminuserpage && !empty($roleinfo['is_admin'])) {
     </script>';
 }
 
+// 2.4 Live Real-Time Notification Poller & Focus Sync
+if (isloggedin() && !isguestuser() && !empty($USER->id)) {
+    $quizguidehtml .= '
+    <script>
+    (function() {
+        var currentUserId = ' . (int)$USER->id . ';
+        if (!currentUserId || currentUserId <= 1) return;
+
+        function updateNotificationBadge(count) {
+            var bellBtn = document.querySelector(\'a.action-icon-btn[aria-label="Notifikasi"]\');
+            if (!bellBtn) return;
+            var pill = bellBtn.querySelector(".unread-count-pill");
+            if (count > 0) {
+                if (pill) {
+                    pill.textContent = count;
+                } else {
+                    pill = document.createElement("span");
+                    pill.className = "unread-count-pill";
+                    pill.textContent = count;
+                    bellBtn.appendChild(pill);
+                }
+            } else if (pill) {
+                pill.remove();
+            }
+        }
+
+        function checkLiveNotifications() {
+            if (typeof require !== "function") return;
+            require(["message_popup/notification_repository"], function(Repo) {
+                if (!Repo || typeof Repo.countUnread !== "function") return;
+                Repo.countUnread({useridto: currentUserId}).then(function(count) {
+                    updateNotificationBadge(parseInt(count, 10));
+                }).catch(function() {});
+            });
+        }
+
+        // Live check on window focus (user returns to LMS tab)
+        window.addEventListener("focus", checkLiveNotifications);
+
+        // Periodic background poll every 15 seconds
+        setInterval(checkLiveNotifications, 15000);
+    })();
+    </script>';
+}
+
 // 3. Smart Resource Library URL (Role & Course-isolated)
 if ($roleinfo['is_admin']) {
     $resourcesurl = (new \core\url('/local/lumina_core/library.php'))->out(false);

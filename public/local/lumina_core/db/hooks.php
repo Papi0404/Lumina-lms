@@ -30,4 +30,9 @@ $callbacks = [
         'callback' => \local_lumina_core\hook_callbacks::class . '::before_http_headers',
         'priority' => 500,
     ],
+    [
+        'hook'     => \core_user\hook\after_login_completed::class,
+        'callback' => \local_lumina_core\hook_callbacks::class . '::after_login_completed',
+        'priority' => 500,
+    ],
 ];

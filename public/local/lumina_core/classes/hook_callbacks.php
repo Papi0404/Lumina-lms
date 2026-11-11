@@ -86,4 +86,115 @@ class hook_callbacks {
             }
         }
     }
+
+    /**
+     * Parse User Agent into human readable device & browser string.
+     *
+     * @param string $useragent
+     * @return string
+     */
+    private static function parse_device_info(string $useragent): string {
+        $os = 'Perangkat Desktop/Laptop';
+        if (preg_match('/windows nt 10/i', $useragent)) {
+            $os = 'Windows 10/11';
+        } else if (preg_match('/windows/i', $useragent)) {
+            $os = 'Windows';
+        } else if (preg_match('/macintosh|mac os x/i', $useragent)) {
+            $os = 'macOS';
+        } else if (preg_match('/android/i', $useragent)) {
+            $os = 'Android Mobile';
+        } else if (preg_match('/iphone|ipad|ipod/i', $useragent)) {
+            $os = 'Apple iOS';
+        } else if (preg_match('/linux/i', $useragent)) {
+            $os = 'Linux';
+        }
+
+        $browser = 'Web Browser';
+        if (preg_match('/edg/i', $useragent)) {
+            $browser = 'Microsoft Edge';
+        } else if (preg_match('/brave/i', $useragent)) {
+            $browser = 'Brave';
+        } else if (preg_match('/chrome|crios/i', $useragent)) {
+            $browser = 'Google Chrome';
+        } else if (preg_match('/firefox|fxios/i', $useragent)) {
+            $browser = 'Mozilla Firefox';
+        } else if (preg_match('/safari/i', $useragent)) {
+            $browser = 'Apple Safari';
+        }
+
+        return "{$browser} ({$os})";
+    }
+
+    /**
+     * Instant login security notification hook: sends immediate notification on EVERY user login.
+     *
+     * @param \core_user\hook\after_login_completed $hook
+     */
+    public static function after_login_completed(\core_user\hook\after_login_completed $hook): void {
+        global $USER, $CFG, $PAGE, $SESSION;
+
+        if (empty($USER) || empty($USER->id) || isguestuser($USER)) {
+            return;
+        }
+
+        // Avoid duplicate triggers within the same 3 seconds.
+        if (!empty($SESSION->lumina_last_login_notif_time) && (time() - $SESSION->lumina_last_login_notif_time) < 3) {
+            return;
+        }
+        $SESSION->lumina_last_login_notif_time = time();
+
+        $loginip = getremoteaddr();
+        $useragent = \core_useragent::get_user_agent_string();
+        $devicename = self::parse_device_info($useragent);
+        $logintime = date('d F Y, H:i:s');
+        $userfullname = fullname($USER);
+        $username = $USER->username;
+        $useremail = $USER->email ?? '';
+
+        $changepasswordlink = (new \moodle_url('/login/change_password.php'))->out(false);
+
+        $html = '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 540px; padding: 16px; border: 1px solid #E2E8F0; border-radius: 14px; background: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">'
+            . '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">'
+            . '<span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10B981;"></span>'
+            . '<strong style="color: #0F172A; font-size: 15px;">Sesi Masuk Berhasil Terverifikasi</strong>'
+            . '</div>'
+            . '<p style="color: #475569; font-size: 13px; margin: 0 0 12px 0; line-height: 1.5;">'
+            . 'Halo <strong>' . s($userfullname) . '</strong>, akun Lumina LMS Anda baru saja berhasil masuk ke sistem.'
+            . '</p>'
+            . '<table style="width: 100%; font-size: 13px; color: #334155; border-collapse: collapse; margin-bottom: 12px;">'
+            . '<tr><td style="padding: 5px 0; color: #64748B; width: 110px;">👤 <strong>Akun:</strong></td><td style="padding: 5px 0;">' . s($username) . ($useremail ? ' (' . s($useremail) . ')' : '') . '</td></tr>'
+            . '<tr><td style="padding: 5px 0; color: #64748B;">🕒 <strong>Waktu:</strong></td><td style="padding: 5px 0;">' . $logintime . ' WIB</td></tr>'
+            . '<tr><td style="padding: 5px 0; color: #64748B;">💻 <strong>Perangkat:</strong></td><td style="padding: 5px 0;">' . s($devicename) . '</td></tr>'
+            . '<tr><td style="padding: 5px 0; color: #64748B;">🌐 <strong>Alamat IP:</strong></td><td style="padding: 5px 0;"><code>' . s($loginip) . '</code></td></tr>'
+            . '</table>'
+            . '<div style="padding-top: 10px; border-top: 1px solid #F1F5F9; font-size: 12px; color: #94A3B8;">'
+            . 'Jika ini bukan aktivitas Anda, segera <a href="' . $changepasswordlink . '" style="color: #4338CA; font-weight: 600; text-decoration: underline;">amankan akun dan ganti kata sandi</a>.'
+            . '</div>'
+            . '</div>';
+
+        $eventdata = new \core\message\message();
+        $eventdata->courseid          = SITEID;
+        $eventdata->component         = 'moodle';
+        $eventdata->name              = 'newlogin';
+        $eventdata->userfrom          = \core_user::get_noreply_user();
+        $eventdata->userto            = $USER;
+        $eventdata->notification      = 1;
+        $eventdata->subject           = 'Sesi Masuk Baru Berhasil — Lumina LMS';
+        $eventdata->fullmessageformat = FORMAT_HTML;
+        $eventdata->fullmessagehtml   = $html;
+        $eventdata->fullmessage       = "Halo {$userfullname}, akun Anda baru saja masuk dari {$devicename} pada {$logintime} WIB (IP: {$loginip}).";
+        $eventdata->smallmessage      = "Masuk berhasil dari {$devicename} pada " . date('H:i') . " WIB";
+
+        try {
+            $userpicture = new \user_picture($USER);
+            $userpicture->size = 1;
+            if ($PAGE) {
+                $eventdata->customdata = ['notificationiconurl' => $userpicture->get_url($PAGE)->out(false)];
+            }
+        } catch (\Throwable $e) {
+            // Ignore icon fallback.
+        }
+
+        message_send($eventdata);
+    }
 }

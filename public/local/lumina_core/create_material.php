@@ -142,6 +142,17 @@ $moduletypes = [
         'btn_text' => '+ Buat Kuis / Ujian',
     ],
     [
+        'type' => 'h5pactivity',
+        'title' => 'Ujian CBT H5P (Bank Soal)',
+        'badge' => 'CBT Anti-Curang H5P',
+        'badge_class' => 'bg-indigo-subtle text-indigo border border-indigo-subtle',
+        'icon' => 'verified_user',
+        'icon_color' => '#4F46E5',
+        'bg_color' => '#EEF2FF',
+        'desc' => 'Unggah berkas paket bank soal .h5p (Question Set). Otomatis terintegrasi layar penuh CBT, anti-curang, dan sinkronisasi nilai.',
+        'btn_text' => '+ Unggah Ujian H5P',
+    ],
+    [
         'type' => 'page',
         'title' => 'Halaman Bacaan Digital',
         'badge' => 'Modul Teks Interaktif',

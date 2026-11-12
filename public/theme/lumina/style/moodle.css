@@ -173,6 +173,14 @@
     box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3) !important;
     text-decoration: none !important;
     transition: all 0.15s ease !important;
+    position: relative !important;
+    z-index: 10 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+.lumina-btn-pending *,
+.lumina-btn-completed * {
+    pointer-events: none !important;
 }
 .lumina-btn-pending:hover {
     background: #EA580C !important;
@@ -1425,3 +1433,301 @@
 .lumina-role-preview-bar {
     display: none !important;
 }
+
+
+/* ==========================================================================
+   LUMINA GRADER REPORT MODERN TABLE (NO HYPHENATION, NATURAL EXPANSION & HORIZONTAL SCROLL)
+   ========================================================================== */
+#page-grade-report-grader-index .gradeparent,
+.path-grade-report-grader .gradeparent {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: var(--lumina-radius-md, 12px) !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    background: #ffffff !important;
+    border: 1px solid var(--lumina-border, #E2E8F0) !important;
+    margin-bottom: 2rem !important;
+    position: relative !important;
+}
+
+#page-grade-report-grader-index .gradeparent table,
+#page-grade-report-grader-index .gradeparent table#user-grades,
+#page-grade-report-grader-index .gradeparent .gradestable,
+.path-grade-report-grader .gradeparent table,
+.path-grade-report-grader .gradeparent table#user-grades,
+.path-grade-report-grader .gradeparent .gradestable {
+    table-layout: auto !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+}
+
+#page-grade-report-grader-index .gradeparent thead th,
+#page-grade-report-grader-index .gradeparent th.header,
+#page-grade-report-grader-index .gradeparent th.item,
+#page-grade-report-grader-index .gradeparent th.cat,
+#page-grade-report-grader-index .gradeparent th.category,
+#page-grade-report-grader-index .gradeparent .heading .cell,
+.path-grade-report-grader .gradeparent thead th,
+.path-grade-report-grader .gradeparent th.header,
+.path-grade-report-grader .gradeparent th.item,
+.path-grade-report-grader .gradeparent th.cat,
+.path-grade-report-grader .gradeparent th.category,
+.path-grade-report-grader .gradeparent .heading .cell {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
+    line-height: 1.4 !important;
+    font-size: 0.8125rem !important;
+    padding: 0.85rem 1.25rem !important;
+    min-width: 130px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    background: #F8FAFC !important;
+    color: #334155 !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid var(--lumina-border, #E2E8F0) !important;
+    border-right: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-sizing: border-box !important;
+}
+
+#page-grade-report-grader-index .gradeparent thead th .gradeitemheader,
+#page-grade-report-grader-index .gradeparent th.header .gradeitemheader,
+#page-grade-report-grader-index .gradeparent th.item .gradeitemheader,
+.path-grade-report-grader .gradeparent thead th .gradeitemheader,
+.path-grade-report-grader .gradeparent th.header .gradeitemheader,
+.path-grade-report-grader .gradeparent th.item .gradeitemheader {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    max-width: none !important;
+    width: auto !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-overflow: clip !important;
+    text-indent: 0 !important;
+    padding: 0 !important;
+    font-weight: 600 !important;
+    color: #0F172A !important;
+}
+
+#page-grade-report-grader-index .gradeparent .gradeitemheader .itemicon,
+.path-grade-report-grader .gradeparent .gradeitemheader .itemicon {
+    margin-right: 4px !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.cat,
+#page-grade-report-grader-index .gradeparent th.category,
+.path-grade-report-grader .gradeparent th.cat,
+.path-grade-report-grader .gradeparent th.category {
+    background: #F1F5F9 !important;
+    color: #1E293B !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    padding: 0.75rem 1rem !important;
+    border-bottom: 1px solid var(--lumina-border, #E2E8F0) !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.user,
+#page-grade-report-grader-index .gradeparent .user.cell,
+.path-grade-report-grader .gradeparent th.user,
+.path-grade-report-grader .gradeparent .user.cell {
+    min-width: 200px !important;
+    width: auto !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-align: left !important;
+    padding: 0.85rem 1.25rem !important;
+    background: #FFFFFF !important;
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 5 !important;
+    box-shadow: 2px 0 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+#page-grade-report-grader-index .gradeparent thead th.user,
+.path-grade-report-grader .gradeparent thead th.user {
+    background: #F8FAFC !important;
+    z-index: 6 !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.user .userpicture,
+#page-grade-report-grader-index .gradeparent .user.cell .userpicture,
+.path-grade-report-grader .gradeparent th.user .userpicture,
+.path-grade-report-grader .gradeparent .user.cell .userpicture {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    margin-right: 8px !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.user .username,
+#page-grade-report-grader-index .gradeparent th.user a,
+#page-grade-report-grader-index .gradeparent .user.cell .username,
+#page-grade-report-grader-index .gradeparent .user.cell a,
+.path-grade-report-grader .gradeparent th.user .username,
+.path-grade-report-grader .gradeparent th.user a,
+.path-grade-report-grader .gradeparent .user.cell .username,
+.path-grade-report-grader .gradeparent .user.cell a {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #0F172A !important;
+    line-height: 1.3 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    text-decoration: none !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.userfield,
+#page-grade-report-grader-index .gradeparent td.userfield,
+#page-grade-report-grader-index .gradeparent .heading .userfield,
+.path-grade-report-grader .gradeparent th.userfield,
+.path-grade-report-grader .gradeparent td.userfield,
+.path-grade-report-grader .gradeparent .heading .userfield {
+    min-width: 220px !important;
+    width: auto !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-align: left !important;
+    padding: 0.85rem 1.25rem !important;
+    background: #FFFFFF !important;
+    font-size: 0.825rem !important;
+    color: #475569 !important;
+}
+
+#page-grade-report-grader-index .gradeparent thead th.userfield,
+.path-grade-report-grader .gradeparent thead th.userfield {
+    background: #F8FAFC !important;
+}
+
+#page-grade-report-grader-index .gradeparent tbody tr.userrow th.user.cell,
+#page-grade-report-grader-index .gradeparent tbody tr.userrow td.userfield,
+#page-grade-report-grader-index .gradeparent tbody tr.userrow td.cell,
+.path-grade-report-grader .gradeparent tbody tr.userrow th.user.cell,
+.path-grade-report-grader .gradeparent tbody tr.userrow td.userfield,
+.path-grade-report-grader .gradeparent tbody tr.userrow td.cell {
+    background: #FFFFFF !important;
+    vertical-align: middle !important;
+    height: auto !important;
+    min-height: 52px !important;
+}
+
+#page-grade-report-grader-index .gradeparent tbody tr.userrow:hover th.user.cell,
+#page-grade-report-grader-index .gradeparent tbody tr.userrow:hover td.userfield,
+#page-grade-report-grader-index .gradeparent tbody tr.userrow:hover td.cell,
+.path-grade-report-grader .gradeparent tbody tr.userrow:hover th.user.cell,
+.path-grade-report-grader .gradeparent tbody tr.userrow:hover td.userfield,
+.path-grade-report-grader .gradeparent tbody tr.userrow:hover td.cell {
+    background: #F8FAFC !important;
+}
+
+#page-grade-report-grader-index .gradeparent tbody td.cell,
+.path-grade-report-grader .gradeparent tbody td.cell {
+    padding: 0.85rem 1.25rem !important;
+    min-width: 120px !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-size: 0.875rem !important;
+    font-variant-numeric: tabular-nums !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+    border-right: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    background: #FFFFFF !important;
+}
+
+#page-grade-report-grader-index .gradeparent tbody td.cell .gradevalue,
+.path-grade-report-grader .gradeparent tbody td.cell .gradevalue {
+    font-weight: 600 !important;
+    color: var(--lumina-primary, #4338CA) !important;
+    display: inline-block !important;
+    line-height: 1.4 !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.coursetotal,
+#page-grade-report-grader-index .gradeparent td.coursetotal,
+#page-grade-report-grader-index .gradeparent th.categorytotal,
+#page-grade-report-grader-index .gradeparent td.categorytotal,
+.path-grade-report-grader .gradeparent th.coursetotal,
+.path-grade-report-grader .gradeparent td.coursetotal,
+.path-grade-report-grader .gradeparent th.categorytotal,
+.path-grade-report-grader .gradeparent td.categorytotal {
+    background: #F8FAFC !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+}
+
+#page-grade-report-grader-index .gradeparent th.coursetotal .gradevalue,
+#page-grade-report-grader-index .gradeparent td.coursetotal .gradevalue,
+.path-grade-report-grader .gradeparent th.coursetotal .gradevalue,
+.path-grade-report-grader .gradeparent td.coursetotal .gradevalue {
+    color: #0F172A !important;
+    font-weight: 700 !important;
+}
+
+#page-grade-report-grader-index .gradeparent tr.lastrow th,
+#page-grade-report-grader-index .gradeparent tr.lastrow td,
+#page-grade-report-grader-index .gradeparent tr.avg th,
+#page-grade-report-grader-index .gradeparent tr.avg td,
+#page-grade-report-grader-index .gradeparent tr.range th,
+#page-grade-report-grader-index .gradeparent tr.range td,
+#page-grade-report-grader-index .gradeparent tr.groupavg th,
+#page-grade-report-grader-index .gradeparent tr.groupavg td,
+.path-grade-report-grader .gradeparent tr.lastrow th,
+.path-grade-report-grader .gradeparent tr.lastrow td,
+.path-grade-report-grader .gradeparent tr.avg th,
+.path-grade-report-grader .gradeparent tr.avg td,
+.path-grade-report-grader .gradeparent tr.range th,
+.path-grade-report-grader .gradeparent tr.range td,
+.path-grade-report-grader .gradeparent tr.groupavg th,
+.path-grade-report-grader .gradeparent tr.groupavg td {
+    position: static !important;
+    bottom: auto !important;
+    background: #F8FAFC !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    border-top: 2px solid #E2E8F0 !important;
+    border-bottom: 2px solid #CBD5E1 !important;
+    padding: 0.85rem 1.25rem !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    height: auto !important;
+    min-height: 48px !important;
+}
+
+#page-grade-report-grader-index .gradeparent tr.lastrow th.user,
+#page-grade-report-grader-index .gradeparent tr.range th.header.range,
+.path-grade-report-grader .gradeparent tr.lastrow th.user,
+.path-grade-report-grader .gradeparent tr.range th.header.range {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 5 !important;
+    background: #F1F5F9 !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+    text-align: left !important;
+    padding-left: 1.25rem !important;
+    box-shadow: 2px 0 6px rgba(15, 23, 42, 0.04) !important;
+}
+

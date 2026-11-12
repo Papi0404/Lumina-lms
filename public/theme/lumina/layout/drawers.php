@@ -687,12 +687,20 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
         box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3) !important;
         text-decoration: none !important;
         transition: all 0.15s ease !important;
+        position: relative !important;
+        z-index: 10 !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
     }
     .lumina-btn-pending:hover {
         background: #EA580C !important;
         box-shadow: 0 4px 12px rgba(249, 115, 22, 0.45) !important;
         color: #FFFFFF !important;
         transform: translateY(-1px);
+    }
+    .lumina-btn-pending *,
+    .lumina-btn-completed * {
+        pointer-events: none !important;
     }
 
     /* ========================================================== */
@@ -798,6 +806,12 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
                 var titleNode = card.querySelector("h3, h4, h5, .name, .eventname");
                 var actionBtn = card.querySelector(".card-footer a, a.card-link, .commands a");
 
+                var targetState = isCompleted ? "completed" : "pending";
+                if (card.getAttribute("data-lumina-state") === targetState) {
+                    return;
+                }
+                card.setAttribute("data-lumina-state", targetState);
+
                 if (isCompleted) {
                     eventEl.classList.remove("lumina-event-pending");
                     eventEl.classList.add("lumina-event-completed");
@@ -818,6 +832,12 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
                     if (actionBtn) {
                         actionBtn.className = "lumina-btn-completed text-decoration-none";
                         actionBtn.innerHTML = "<span class=\'material-symbols-outlined\' style=\'font-size: 16px; vertical-align: -2px;\'>task_alt</span> ✓ Sudah Selesai (Lihat Aktivitas)";
+                        actionBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            if (this.href && this.href !== "#" && !this.href.startsWith("javascript:")) {
+                                window.location.href = this.href;
+                            }
+                        };
                     }
                 } else {
                     // Pending / Belum Selesai -> ORANGE
@@ -837,9 +857,26 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
                         existingBadge.innerHTML = "⏳ Belum Dikerjakan";
                     }
 
-                    if (actionBtn && (actionBtn.innerText.indexOf("Go to") !== -1 || actionBtn.innerText.indexOf("activity") !== -1 || actionBtn.classList.contains("card-link"))) {
+                    if (actionBtn) {
                         actionBtn.className = "lumina-btn-pending text-decoration-none";
                         actionBtn.innerHTML = "<span class=\'material-symbols-outlined\' style=\'font-size: 16px; vertical-align: -2px;\'>arrow_forward</span> Kerjakan Sekarang";
+
+                        // If it is a Quiz or H5P exam activity, route DIRECTLY to Lumina CBT Exam View
+                        var cmidMatch = actionBtn.href ? actionBtn.href.match(/id=(\d+)/) : null;
+                        var component = (eventEl.getAttribute("data-event-component") || "").toLowerCase();
+                        var isExam = (component === "mod_quiz" || component === "mod_h5pactivity" || actionBtn.href.indexOf("mod/quiz/") !== -1 || actionBtn.href.indexOf("mod/h5pactivity/") !== -1);
+
+                        if (isExam && cmidMatch) {
+                            var rootUrl = (window.M && window.M.cfg && window.M.cfg.wwwroot) ? window.M.cfg.wwwroot : "";
+                            actionBtn.href = rootUrl + "/local/lumina_core/exam_view.php?cmid=" + cmidMatch[1];
+                        }
+
+                        actionBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            if (this.href && this.href !== "#" && !this.href.startsWith("javascript:")) {
+                                window.location.href = this.href;
+                            }
+                        };
                     }
                 }
             });

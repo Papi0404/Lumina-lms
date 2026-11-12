@@ -2470,6 +2470,14 @@ body.pagelayout-admin {
     box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3) !important;
     text-decoration: none !important;
     transition: all 0.15s ease !important;
+    position: relative !important;
+    z-index: 10 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+
+    * {
+        pointer-events: none !important;
+    }
 
     &:hover {
         background: #EA580C !important;
@@ -3081,41 +3089,45 @@ body.pagelayout-admin {
         width: 100% !important;
         max-width: 100% !important;
         overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch !important;
         border-radius: var(--lumina-radius-md, 12px) !important;
-        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03) !important;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
         background: #ffffff !important;
         border: 1px solid var(--lumina-border, #E2E8F0) !important;
         margin-bottom: 2rem !important;
+        position: relative !important;
 
-        /* 1. Force fixed table layout & 100% width */
+        /* 1. Fluid table layout & natural expansion for horizontal scrolling */
         table,
         table#user-grades,
         .gradestable {
-            table-layout: fixed !important;
-            width: 100% !important;
+            table-layout: auto !important;
+            width: max-content !important;
             min-width: 100% !important;
-            max-width: 100% !important;
+            max-width: none !important;
             border-collapse: separate !important;
             border-spacing: 0 !important;
             margin-bottom: 0 !important;
             border: none !important;
         }
 
-        /* 2. Text Wrapping for Activity/Quiz/Assignment Headers */
+        /* 2. Activity/Quiz/Assignment Headers - Spacious, Clean & No Break */
         thead th,
         th.header,
         th.item,
         th.cat,
         th.category,
         .heading .cell {
-            white-space: normal !important;
-            word-break: break-word !important;
-            overflow-wrap: break-word !important;
-            hyphens: auto !important;
-            line-height: 1.35 !important;
-            font-size: 0.78rem !important;
-            padding: 0.75rem 0.5rem !important;
-            vertical-align: top !important;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            hyphens: none !important;
+            line-height: 1.4 !important;
+            font-size: 0.8125rem !important;
+            padding: 0.85rem 1.25rem !important;
+            min-width: 130px !important;
+            vertical-align: middle !important;
             text-align: center !important;
             background: #F8FAFC !important;
             color: #334155 !important;
@@ -3126,12 +3138,15 @@ body.pagelayout-admin {
 
             /* Override Moodle's fixed 200px ellipsis on headers */
             .gradeitemheader {
-                display: block !important;
-                max-width: 100% !important;
-                width: 100% !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-                overflow-wrap: break-word !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 6px !important;
+                max-width: none !important;
+                width: auto !important;
+                white-space: nowrap !important;
+                word-break: normal !important;
+                overflow-wrap: normal !important;
                 text-overflow: clip !important;
                 text-indent: 0 !important;
                 padding: 0 !important;
@@ -3140,15 +3155,28 @@ body.pagelayout-admin {
 
                 .itemicon {
                     margin-right: 4px !important;
-                    vertical-align: text-bottom !important;
+                    vertical-align: middle !important;
+                    flex-shrink: 0 !important;
                 }
             }
 
             .sorticon {
                 display: inline-block !important;
-                margin-left: 2px !important;
+                margin-left: 4px !important;
                 vertical-align: middle !important;
             }
+        }
+
+        /* Category Header Row */
+        th.cat,
+        th.category {
+            background: #F1F5F9 !important;
+            color: #1E293B !important;
+            font-size: 0.875rem !important;
+            font-weight: 700 !important;
+            text-align: center !important;
+            padding: 0.75rem 1rem !important;
+            border-bottom: 1px solid var(--lumina-border, #E2E8F0) !important;
         }
 
         /* Remove fixed min-width on highlighted cells */
@@ -3157,54 +3185,78 @@ body.pagelayout-admin {
             width: auto !important;
         }
 
-        /* 3. Compact & Ergonomic Student Name & Profile Column */
+        /* 3. Compact & Sticky Student Name Column */
         th.user,
-        .user.cell,
-        .heading .userfield,
-        th.userfield,
-        td.userfield {
-            width: 180px !important;
-            min-width: 150px !important;
-            max-width: 220px !important;
-            white-space: normal !important;
-            word-break: break-word !important;
-            overflow-wrap: break-word !important;
+        .user.cell {
+            min-width: 200px !important;
+            width: auto !important;
+            max-width: none !important;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
             text-align: left !important;
-            padding: 0.75rem 0.85rem !important;
+            padding: 0.85rem 1.25rem !important;
             background: #FFFFFF !important;
-            position: sticky;
-            left: 0;
-            z-index: 2;
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 5 !important;
+            box-shadow: 2px 0 6px rgba(15, 23, 42, 0.04) !important;
 
             .userpicture {
-                width: 28px !important;
-                height: 28px !important;
+                width: 30px !important;
+                height: 30px !important;
                 border-radius: 50% !important;
-                margin-right: 6px !important;
+                margin-right: 8px !important;
                 flex-shrink: 0 !important;
+                display: inline-block !important;
+                vertical-align: middle !important;
             }
 
             .username, a {
-                font-size: 0.825rem !important;
+                font-size: 0.85rem !important;
                 font-weight: 600 !important;
                 color: #0F172A !important;
                 line-height: 1.3 !important;
                 display: inline-block !important;
-            }
+                vertical-align: middle !important;
+                text-decoration: none !important;
 
-            .useremail, .small {
-                font-size: 0.725rem !important;
-                color: #64748B !important;
-                line-height: 1.2 !important;
-                display: block !important;
-                margin-top: 2px !important;
-                word-break: break-all !important;
+                &:hover {
+                    color: var(--lumina-primary, #4338CA) !important;
+                }
             }
         }
 
-        /* 3.1 Student Rows & Grade Value Cells (Solid Opaque & Clean Flow) */
+        thead th.user {
+            background: #F8FAFC !important;
+            z-index: 6 !important;
+        }
+
+        /* Email Column */
+        th.userfield,
+        td.userfield,
+        .heading .userfield {
+            min-width: 220px !important;
+            width: auto !important;
+            max-width: none !important;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            text-align: left !important;
+            padding: 0.85rem 1.25rem !important;
+            background: #FFFFFF !important;
+            font-size: 0.825rem !important;
+            color: #475569 !important;
+        }
+
+        thead th.userfield {
+            background: #F8FAFC !important;
+        }
+
+        /* 3.1 Student Rows & Grade Value Cells */
         tbody tr.userrow {
             th.user.cell,
+            td.userfield,
             td.cell {
                 background: #FFFFFF !important;
                 vertical-align: middle !important;
@@ -3214,6 +3266,7 @@ body.pagelayout-admin {
 
             &:hover {
                 th.user.cell,
+                td.userfield,
                 td.cell {
                     background: #F8FAFC !important;
                 }
@@ -3221,15 +3274,17 @@ body.pagelayout-admin {
         }
 
         tbody td.cell {
-            padding: 0.65rem 0.5rem !important;
+            padding: 0.85rem 1.25rem !important;
+            min-width: 120px !important;
+            white-space: nowrap !important;
             text-align: center !important;
             vertical-align: middle !important;
-            font-size: 0.825rem !important;
+            font-size: 0.875rem !important;
             font-variant-numeric: tabular-nums !important;
             border-bottom: 1px solid #F1F5F9 !important;
             border-right: 1px solid rgba(226, 232, 240, 0.8) !important;
             box-sizing: border-box !important;
-            position: relative;
+            position: relative !important;
             background: #FFFFFF !important;
 
             .gradevalue {
@@ -3241,15 +3296,31 @@ body.pagelayout-admin {
 
             input.text, input.form-control {
                 width: 100% !important;
-                max-width: 65px !important;
+                max-width: 75px !important;
                 text-align: center !important;
-                padding: 2px 4px !important;
-                font-size: 0.8125rem !important;
+                padding: 4px 8px !important;
+                font-size: 0.85rem !important;
                 border-radius: 6px !important;
+                border: 1px solid var(--lumina-border, #CBD5E1) !important;
             }
         }
 
-        /* 3.2 Overall Average / Range / Category Summary Rows (STRICT FLOW - PREVENT OVERLAPPING) */
+        /* Course Total & Category Total Highlight */
+        th.coursetotal,
+        td.coursetotal,
+        th.categorytotal,
+        td.categorytotal {
+            background: #F8FAFC !important;
+            font-weight: 700 !important;
+            color: #0F172A !important;
+
+            .gradevalue {
+                color: #0F172A !important;
+                font-weight: 700 !important;
+            }
+        }
+
+        /* 3.2 Overall Average / Range / Category Summary Rows */
         tr.lastrow,
         tr.avg,
         tr.range,
@@ -3266,21 +3337,24 @@ body.pagelayout-admin {
                 font-weight: 600 !important;
                 border-top: 2px solid #E2E8F0 !important;
                 border-bottom: 2px solid #CBD5E1 !important;
-                padding: 0.75rem 0.65rem !important;
+                padding: 0.85rem 1.25rem !important;
+                white-space: nowrap !important;
                 vertical-align: middle !important;
                 height: auto !important;
                 min-height: 48px !important;
             }
 
-            th.header.range {
+            th.header.range,
+            th.user {
                 position: sticky !important;
                 left: 0 !important;
-                z-index: 2 !important;
+                z-index: 5 !important;
                 background: #F1F5F9 !important;
                 font-weight: 700 !important;
                 color: #0F172A !important;
                 text-align: left !important;
-                padding-left: 1rem !important;
+                padding-left: 1.25rem !important;
+                box-shadow: 2px 0 6px rgba(15, 23, 42, 0.04) !important;
             }
 
             .gradevalue, div[data-collapse="avgrowcell"] {

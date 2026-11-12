@@ -43,8 +43,10 @@ try {
             echo json_encode(['success' => false, 'error' => 'Akses ditolak']);
             exit;
         }
-        $since = optional_param('since', 0, PARAM_INT);
-        $feed = exam_monitor::get_live_audit_feed($since);
+        $since  = optional_param('since', 0, PARAM_INT);
+        $date   = optional_param('date', '', PARAM_TEXT);
+        $search = optional_param('search', '', PARAM_TEXT);
+        $feed   = exam_monitor::get_live_audit_feed($since, $date, $search);
         echo json_encode([
             'success'     => true,
             'feed'        => $feed,

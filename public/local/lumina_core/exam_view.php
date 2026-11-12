@@ -200,6 +200,33 @@ if ($session->status === 'under_review' || $session->status === 'invalidated') {
             <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-inline-flex p-3 mb-3">
                 <span class="material-symbols-outlined" style="font-size: 52px;">gavel</span>
             </div>
+            <?php if ($session->status === 'invalidated'): ?>
+            <h3 class="fw-bold text-danger mb-2">Ujian Dibatalkan / Diskualifikasi!</h3>
+            <p class="text-dark fw-semibold mb-3">
+                Sesi ujian <strong><?php echo format_string($cm->name); ?></strong> telah dibatalkan oleh Pengawas/Admin karena pelanggaran integritas.
+            </p>
+
+            <div class="alert alert-danger bg-danger bg-opacity-10 border-danger border-opacity-25 rounded-2xl p-3 mb-3 text-start small">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Status Ujian:</span>
+                    <span class="badge bg-danger rounded-pill px-2-5 py-0-5 font-semibold">Dibatalkan / Diskualifikasi</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Nilai Akhir:</span>
+                    <span class="fw-bold text-danger">0.00</span>
+                </div>
+                <?php if (!empty($session->adminreviewnotes)): ?>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Catatan Pengawas:</span>
+                    <span class="fw-semibold text-danger"><?php echo s($session->adminreviewnotes); ?></span>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <p class="text-muted small mb-4">
+                Sesi ujian Anda telah dibatalkan oleh pengawas dan dicatat permanen dalam sistem log audit integritas ujian. Hubungi pengawas atau guru pengampu untuk informasi lebih lanjut.
+            </p>
+            <?php else: ?>
             <h3 class="fw-bold text-danger mb-2">Sesi Ujian Terkunci!</h3>
             <p class="text-dark fw-semibold mb-3">
                 Ujian <strong><?php echo format_string($cm->name); ?></strong> telah dikunci oleh sistem pengawasan anti-curang.
@@ -223,6 +250,7 @@ if ($session->status === 'under_review' || $session->status === 'invalidated') {
             <p class="text-muted small mb-4">
                 Anda terdeteksi keluar dari mode layar penuh atau berpindah jendela browser melebihi batas toleransi. Sesuai protokol ujian terintegrasi, ujian ini tidak dapat dikerjakan lagi sampai Administrator menyetujui (ACC) atau me-reset sesi ujian Anda.
             </p>
+            <?php endif; ?>
 
             <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-outline-danger rounded-pill py-2-5 px-4 font-semibold w-100 shadow-xs">
                 ← Kembali ke Dashboard

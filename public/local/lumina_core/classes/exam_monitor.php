@@ -177,10 +177,16 @@ class exam_monitor {
             'trackpad_gesture' => 'Gesture Trackpad / Pinch Zoom',
             'fullscreen_exit' => 'Keluar Layar Penuh (Fullscreen)',
             'blur' => 'Pindah Jendela / Alt+Tab',
+            'window_blur' => 'Pindah Jendela / Alt+Tab',
             'visibility_hidden' => 'Pindah Tab Browser',
             'mouseleave' => 'Kursor Keluar Layar',
             'clipboard_copy' => 'Percobaan Copy / Salin Teks',
+            'devtools' => 'Percobaan Buka DevTools (F12)',
             'exam_submitted' => 'Ujian Dikumpulkan',
+            'exam_invalidated' => 'Ujian Dibatalkan / Diskualifikasi',
+            'exam_reset' => 'Sesi Di-ACC & Di-reset (0/3)',
+            'exam_approved' => 'Sesi Ujian Diloloskan',
+            'simulation_reset' => 'Simulasi Guru Di-reset',
         ];
         return $labels[$eventtype] ?? ('Pelanggaran (' . $eventtype . ')');
     }
@@ -197,11 +203,18 @@ class exam_monitor {
             'three_finger_gesture' => 'bg-danger text-white',
             'three_finger_gesture_or_minimize' => 'bg-danger text-white',
             'fullscreen_exit' => 'bg-danger text-white',
+            'devtools' => 'bg-danger text-white',
+            'exam_invalidated' => 'bg-danger text-white',
+            'clipboard_copy' => 'bg-danger text-white',
             'trackpad_gesture' => 'bg-warning text-dark',
             'blur' => 'bg-warning text-dark',
+            'window_blur' => 'bg-warning text-dark',
             'visibility_hidden' => 'bg-warning text-dark',
+            'simulation_reset' => 'bg-warning text-dark',
+            'exam_reset' => 'bg-primary text-white',
+            'exam_approved' => 'bg-success text-white',
+            'exam_submitted' => 'bg-success text-white',
             'mouseleave' => 'bg-secondary text-white',
-            'clipboard_copy' => 'bg-danger text-white',
         ];
         return $classes[$eventtype] ?? 'bg-secondary text-white';
     }
@@ -220,9 +233,16 @@ class exam_monitor {
             'trackpad_gesture' => 'pinch',
             'fullscreen_exit' => 'fullscreen_exit',
             'blur' => 'tab_unselected',
+            'window_blur' => 'tab_unselected',
             'visibility_hidden' => 'visibility_off',
             'mouseleave' => 'mouse',
             'clipboard_copy' => 'content_copy',
+            'devtools' => 'terminal',
+            'exam_invalidated' => 'gavel',
+            'exam_reset' => 'restart_alt',
+            'exam_approved' => 'verified',
+            'simulation_reset' => 'refresh',
+            'exam_submitted' => 'task_alt',
         ];
         return $icons[$eventtype] ?? 'warning';
     }
@@ -264,19 +284,55 @@ class exam_monitor {
 
     /**
      * Get live audit feed of all recent violations.
+     * Supports filtering by date and student name search.
      *
      * @param int $since
+     * @param string|null $date Specific date ('YYYY-MM-DD'), null for today, or 'all'.
+     * @param string $search Search term for student name or email.
+     * @param int $limit
      * @return array
      */
-    public static function get_live_audit_feed(int $since = 0): array {
+    public static function get_live_audit_feed(int $since = 0, ?string $date = null, string $search = '', int $limit = 50): array {
         global $DB;
 
         $params = ['exam_submitted'];
-        $where = "ev.eventtype != ?";
+        $where = ["ev.eventtype != ?"];
+
         if ($since > 0) {
-            $where .= " AND ev.eventtime > ?";
+            $where[] = "ev.eventtime > ?";
             $params[] = $since;
         }
+
+        // Date Filter: default to Today if null/empty, or specific date if provided
+        if ($date === null || $date === '') {
+            $date = date('Y-m-d');
+        }
+        if ($date !== 'all') {
+            $daystart = strtotime($date . ' 00:00:00');
+            $dayend   = strtotime($date . ' 23:59:59');
+            if ($daystart !== false && $dayend !== false) {
+                $where[] = "ev.eventtime >= ? AND ev.eventtime <= ?";
+                $params[] = $daystart;
+                $params[] = $dayend;
+            }
+        }
+
+        // Student Search Filter
+        if (!empty($search)) {
+            $searchterm = '%' . $DB->sql_like_escape(trim($search)) . '%';
+            $where[] = "(" . $DB->sql_like('u.firstname', '?', false) . " OR " .
+                             $DB->sql_like('u.lastname', '?', false) . " OR " .
+                             $DB->sql_like($DB->sql_fullname('u.firstname', 'u.lastname'), '?', false) . " OR " .
+                             $DB->sql_like('u.email', '?', false) . " OR " .
+                             $DB->sql_like('ev.metadata', '?', false) . ")";
+            $params[] = $searchterm;
+            $params[] = $searchterm;
+            $params[] = $searchterm;
+            $params[] = $searchterm;
+            $params[] = $searchterm;
+        }
+
+        $wheresql = implode(' AND ', $where);
 
         $sql = "SELECT ev.id, ev.sessionid, ev.userid, ev.eventtype, ev.eventtime, ev.metadata,
                        u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email,
@@ -286,10 +342,10 @@ class exam_monitor {
                   JOIN {user} u ON u.id = ev.userid
                   JOIN {local_lumina_exam_sessions} s ON s.id = ev.sessionid
                   JOIN {course} c ON c.id = s.courseid
-                 WHERE $where
+                 WHERE $wheresql
               ORDER BY ev.id DESC";
 
-        $records = $DB->get_records_sql($sql, $params, 0, 50);
+        $records = $DB->get_records_sql($sql, $params, 0, $limit);
         $feed = [];
         $sysctx = \context_system::instance();
         foreach ($records as $r) {
@@ -306,6 +362,7 @@ class exam_monitor {
                 'badge_class' => self::get_event_badge_class($r->eventtype),
                 'metadata' => format_string($r->metadata ?: '-', true, ['context' => $sysctx]),
                 'time_formatted' => userdate($r->eventtime, '%H:%M:%S WIB'),
+                'date_formatted' => userdate($r->eventtime, '%d %b %Y'),
                 'timestamp' => (int)$r->eventtime,
             ];
         }
@@ -314,29 +371,70 @@ class exam_monitor {
 
     /**
      * Get all exam sessions flagged for admin review.
-     * Shows sessions with 1+ warnings or any logged violations!
+     * Supports filtering by date and student name search.
      *
+     * @param string|null $date Specific date ('YYYY-MM-DD'), null for today, or 'all'.
+     * @param string $search Search term for student name or email.
      * @return array
      */
-    public static function get_sessions_for_review(): array {
+    public static function get_sessions_for_review(?string $date = null, string $search = ''): array {
         global $DB;
 
+        $params = [];
+        $where = [];
+
+        // Base flag condition
+        $where[] = "(s.status IN ('under_review', 'invalidated', 'approved') OR s.warningcount >= 1 OR EXISTS (
+            SELECT 1 FROM {local_lumina_exam_events} ev
+             WHERE ev.sessionid = s.id AND ev.eventtype != 'exam_submitted'
+        ))";
+
+        // Date Filter: default to Today if null/empty, or specific date if provided
+        if ($date === null || $date === '') {
+            $date = date('Y-m-d');
+        }
+        if ($date !== 'all') {
+            $daystart = strtotime($date . ' 00:00:00');
+            $dayend   = strtotime($date . ' 23:59:59');
+            if ($daystart !== false && $dayend !== false) {
+                $where[] = "((s.timestart >= :daystart1 AND s.timestart <= :dayend1) OR " .
+                           "(s.timefinish >= :daystart2 AND s.timefinish <= :dayend2) OR " .
+                           "EXISTS (SELECT 1 FROM {local_lumina_exam_events} ev_date WHERE ev_date.sessionid = s.id AND ev_date.eventtime >= :daystart3 AND ev_date.eventtime <= :dayend3))";
+                $params['daystart1'] = $daystart;
+                $params['dayend1']   = $dayend;
+                $params['daystart2'] = $daystart;
+                $params['dayend2']   = $dayend;
+                $params['daystart3'] = $daystart;
+                $params['dayend3']   = $dayend;
+            }
+        }
+
+        // Student Search Filter
+        if (!empty($search)) {
+            $searchterm = '%' . $DB->sql_like_escape(trim($search)) . '%';
+            $where[] = "(" . $DB->sql_like('u.firstname', ':search1', false) . " OR " .
+                             $DB->sql_like('u.lastname', ':search2', false) . " OR " .
+                             $DB->sql_like($DB->sql_fullname('u.firstname', 'u.lastname'), ':search3', false) . " OR " .
+                             $DB->sql_like('u.email', ':search4', false) . ")";
+            $params['search1'] = $searchterm;
+            $params['search2'] = $searchterm;
+            $params['search3'] = $searchterm;
+            $params['search4'] = $searchterm;
+        }
+
+        $wheresql = implode(' AND ', $where);
+
         $sql = "SELECT s.id, s.courseid, s.activityid, s.userid, s.status, s.warningcount,
-                       s.score, s.timestart, s.timefinish,
+                       s.score, s.timestart, s.timefinish, s.adminreviewerid, s.adminreviewtime, s.adminreviewnotes,
                        u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email,
                        c.fullname AS coursename, c.shortname AS courseshortname
                   FROM {local_lumina_exam_sessions} s
                   JOIN {user} u ON u.id = s.userid
                   JOIN {course} c ON c.id = s.courseid
-                 WHERE s.status IN ('under_review', 'invalidated', 'approved')
-                    OR s.warningcount >= 1
-                    OR EXISTS (
-                        SELECT 1 FROM {local_lumina_exam_events} ev
-                         WHERE ev.sessionid = s.id AND ev.eventtype != 'exam_submitted'
-                    )
+                 WHERE $wheresql
               ORDER BY s.warningcount DESC, s.id DESC";
 
-        $rows = $DB->get_records_sql($sql);
+        $rows = $DB->get_records_sql($sql, $params);
         $result = [];
 
         foreach ($rows as $r) {
@@ -363,6 +461,14 @@ class exam_monitor {
             $coursectx = \context_course::instance($r->courseid, IGNORE_MISSING);
             $isteacher = ($coursectx && (has_capability('moodle/course:manageactivities', $coursectx, $r->userid) || has_capability('moodle/grade:viewall', $coursectx, $r->userid))) || is_siteadmin($r->userid);
 
+            $adminreviewername = '';
+            if (!empty($r->adminreviewerid)) {
+                $reviewer = $DB->get_record('user', ['id' => $r->adminreviewerid], 'firstname, lastname');
+                if ($reviewer) {
+                    $adminreviewername = fullname($reviewer);
+                }
+            }
+
             $result[] = [
                 'session_id'       => $r->id,
                 'course_name'      => format_string($r->coursename, true, ['context' => $sysctx]),
@@ -379,6 +485,8 @@ class exam_monitor {
                 'start_time'       => userdate($r->timestart, '%d %b %Y, %H:%M'),
                 'finish_time'      => $r->timefinish ? userdate($r->timefinish, '%d %b %Y, %H:%M') : 'Sedang Berlangsung',
                 'status'           => $r->status,
+                'admin_reviewer_name' => $adminreviewername,
+                'admin_review_notes'  => $r->adminreviewnotes ?: '',
                 'events'           => self::get_session_events((int)$r->id),
             ];
         }
@@ -387,11 +495,12 @@ class exam_monitor {
     }
 
     /**
-     * Admin review resolution: Approve or Invalidate session.
+     * Admin review resolution: Approve, Invalidate (Batalkan), or Reset session.
+     * Records permanent audit event so cancellations/resets are fully auditable.
      *
      * @param int $sessionid
      * @param int $adminid
-     * @param string $decision ('approved' | 'invalidated')
+     * @param string $decision ('approved' | 'invalidated' | 'reset')
      * @param string $notes
      * @return bool
      */
@@ -399,6 +508,9 @@ class exam_monitor {
         global $DB;
 
         $session = $DB->get_record('local_lumina_exam_sessions', ['id' => $sessionid], '*', MUST_EXIST);
+        $adminuser = $DB->get_record('user', ['id' => $adminid], 'id, firstname, lastname');
+        $adminname = $adminuser ? fullname($adminuser) : 'Pengawas/Admin';
+        $now = time();
 
         if ($decision === 'reset') {
             // Admin ACC & Reset Ujian: Kembalikan sesi ke status in_progress dengan peringatan 0/3
@@ -407,12 +519,20 @@ class exam_monitor {
             $session->score = null;
             $session->timefinish = 0;
             $session->adminreviewerid = $adminid;
-            $session->adminreviewtime = time();
+            $session->adminreviewtime = $now;
             $session->adminreviewnotes = clean_text($notes ?: 'Di-ACC & di-reset oleh Admin agar murid dapat mengerjakan ulang.');
 
-            // Hapus log pelanggaran dan peringatan lama agar murid mulai dengan 0/3 peringatan
+            // Clear warnings counter table so student starts with 0/3 warnings
             $DB->delete_records('local_lumina_exam_warnings', ['sessionid' => $sessionid]);
-            $DB->delete_records('local_lumina_exam_events', ['sessionid' => $sessionid]);
+
+            // Record permanent audit event for reset (never lose track of previous violations)
+            $ev = new stdClass();
+            $ev->sessionid = $sessionid;
+            $ev->userid = $session->userid;
+            $ev->eventtype = 'exam_reset';
+            $ev->eventtime = $now;
+            $ev->metadata = clean_text('Sesi di-ACC & di-reset oleh ' . $adminname . ($notes ? ' (Catatan: ' . $notes . ')' : ''));
+            $DB->insert_record('local_lumina_exam_events', $ev);
 
             $res = $DB->update_record('local_lumina_exam_sessions', $session);
             self::sync_grade_to_gradebook((int)$session->activityid, (int)$session->userid, null);
@@ -421,7 +541,7 @@ class exam_monitor {
 
         $session->status = in_array($decision, ['approved', 'invalidated'], true) ? $decision : 'under_review';
         $session->adminreviewerid = $adminid;
-        $session->adminreviewtime = time();
+        $session->adminreviewtime = $now;
         $session->adminreviewnotes = clean_text($notes);
 
         if ($decision === 'approved') {
@@ -439,8 +559,27 @@ class exam_monitor {
                     }
                 }
             }
+
+            // Record permanent audit log for approval
+            $ev = new stdClass();
+            $ev->sessionid = $sessionid;
+            $ev->userid = $session->userid;
+            $ev->eventtype = 'exam_approved';
+            $ev->eventtime = $now;
+            $ev->metadata = clean_text('Sesi ujian disetujui & diloloskan oleh ' . $adminname . ($notes ? ' (Catatan: ' . $notes . ')' : ''));
+            $DB->insert_record('local_lumina_exam_events', $ev);
+
         } else if ($decision === 'invalidated') {
             $session->score = 0.00;
+
+            // Record permanent audit log for cancellation / disqualification
+            $ev = new stdClass();
+            $ev->sessionid = $sessionid;
+            $ev->userid = $session->userid;
+            $ev->eventtype = 'exam_invalidated';
+            $ev->eventtime = $now;
+            $ev->metadata = clean_text('Ujian dibatalkan oleh ' . $adminname . ($notes ? ' (Alasan: ' . $notes . ')' : ''));
+            $DB->insert_record('local_lumina_exam_events', $ev);
         }
 
         $res = $DB->update_record('local_lumina_exam_sessions', $session);
@@ -463,7 +602,7 @@ class exam_monitor {
         global $DB;
 
         $session = $DB->get_record('local_lumina_exam_sessions', ['id' => $sessionid, 'userid' => $userid], '*', MUST_EXIST);
-        if ($session->status === 'completed' || $session->status === 'under_review') {
+        if ($session->status === 'completed' || $session->status === 'under_review' || $session->status === 'invalidated') {
             return false;
         }
 
@@ -736,6 +875,22 @@ class exam_monitor {
         global $DB;
 
         $session = $DB->get_record('local_lumina_exam_sessions', ['id' => $sessionid, 'userid' => $userid], '*', MUST_EXIST);
+        if ($session->status === 'invalidated') {
+            return [
+                'success'       => false,
+                'session_id'    => $sessionid,
+                'status'        => 'invalidated',
+                'score'         => 0.0,
+                'correct'       => 0,
+                'wrong'         => 0,
+                'unanswered'    => 0,
+                'total'         => 0,
+                'warning_count' => (int)$session->warningcount,
+                'is_suspended'  => true,
+                'submitted_at'  => userdate(time(), '%d %b %Y, %H:%M WIB'),
+                'message'       => 'Sesi ujian ini telah dibatalkan oleh pengawas/admin.',
+            ];
+        }
         $questions = self::get_exam_questions((int)$session->activityid);
         $total = count($questions);
         if ($total === 0) {

@@ -133,6 +133,7 @@
       <INDEXES>
         <INDEX NAME="sessionid" UNIQUE="false" FIELDS="sessionid"/>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
+        <INDEX NAME="eventtime" UNIQUE="false" FIELDS="eventtime"/>
       </INDEXES>
     </TABLE>
 

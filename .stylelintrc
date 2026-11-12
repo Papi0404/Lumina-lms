@@ -10,11 +10,11 @@
           ]
         },
         "at-rule-empty-line-before": [ "always",
-          {"except": [ "blockless-after-blockless"], ignore: ["after-comment", "inside-block"]}
+          {"except": [ "blockless-after-blockless"], "ignore": ["after-comment", "inside-block"]}
         ],
         "at-rule-name-case": "lower",
         "at-rule-name-space-after": "always-single-line",
-        "at-rule-no-unknown": null, # Enabled for non-scss in grunt.
+        "at-rule-no-unknown": null,
         "at-rule-semicolon-newline-after": "always",
         "at-rule-semicolon-space-before": "never",
         "block-closing-brace-newline-after": "always",
@@ -95,8 +95,8 @@
         "value-keyword-case": ["lower", {"ignoreKeywords": ["/(@|$)/"]}],
         "value-list-comma-newline-after": "always-multi-line",
         "value-list-comma-space-after": "always-single-line",
-        "value-list-comma-space-before": "never",
-  },
+        "value-list-comma-space-before": "never"
+    },
   "overrides": [
     {
       "files": ["**/yui/**/*.css"],

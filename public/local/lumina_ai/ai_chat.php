@@ -92,7 +92,7 @@ if (!is_array($history)) {
     $history = [];
 }
 
-// 1. Math quick-eval.
+// 1. Math quick-eval (AST-safe parser without eval).
 $mathclean = preg_replace('/\s+/', '', strtolower($message));
 $mathclean = rtrim($mathclean, '=?');
 $mathclean = preg_replace('/(berapa|adalah|sama\s*dengan)$/u', '', $mathclean);
@@ -100,13 +100,10 @@ $mathclean = rtrim($mathclean, '=?');
 
 if (preg_match('/^[-+*\/%0-9().^]+$/', $mathclean) && preg_match('/[0-9]/', $mathclean) && preg_match('/[-+*\/%^]/', $mathclean)) {
     try {
-        $evalexpr = str_replace('^', '**', $mathclean);
-        if (preg_match('/^[0-9+\-*\/().% ]+$/', $evalexpr)) {
-            $calc = @eval('return ' . $evalexpr . ';');
-            if ($calc !== false && $calc !== null) {
-                echo json_encode(['status' => 'success', 'reply' => "{$message} = **{$calc}**", 'engine' => 'math-eval']);
-                exit;
-            }
+        $calc = lumina_ai_safe_eval_math($mathclean);
+        if ($calc !== null && $calc !== false) {
+            echo json_encode(['status' => 'success', 'reply' => "{$message} = **{$calc}**", 'engine' => 'math-eval']);
+            exit;
         }
     } catch (\Throwable $e) {}
 }
@@ -204,6 +201,13 @@ function lumina_ai_build_messages(string $systemprompt, array $history, string $
     }
     $messages[] = ['role' => 'user', 'content' => $message];
     return $messages;
+}
+
+// Enterprise Session Concurrency Optimization:
+// Release session write lock before executing external HTTP/cURL requests.
+// Prevents other tabs/requests from the same user from freezing during AI response generation.
+if (class_exists('\core\session\manager')) {
+    \core\session\manager::write_close();
 }
 
 // 5. Engine: Google Gemini.
@@ -389,4 +393,149 @@ function lumina_ai_academic_response(string $msg, $user, array $enrolled, array 
 
     return "Pertanyaan yang menarik mengenai **" . s($msg) . "**!\n\nSilakan tanyakan materi kuliah, konsep teori, atau masalah koding yang sedang Anda pelajari, dan saya akan menjelaskannya langkah demi langkah. Untuk jawaban yang lebih mendalam, pastikan admin telah mengkonfigurasi API key AI di pengaturan plugin Lumina AI.";
 }
+
+/**
+ * Enterprise-grade AST-safe mathematical expression evaluator.
+ * Uses Shunting-yard algorithm and RPN evaluation without eval() or shell execution.
+ *
+ * @param string $expr Mathematical expression to evaluate
+ * @return int|float|null Result or null if invalid
+ */
+function lumina_ai_safe_eval_math(string $expr) {
+    $tokens = [];
+    $len = strlen($expr);
+    $i = 0;
+    while ($i < $len) {
+        $c = $expr[$i];
+        if (ctype_space($c)) {
+            $i++;
+            continue;
+        }
+        if (ctype_digit($c) || $c === '.') {
+            $num = '';
+            while ($i < $len && (ctype_digit($expr[$i]) || $expr[$i] === '.')) {
+                $num .= $expr[$i];
+                $i++;
+            }
+            $tokens[] = ['type' => 'number', 'val' => (float)$num];
+            continue;
+        }
+        if (in_array($c, ['+', '-', '*', '/', '%', '^', '(', ')'])) {
+            if ($c === '-' || $c === '+') {
+                $prev = empty($tokens) ? null : end($tokens);
+                if ($prev === null || $prev['type'] === 'operator' || ($prev['type'] === 'paren' && $prev['val'] === '(')) {
+                    $tokens[] = ['type' => 'operator', 'val' => ($c === '-' ? 'u-' : 'u+')];
+                    $i++;
+                    continue;
+                }
+            }
+            $tokens[] = [
+                'type' => ($c === '(' || $c === ')') ? 'paren' : 'operator',
+                'val'  => $c
+            ];
+            $i++;
+            continue;
+        }
+        return null;
+    }
+
+    $precedence = [
+        'u-' => 4, 'u+' => 4,
+        '^'  => 3,
+        '*'  => 2, '/'  => 2, '%'  => 2,
+        '+'  => 1, '-'  => 1,
+    ];
+    $assoc = [
+        'u-' => 'R', 'u+' => 'R',
+        '^'  => 'R',
+        '*'  => 'L', '/'  => 'L', '%'  => 'L',
+        '+'  => 'L', '-'  => 'L',
+    ];
+
+    $output = [];
+    $opstack = [];
+
+    foreach ($tokens as $t) {
+        if ($t['type'] === 'number') {
+            $output[] = $t;
+        } elseif ($t['type'] === 'operator') {
+            $op1 = $t['val'];
+            while (!empty($opstack)) {
+                $top = end($opstack);
+                if ($top['type'] === 'operator') {
+                    $op2 = $top['val'];
+                    $p1 = $precedence[$op1] ?? 0;
+                    $p2 = $precedence[$op2] ?? 0;
+                    $a1 = $assoc[$op1] ?? 'L';
+                    if (($a1 === 'L' && $p1 <= $p2) || ($a1 === 'R' && $p1 < $p2)) {
+                        $output[] = array_pop($opstack);
+                        continue;
+                    }
+                }
+                break;
+            }
+            $opstack[] = $t;
+        } elseif ($t['type'] === 'paren') {
+            if ($t['val'] === '(') {
+                $opstack[] = $t;
+            } else {
+                while (!empty($opstack) && end($opstack)['val'] !== '(') {
+                    $output[] = array_pop($opstack);
+                }
+                if (empty($opstack)) {
+                    return null;
+                }
+                array_pop($opstack);
+            }
+        }
+    }
+
+    while (!empty($opstack)) {
+        $top = array_pop($opstack);
+        if ($top['type'] === 'paren') {
+            return null;
+        }
+        $output[] = $top;
+    }
+
+    $evalstack = [];
+    foreach ($output as $item) {
+        if ($item['type'] === 'number') {
+            $evalstack[] = $item['val'];
+        } elseif ($item['type'] === 'operator') {
+            $op = $item['val'];
+            if ($op === 'u-') {
+                if (empty($evalstack)) return null;
+                $a = array_pop($evalstack);
+                $evalstack[] = -$a;
+            } elseif ($op === 'u+') {
+                if (empty($evalstack)) return null;
+            } else {
+                if (count($evalstack) < 2) return null;
+                $b = array_pop($evalstack);
+                $a = array_pop($evalstack);
+                switch ($op) {
+                    case '+': $evalstack[] = $a + $b; break;
+                    case '-': $evalstack[] = $a - $b; break;
+                    case '*': $evalstack[] = $a * $b; break;
+                    case '/': 
+                        if ($b == 0) return null;
+                        $evalstack[] = $a / $b; 
+                        break;
+                    case '%': 
+                        if ($b == 0) return null;
+                        $evalstack[] = fmod($a, $b); 
+                        break;
+                    case '^': $evalstack[] = pow($a, $b); break;
+                    default: return null;
+                }
+            }
+        }
+    }
+
+    if (count($evalstack) !== 1) return null;
+    $res = $evalstack[0];
+    return is_finite($res) ? (round($res, 6) == (int)$res ? (int)$res : round($res, 4)) : null;
+}
+
 

@@ -26,8 +26,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/course/lib.php');
-
 // Assignment submission statuses.
 define('ASSIGN_SUBMISSION_STATUS_NEW', 'new');
 define('ASSIGN_SUBMISSION_STATUS_REOPENED', 'reopened');
@@ -80,21 +78,11 @@ define('ASSIGN_INTROATTACHMENT_FILEAREA', 'introattachment');
 define('ASSIGN_ACTIVITYATTACHMENT_FILEAREA', 'activityattachment');
 
 // Event types.
-if (!defined('ASSIGN_EVENT_TYPE_DUE')) {
-    define('ASSIGN_EVENT_TYPE_DUE', 'due');
-}
-if (!defined('ASSIGN_EVENT_TYPE_GRADINGDUE')) {
-    define('ASSIGN_EVENT_TYPE_GRADINGDUE', 'gradingdue');
-}
-if (!defined('ASSIGN_EVENT_TYPE_OPEN')) {
-    define('ASSIGN_EVENT_TYPE_OPEN', 'open');
-}
-if (!defined('ASSIGN_EVENT_TYPE_CLOSE')) {
-    define('ASSIGN_EVENT_TYPE_CLOSE', 'close');
-}
-if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
-    define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
-}
+define('ASSIGN_EVENT_TYPE_DUE', 'due');
+define('ASSIGN_EVENT_TYPE_GRADINGDUE', 'gradingdue');
+define('ASSIGN_EVENT_TYPE_OPEN', 'open');
+define('ASSIGN_EVENT_TYPE_CLOSE', 'close');
+define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
 
 define('ASSIGN_MULTIMARKING_METHOD_MANUAL', 'manual');
 define('ASSIGN_MULTIMARKING_METHOD_MAX', 'maximum');

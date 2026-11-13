@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 class hook_callbacks {
 
     /**
-     * Inject universal CBT proctoring into footer.
+     * Inject universal CBT proctoring and navbar menu fallback into footer.
      *
      * @param \core\hook\output\before_standard_footer_html_generation $hook
      */
@@ -37,12 +37,59 @@ class hook_callbacks {
     }
 
     /**
+     * Inject CBT & Audit menu into top taskbar / primary navigation menu across all themes.
+     *
+     * @param \core\hook\navigation\primary_extend $hook
+     */
+    public static function primary_extend($hook): void {
+        global $USER;
+
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
+
+        $syscontext = \context_system::instance();
+        $canmonitor = is_siteadmin() ||
+                      has_capability('local/lumina_cbt:monitor', $syscontext) ||
+                      has_capability('moodle/grade:viewall', $syscontext) ||
+                      has_capability('moodle/course:manageactivities', $syscontext);
+
+        if (!$canmonitor) {
+            $courses = enrol_get_all_users_courses($USER->id, true);
+            foreach ($courses as $c) {
+                $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
+                if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
+                                  has_capability('moodle/grade:viewall', $ccontext) ||
+                                  has_capability('moodle/course:manageactivities', $ccontext))) {
+                    $canmonitor = true;
+                    break;
+                }
+            }
+        }
+
+        if ($canmonitor) {
+            $primaryview = $hook->get_primaryview();
+            $url = new \moodle_url('/local/lumina_cbt/monitor.php');
+            $node = $primaryview->add(
+                '🛡️ CBT & Audit',
+                $url,
+                \navigation_node::TYPE_CUSTOM,
+                null,
+                'lumina_cbt_primary_monitor'
+            );
+            if ($node) {
+                $node->showinflatnavigation = true;
+            }
+        }
+    }
+
+    /**
      * Inject CBT Proctor & Audit tab into course secondary navigation menu.
      *
      * @param \core\hook\navigation\secondary_extend $hook
      */
     public static function secondary_extend($hook): void {
-        global $COURSE, $PAGE;
+        global $COURSE;
 
         if (!$COURSE || $COURSE->id == SITEID) {
             return;

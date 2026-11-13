@@ -27,6 +27,52 @@ defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/classes/cbt_engine.php');
 
 /**
+ * Global navigation extension: ensures "CBT & Audit" is registered in classic and global menus.
+ *
+ * @param global_navigation $navigation
+ */
+function local_lumina_cbt_extend_navigation(\global_navigation $navigation) {
+    global $USER;
+
+    if (!isloggedin() || isguestuser()) {
+        return;
+    }
+
+    $syscontext = \context_system::instance();
+    $canmonitor = is_siteadmin() ||
+                  has_capability('local/lumina_cbt:monitor', $syscontext) ||
+                  has_capability('moodle/grade:viewall', $syscontext) ||
+                  has_capability('moodle/course:manageactivities', $syscontext);
+
+    if (!$canmonitor) {
+        $courses = enrol_get_all_users_courses($USER->id, true);
+        foreach ($courses as $c) {
+            $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
+            if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
+                              has_capability('moodle/grade:viewall', $ccontext) ||
+                              has_capability('moodle/course:manageactivities', $ccontext))) {
+                $canmonitor = true;
+                break;
+            }
+        }
+    }
+
+    if ($canmonitor) {
+        $cbturl = new \moodle_url('/local/lumina_cbt/monitor.php');
+        $node = $navigation->add(
+            '🛡️ CBT & Audit',
+            $cbturl,
+            \navigation_node::TYPE_CUSTOM,
+            null,
+            'lumina_cbt_global_monitor'
+        );
+        if ($node) {
+            $node->showinflatnavigation = true;
+        }
+    }
+}
+
+/**
  * Automatically inject "CBT Proctor & Audit" into Course Navigation for teachers and managers.
  *
  * @param navigation_node $navigation
@@ -88,17 +134,79 @@ function local_lumina_cbt_extend_settings_navigation(\settings_navigation $nav, 
 }
 
 /**
- * Universal Auto-Enforcement on assessment activity pages (mod_quiz, mod_h5pactivity).
- * Automatically locks down student's browser and starts proctor monitoring.
+ * Universal Auto-Enforcement on assessment activities AND taskbar navbar injection for admins/teachers.
  */
 function local_lumina_cbt_before_footer() {
-    global $PAGE, $USER, $COURSE, $DB;
+    global $PAGE, $USER, $COURSE, $DB, $CFG;
 
     if (!isloggedin() || isguestuser()) {
         return;
     }
 
-    // Check if universal enforcement is enabled (default: 1)
+    // 1. Taskbar / Navbar Menu Injection across ALL themes for teachers & admins
+    $sysctx = \context_system::instance();
+    $canmonitor = is_siteadmin() ||
+                  has_capability('local/lumina_cbt:monitor', $sysctx) ||
+                  has_capability('moodle/grade:viewall', $sysctx) ||
+                  has_capability('moodle/course:manageactivities', $sysctx);
+
+    if (!$canmonitor) {
+        $courses = enrol_get_all_users_courses($USER->id, true);
+        foreach ($courses as $c) {
+            $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
+            if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
+                              has_capability('moodle/grade:viewall', $ccontext) ||
+                              has_capability('moodle/course:manageactivities', $ccontext))) {
+                $canmonitor = true;
+                break;
+            }
+        }
+    }
+
+    if ($canmonitor) {
+        $monUrl = (new \moodle_url('/local/lumina_cbt/monitor.php'))->out(false);
+        $PAGE->requires->js_amd_inline("
+            require([], function() {
+                function injectCbtTaskbar() {
+                    if (document.querySelector('a[href*=\"/local/lumina_cbt/monitor.php\"]')) return;
+                    var nav = document.querySelector('.primary-navigation .navigation') ||
+                              document.querySelector('.navbar-nav') ||
+                              document.querySelector('#header .nav') ||
+                              document.querySelector('.nav-tabs') ||
+                              document.querySelector('.navbar');
+                    if (!nav) return;
+
+                    var isCurrent = window.location.pathname.indexOf('/local/lumina_cbt/monitor.php') !== -1;
+                    var li = document.createElement('li');
+                    li.className = 'nav-item cbt-taskbar-item' + (isCurrent ? ' active' : '');
+                    li.setAttribute('role', 'none');
+
+                    var a = document.createElement('a');
+                    a.className = 'nav-link' + (isCurrent ? ' active' : '');
+                    a.href = " . json_encode($monUrl) . ";
+                    a.setAttribute('role', 'menuitem');
+                    a.innerHTML = '<span style=\"margin-right:5px;\">🛡️</span><span style=\"font-weight:600;\">CBT &amp; Audit</span>';
+                    li.appendChild(a);
+
+                    // Insert right before user menu or at end of nav
+                    var userMenu = nav.querySelector('.usermenu') || nav.querySelector('.ms-auto');
+                    if (userMenu) {
+                        nav.insertBefore(li, userMenu);
+                    } else {
+                        nav.appendChild(li);
+                    }
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', injectCbtTaskbar);
+                } else {
+                    injectCbtTaskbar();
+                }
+                setTimeout(injectCbtTaskbar, 500);
+            });
+        ");
+    }
+
+    // 2. Check universal exam enforcement (default: 1)
     $universal = get_config('local_lumina_cbt', 'universal_mode');
     if ($universal === false || $universal === null) {
         $universal = 1;
@@ -114,7 +222,6 @@ function local_lumina_cbt_before_footer() {
 
     $path = $PAGE->url ? $PAGE->url->get_path() : '';
 
-    // Check if current page is an active exam attempt or view
     $isexam = (
         strpos($path, '/mod/quiz/attempt.php') !== false ||
         strpos($path, '/mod/quiz/processattempt.php') !== false ||
@@ -126,12 +233,12 @@ function local_lumina_cbt_before_footer() {
         return;
     }
 
-    $context = context_module::instance($cm->id, IGNORE_MISSING);
+    $context = \context_module::instance($cm->id, IGNORE_MISSING);
     if (!$context) {
         return;
     }
 
-    // Exclude teachers/admins so they don't get locked out while reviewing
+    // Exclude teachers/admins from lockdown so they can preview/grade
     $isteacher = has_capability('moodle/course:manageactivities', $context) ||
                  has_capability('moodle/grade:viewall', $context) ||
                  is_siteadmin();
@@ -143,11 +250,15 @@ function local_lumina_cbt_before_footer() {
     // Start/retrieve candidate proctoring session
     $session = \local_lumina_cbt\cbt_engine::start_or_get_session((int)$cm->course, (int)$cm->id, (int)$USER->id);
 
+    // Course URL for fallback redirect
+    $courseurl = (new \moodle_url('/course/view.php', ['id' => $cm->course]))->out(false);
+
     // Inject Proctoring AMD Module
     $PAGE->requires->js_call_amd('local_lumina_cbt/proctor', 'init', [[
         'sessionId'        => (int)$session->id,
         'cmid'             => (int)$cm->id,
         'courseId'         => (int)$cm->course,
+        'courseUrl'        => $courseurl,
         'sesskey'          => sesskey(),
         'maxWarnings'      => (int)(get_config('local_lumina_cbt', 'max_warnings') ?: 3),
         'strictFullscreen' => (bool)(get_config('local_lumina_cbt', 'enable_fullscreen') ?? true),

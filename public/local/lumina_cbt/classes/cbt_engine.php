@@ -281,7 +281,7 @@ class cbt_engine {
      * @param int $limit Max records
      * @return array
      */
-    public static function get_live_audit_feed(int $since = 0, ?string $date = null, string $search = '', int $limit = 50): array {
+    public static function get_live_audit_feed(int $since = 0, ?string $date = null, string $search = '', int $limit = 50, ?int $courseid = null, ?int $activityid = null): array {
         global $DB;
 
         $sessiontable = self::get_session_table();
@@ -289,6 +289,16 @@ class cbt_engine {
 
         $params = ['exam_submitted'];
         $where = ["ev.eventtype != ?"];
+
+        if ($courseid > 0) {
+            $where[] = "s.courseid = ?";
+            $params[] = $courseid;
+        }
+
+        if ($activityid > 0) {
+            $where[] = "s.activityid = ?";
+            $params[] = $activityid;
+        }
 
         if ($since > 0) {
             $where[] = "ev.eventtime > ?";
@@ -370,7 +380,7 @@ class cbt_engine {
      * @param int|null $courseid
      * @return array
      */
-    public static function get_sessions_for_review(?string $date = null, string $search = '', ?int $courseid = null): array {
+    public static function get_sessions_for_review(?string $date = null, string $search = '', ?int $courseid = null, ?int $activityid = null, string $filterscope = 'violations_only'): array {
         global $DB;
 
         $sessiontable = self::get_session_table();
@@ -379,16 +389,24 @@ class cbt_engine {
         $params = [];
         $where = [];
 
-        if ($courseid) {
+        if ($courseid > 0) {
             $where[] = "s.courseid = :courseid";
             $params['courseid'] = $courseid;
         }
 
-        // Base review filter
-        $where[] = "(s.status IN ('under_review', 'invalidated', 'approved') OR s.warningcount >= 1 OR EXISTS (
-            SELECT 1 FROM {{$eventstable}} ev
-             WHERE ev.sessionid = s.id AND ev.eventtype != 'exam_submitted'
-        ))";
+        if ($activityid > 0) {
+            $where[] = "s.activityid = :activityid";
+            $params['activityid'] = $activityid;
+        }
+
+        // Filter Scope:
+        // By default ('violations_only'), honest candidates who finished with 0 violations pass automatically
+        // and do not clutter the admin review queue.
+        if ($filterscope === 'violations_only') {
+            $where[] = "(s.status IN ('under_review', 'invalidated') OR s.warningcount >= 1)";
+        } else {
+            $where[] = "(s.status IN ('under_review', 'invalidated', 'approved', 'completed', 'in_progress'))";
+        }
 
         // Date Filter
         if ($date === null || $date === '') {
@@ -918,8 +936,12 @@ class cbt_engine {
 
         $session->score = $finalscore;
         $session->timefinish = $now;
-        if ($session->status !== 'under_review') {
+        if ((int)$session->warningcount === 0) {
+            // Student finished with ZERO violations: auto-approved and passed cleanly!
             $session->status = 'completed';
+        } else {
+            // Student had 1 or more infractions: flag for proctor review
+            $session->status = 'under_review';
         }
         $DB->update_record($sessiontable, $session);
 

@@ -135,4 +135,42 @@ if ($action === 'teacher_sim_reset') {
     exit;
 }
 
+// 5. Real-Time Student Heartbeat & Integrity Status Check
+if ($action === 'heartbeat') {
+    if ($sessionid <= 0 && $cmid > 0) {
+        $cm = get_coursemodule_from_id('', $cmid, 0, false, MUST_EXIST);
+        $sess = \local_lumina_cbt\cbt_engine::start_or_get_session((int)$cm->course, $cmid, (int)$USER->id);
+        $sessionid = (int)$sess->id;
+    }
+
+    $sessiontable = \local_lumina_cbt\cbt_engine::get_session_table();
+    $sess = $DB->get_record($sessiontable, ['id' => $sessionid, 'userid' => $USER->id]);
+
+    if (!$sess) {
+        echo json_encode(['success' => false, 'error' => 'Session not found']);
+        exit;
+    }
+
+    $isDisqualified = ($sess->status === 'invalidated');
+    $isSuspended    = ($sess->status === 'under_review' || (int)$sess->warningcount >= 3);
+
+    $msg = '';
+    if ($isDisqualified) {
+        $msg = 'Anda ujiannya telah dibekukan karna melanggar integritas, silahkan hubungi admin.';
+    } else if ($isSuspended) {
+        $msg = 'Sesi ujian Anda telah ditangguhkan karena mencapai batas pelanggaran. Silakan hubungi pengawas.';
+    }
+
+    echo json_encode([
+        'success'         => true,
+        'session_id'      => (int)$sess->id,
+        'status'          => $sess->status,
+        'warning_level'   => (int)$sess->warningcount,
+        'is_suspended'    => $isSuspended,
+        'is_disqualified' => $isDisqualified,
+        'message'         => $msg,
+    ]);
+    exit;
+}
+
 echo json_encode(['success' => false, 'error' => 'Unknown action']);

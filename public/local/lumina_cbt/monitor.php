@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Real-Time Proctoring Audit & Anti-Cheat Monitor Dashboard.
+ * Real-Time CBT Proctoring & Anti-Cheat Audit Dashboard.
  *
- * Live streaming feed of exam infractions, active candidate management,
- * and instant proctor unlock/disqualification suite.
+ * Live streaming feed of infractions, real-time candidate management,
+ * course & activity dynamic filtering, and instant lock/unlock/invalidation actions.
  *
  * @package    local_lumina_cbt
  * @copyright  2026 Lumina LMS
@@ -34,8 +34,12 @@ require_login();
 
 $sysctx = context_system::instance();
 $courseid = optional_param('courseid', 0, PARAM_INT);
-$course = null;
+$activityid = optional_param('activityid', 0, PARAM_INT);
+$filterscope = optional_param('filterscope', 'violations_only', PARAM_ALPHAEXT);
+$selecteddate = optional_param('date', date('Y-m-d'), PARAM_RAW);
+$search = optional_param('search', '', PARAM_RAW_TRIMMED);
 
+$course = null;
 if ($courseid > 0) {
     $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
     $context = context_course::instance($courseid);
@@ -52,21 +56,57 @@ if (!$canmonitor) {
     throw new moodle_exception('nopermissions', 'error', '', 'Akses Dasbor Pengawasan CBT');
 }
 
-$PAGE->set_url(new moodle_url('/local/lumina_cbt/monitor.php', $courseid ? ['courseid' => $courseid] : []));
+$PAGE->set_url(new moodle_url('/local/lumina_cbt/monitor.php', array_filter([
+    'courseid'    => $courseid,
+    'activityid'  => $activityid,
+    'filterscope' => $filterscope,
+    'date'        => $selecteddate,
+    'search'      => $search,
+])));
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('monitor_dashboard', 'local_lumina_cbt'));
 $PAGE->set_heading(get_string('cbt_proctoring', 'local_lumina_cbt'));
 
-$selecteddate = optional_param('date', date('Y-m-d'), PARAM_RAW);
-$search = optional_param('search', '', PARAM_RAW_TRIMMED);
+// Retrieve courses list for filter dropdown
+if (is_siteadmin()) {
+    $courseslist = $DB->get_records_select('course', 'id != ?', [SITEID], 'fullname ASC', 'id, fullname, shortname');
+} else {
+    $courseslist = enrol_get_all_users_courses($USER->id, true);
+}
 
-$reviewlist = cbt_engine::get_sessions_for_review($selecteddate, $search, $courseid ?: null);
-$livefeed = cbt_engine::get_live_audit_feed(0, $selecteddate, $search, 50);
+// Retrieve activities list if course selected
+$activitieslist = [];
+if ($courseid > 0) {
+    $sql_act = "SELECT cm.id, COALESCE(q.name, h.name, a.name, cm.id) AS name, m.name AS modname
+                  FROM {course_modules} cm
+                  JOIN {modules} m ON m.id = cm.module
+             LEFT JOIN {quiz} q ON q.id = cm.instance AND m.name = 'quiz'
+             LEFT JOIN {h5pactivity} h ON h.id = cm.instance AND m.name = 'h5pactivity'
+             LEFT JOIN {assign} a ON a.id = cm.instance AND m.name = 'assign'
+                 WHERE cm.course = ? AND m.name IN ('quiz', 'h5pactivity', 'assign') AND cm.deletioninprogress = 0
+              ORDER BY cm.id ASC";
+    $activitieslist = $DB->get_records_sql($sql_act, [$courseid]);
+}
+
+$reviewlist = cbt_engine::get_sessions_for_review($selecteddate, $search, $courseid ?: null, $activityid ?: null, $filterscope);
+$livefeed = cbt_engine::get_live_audit_feed(0, $selecteddate, $search, 50, $courseid ?: null, $activityid ?: null);
 
 $sessiontable = cbt_engine::get_session_table();
-$activecount = $DB->count_records($sessiontable, ['status' => 'in_progress']);
-$reviewcount = $DB->count_records($sessiontable, ['status' => 'under_review']);
-$completedcount = $DB->count_records($sessiontable, ['status' => 'completed']);
+$whereParams = [];
+$whereParts = [];
+if ($courseid > 0) {
+    $whereParts[] = "courseid = ?";
+    $whereParams[] = $courseid;
+}
+if ($activityid > 0) {
+    $whereParts[] = "activityid = ?";
+    $whereParams[] = $activityid;
+}
+$extraWhere = !empty($whereParts) ? ' AND ' . implode(' AND ', $whereParts) : '';
+
+$activecount = $DB->count_records_select($sessiontable, "status = 'in_progress'" . $extraWhere, $whereParams);
+$reviewcount = $DB->count_records_select($sessiontable, "status = 'under_review'" . $extraWhere, $whereParams);
+$completedcount = $DB->count_records_select($sessiontable, "status = 'completed'" . $extraWhere, $whereParams);
 
 echo $OUTPUT->header();
 ?>
@@ -232,8 +272,8 @@ echo $OUTPUT->header();
         <div class="col-sm-6 col-lg-3">
             <div class="cbt-stat-card">
                 <div>
-                    <div class="cbt-stat-label">Selesai Dikumpulkan</div>
-                    <div class="cbt-stat-val text-success"><?php echo $completedcount; ?></div>
+                    <div class="cbt-stat-label">Lolos Bersih (0 Pelanggaran)</div>
+                    <div class="cbt-stat-val text-success" id="cbt-stat-completed"><?php echo $completedcount; ?></div>
                 </div>
                 <div style="font-size: 28px; opacity: 0.8;">✓</div>
             </div>
@@ -242,7 +282,7 @@ echo $OUTPUT->header();
         <div class="col-sm-6 col-lg-3">
             <div class="cbt-stat-card">
                 <div>
-                    <div class="cbt-stat-label">Total Pelanggaran Hari Ini</div>
+                    <div class="cbt-stat-label">Total Pelanggaran Terdeteksi</div>
                     <div class="cbt-stat-val text-warning" id="cbt-stat-violations"><?php echo count($livefeed); ?></div>
                 </div>
                 <div style="font-size: 28px; opacity: 0.8;">🚨</div>
@@ -250,21 +290,55 @@ echo $OUTPUT->header();
         </div>
     </div>
 
-    <!-- Filter & Search Toolbar -->
+    <!-- Real-time Filter & Search Toolbar -->
     <div class="cbt-panel p-3 mb-4">
-        <form method="get" class="row g-2 align-items-center">
-            <?php if ($courseid > 0): ?>
-                <input type="hidden" name="courseid" value="<?php echo $courseid; ?>">
-            <?php endif; ?>
-            <div class="col-md-5">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nama peserta / email / ujian..." value="<?php echo s($search); ?>">
+        <form method="get" id="cbt-filter-form" class="row g-2 align-items-center">
+            <!-- Course Filter -->
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1 fw-bold">Kelas / Kursus:</label>
+                <select name="courseid" id="cbt-filter-course" class="form-select form-select-sm">
+                    <option value="0">Semua Kelas</option>
+                    <?php foreach ($courseslist as $c): ?>
+                        <option value="<?php echo $c->id; ?>" <?php echo ($courseid == $c->id ? 'selected' : ''); ?>>
+                            <?php echo format_string($c->fullname); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <div class="col-md-4">
-                <input type="date" name="date" class="form-control form-control-sm" value="<?php echo s($selecteddate); ?>">
+
+            <!-- Activity Filter -->
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1 fw-bold">Ujian / Aktivitas:</label>
+                <select name="activityid" id="cbt-filter-activity" class="form-select form-select-sm">
+                    <option value="0">Semua Ujian</option>
+                    <?php foreach ($activitieslist as $a): ?>
+                        <?php $badge = ($a->modname === 'quiz' ? '📝 Quiz' : ($a->modname === 'h5pactivity' ? '🎮 H5P' : '📋 Tugas')); ?>
+                        <option value="<?php echo $a->id; ?>" <?php echo ($activityid == $a->id ? 'selected' : ''); ?>>
+                            <?php echo format_string($a->name) . ' (' . $badge . ')'; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-sm btn-primary w-100 font-weight-bold">Filter</button>
-                <a href="<?php echo new moodle_url('/local/lumina_cbt/monitor.php', $courseid ? ['courseid' => $courseid] : []); ?>" class="btn btn-sm btn-outline-secondary">Reset</a>
+
+            <!-- Scope Filter -->
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1 fw-bold">Tampilan:</label>
+                <select name="filterscope" id="cbt-filter-scope" class="form-select form-select-sm">
+                    <option value="violations_only" <?php echo ($filterscope === 'violations_only' ? 'selected' : ''); ?>>⚠️ Perlu Ditindak</option>
+                    <option value="all" <?php echo ($filterscope === 'all' ? 'selected' : ''); ?>>📋 Semua Peserta</option>
+                </select>
+            </div>
+
+            <!-- Search -->
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1 fw-bold">Cari Siswa:</label>
+                <input type="text" name="search" id="cbt-filter-search" class="form-control form-control-sm" placeholder="Nama / Email..." value="<?php echo s($search); ?>">
+            </div>
+
+            <!-- Date -->
+            <div class="col-md-2">
+                <label class="form-label small text-muted mb-1 fw-bold">Tanggal:</label>
+                <input type="date" name="date" id="cbt-filter-date" class="form-control form-control-sm" value="<?php echo s($selecteddate); ?>">
             </div>
         </form>
     </div>
@@ -284,7 +358,7 @@ echo $OUTPUT->header();
                 <div id="cbt-live-feed-list" style="max-height: 580px; overflow-y: auto;">
                     <?php if (empty($livefeed)): ?>
                         <div class="p-4 text-center text-muted small" id="cbt-empty-feed-msg">
-                            🎉 Belum ada pelanggaran terdeteksi pada rentang waktu ini.
+                            🎉 Belum ada pelanggaran terdeteksi pada filter ini.
                         </div>
                     <?php else: ?>
                         <?php foreach ($livefeed as $ev): ?>
@@ -315,9 +389,11 @@ echo $OUTPUT->header();
                 <div class="cbt-panel-header">
                     <div class="d-flex align-items-center gap-2">
                         <span>👥</span>
-                        <span><?php echo get_string('active_candidates', 'local_lumina_cbt'); ?></span>
+                        <span id="cbt-roster-title">
+                            <?php echo ($filterscope === 'violations_only' ? 'Peserta Perlu Peninjauan (Melanggar)' : 'Daftar Semua Peserta Ujian'); ?>
+                        </span>
                     </div>
-                    <span class="badge bg-primary rounded-pill"><?php echo count($reviewlist); ?> sesi</span>
+                    <span class="badge bg-primary rounded-pill" id="cbt-candidate-count"><?php echo count($reviewlist); ?> sesi</span>
                 </div>
 
                 <div class="table-responsive" style="max-height: 580px; overflow-y: auto;">
@@ -334,7 +410,9 @@ echo $OUTPUT->header();
                             <?php if (empty($reviewlist)): ?>
                                 <tr>
                                     <td colspan="4" class="text-center text-muted py-4">
-                                        Tidak ada sesi ujian yang cocok dengan kriteria filter.
+                                        <div style="font-size: 28px; margin-bottom: 6px;">🎉</div>
+                                        <strong>Tidak ada sesi yang memerlukan tindakan.</strong><br>
+                                        <span class="small">Peserta dengan 0 pelanggaran otomatis tervalidasi dan nilainya masuk langsung ke Gradebook.</span>
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -386,9 +464,9 @@ echo $OUTPUT->header();
                                                         🔓 Unlock
                                                     </button>
                                                 <?php endif; ?>
-                                                <?php if ($item['status'] === 'under_review'): ?>
-                                                    <button type="button" class="btn btn-danger btn-sm" title="Batalkan Ujian" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
-                                                        ✕
+                                                <?php if ($item['status'] !== 'invalidated'): ?>
+                                                    <button type="button" class="btn btn-danger btn-sm" title="Batalkan Ujian / Diskualifikasi" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
+                                                        ✕ Batalkan
                                                     </button>
                                                 <?php endif; ?>
                                             </div>
@@ -447,15 +525,96 @@ function playChime() {
     } catch(e){}
 }
 
-// Polling live feed every 2.5 seconds
-setInterval(function() {
-    var url = '<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_monitor.php?action=feed&since=' + cbtLatestTimestamp + '&sesskey=<?php echo sesskey(); ?>';
+// Dynamic Activity dropdown when course changes
+document.getElementById('cbt-filter-course').addEventListener('change', function() {
+    var cid = parseInt(this.value, 10);
+    var actSelect = document.getElementById('cbt-filter-activity');
+    actSelect.innerHTML = '<option value="0">Memuat ujian...</option>';
+
+    if (cid <= 0) {
+        actSelect.innerHTML = '<option value="0">Semua Ujian</option>';
+        fetchLiveData(true);
+        return;
+    }
+
+    fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_monitor.php?action=get_activities&courseid=' + cid + '&sesskey=<?php echo sesskey(); ?>')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        actSelect.innerHTML = '<option value="0">Semua Ujian</option>';
+        if (data.success && data.activities) {
+            data.activities.forEach(function(a) {
+                var opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name;
+                actSelect.appendChild(opt);
+            });
+        }
+        fetchLiveData(true);
+    })
+    .catch(function() {
+        actSelect.innerHTML = '<option value="0">Semua Ujian</option>';
+        fetchLiveData(true);
+    });
+});
+
+// Trigger live update on filter controls change
+['cbt-filter-activity', 'cbt-filter-scope', 'cbt-filter-date'].forEach(function(id) {
+    document.getElementById(id).addEventListener('change', function() {
+        fetchLiveData(true);
+    });
+});
+
+var searchTimeout = null;
+document.getElementById('cbt-filter-search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        fetchLiveData(true);
+    }, 400);
+});
+
+// Main Live Data Fetcher
+function fetchLiveData(resetFeed) {
+    var cid = document.getElementById('cbt-filter-course').value;
+    var aid = document.getElementById('cbt-filter-activity').value;
+    var scope = document.getElementById('cbt-filter-scope').value;
+    var search = document.getElementById('cbt-filter-search').value;
+    var date = document.getElementById('cbt-filter-date').value;
+
+    var sinceParam = resetFeed ? 0 : cbtLatestTimestamp;
+
+    var url = '<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_monitor.php?action=feed' +
+              '&since=' + sinceParam +
+              '&courseid=' + encodeURIComponent(cid) +
+              '&activityid=' + encodeURIComponent(aid) +
+              '&filterscope=' + encodeURIComponent(scope) +
+              '&search=' + encodeURIComponent(search) +
+              '&date=' + encodeURIComponent(date) +
+              '&sesskey=<?php echo sesskey(); ?>';
+
     fetch(url)
     .then(function(r){ return r.json(); })
     .then(function(data) {
-        if (data.success && data.feed && data.feed.length > 0) {
-            playChime();
-            var listEl = document.getElementById('cbt-live-feed-list');
+        if (!data.success) return;
+
+        // Update stats
+        if (data.active_count !== undefined) {
+            document.getElementById('cbt-stat-active').innerText = data.active_count;
+        }
+        if (data.review_count !== undefined) {
+            document.getElementById('cbt-stat-review').innerText = data.review_count;
+        }
+
+        // Update Live Infraction Feed
+        var listEl = document.getElementById('cbt-live-feed-list');
+        if (resetFeed) {
+            listEl.innerHTML = '';
+            if (!data.feed || data.feed.length === 0) {
+                listEl.innerHTML = '<div class="p-4 text-center text-muted small" id="cbt-empty-feed-msg">🎉 Belum ada pelanggaran terdeteksi pada filter ini.</div>';
+            }
+        }
+
+        if (data.feed && data.feed.length > 0) {
+            if (!resetFeed) playChime();
             var emptyEl = document.getElementById('cbt-empty-feed-msg');
             if (emptyEl) emptyEl.style.display = 'none';
 
@@ -466,26 +625,114 @@ setInterval(function() {
                 item.innerHTML = '<span style="font-size: 20px;">🚨</span>' +
                                  '<div class="w-100">' +
                                  '<div class="d-flex justify-content-between align-items-center mb-1">' +
-                                 '<span class="fw-bold" style="font-size: 0.88rem; color: #0F172A;">' + ev.student_name + '</span>' +
-                                 '<span class="text-muted" style="font-size: 0.75rem;">' + ev.time_formatted + '</span>' +
+                                 '<span class="fw-bold" style="font-size: 0.88rem; color: #0F172A;">' + escapeHtml(ev.student_name) + '</span>' +
+                                 '<span class="text-muted" style="font-size: 0.75rem;">' + escapeHtml(ev.time_formatted) + '</span>' +
                                  '</div>' +
-                                 '<div class="mb-1"><span class="' + ev.badge_class + '" style="font-size: 0.75rem;">' + ev.label + '</span></div>' +
-                                 '<div class="text-muted" style="font-size: 0.78rem;">' + ev.course + ' &bull; ' + ev.metadata + '</div>' +
+                                 '<div class="mb-1"><span class="' + ev.badge_class + '" style="font-size: 0.75rem;">' + escapeHtml(ev.label) + '</span></div>' +
+                                 '<div class="text-muted" style="font-size: 0.78rem;">' + escapeHtml(ev.course) + ' &bull; ' + escapeHtml(ev.metadata) + '</div>' +
                                  '</div>';
                 listEl.insertBefore(item, listEl.firstChild);
             });
 
-            cbtLatestTimestamp = data.server_time || Math.floor(Date.now() / 1000);
-            document.getElementById('cbt-stat-active').innerText = data.active_count;
-            document.getElementById('cbt-stat-review').innerText = data.review_count;
+            document.getElementById('cbt-feed-count').innerText = listEl.querySelectorAll('.cbt-feed-item').length + ' event';
+            document.getElementById('cbt-stat-violations').innerText = listEl.querySelectorAll('.cbt-feed-item').length;
+        }
+
+        if (data.server_time) {
+            cbtLatestTimestamp = data.server_time;
+        }
+
+        // Update Candidate Roster Table
+        if (data.candidates) {
+            renderCandidatesTable(data.candidates);
         }
     })
     .catch(function(e){});
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function renderCandidatesTable(list) {
+    var tbody = document.getElementById('cbt-candidates-body');
+    document.getElementById('cbt-candidate-count').innerText = list.length + ' sesi';
+
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">' +
+                          '<div style="font-size: 28px; margin-bottom: 6px;">🎉</div>' +
+                          '<strong>Tidak ada sesi yang memerlukan tindakan.</strong><br>' +
+                          '<span class="small">Peserta dengan 0 pelanggaran otomatis tervalidasi dan nilainya masuk langsung ke Gradebook.</span>' +
+                          '</td></tr>';
+        return;
+    }
+
+    var html = '';
+    list.forEach(function(item) {
+        var wcount = parseInt(item.warning_count, 10);
+        var badgeClass = 'badge-strike-' + Math.min(3, wcount);
+
+        var statusBadge = '';
+        if (item.status === 'under_review') {
+            statusBadge = '<span class="badge bg-danger text-white">🔒 TERKUNCI</span>';
+        } else if (item.status === 'completed') {
+            statusBadge = '<span class="badge bg-success text-white">✓ Selesai</span>';
+        } else if (item.status === 'approved') {
+            statusBadge = '<span class="badge bg-info text-white">✓ Disetujui</span>';
+        } else if (item.status === 'invalidated') {
+            statusBadge = '<span class="badge bg-dark text-white">✕ Dibatalkan</span>';
+        } else {
+            statusBadge = '<span class="badge bg-primary text-white">Sedang Mengerjakan</span>';
+        }
+
+        var scoreHtml = (item.score !== null) ? '<div class="fw-bold text-primary mt-1">Nilai: ' + parseFloat(item.score).toFixed(2) + '</div>' : '';
+
+        var actions = '<div class="btn-group btn-group-sm">' +
+                      '<button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(' + item.session_id + ', \'' + escapeHtml(item.student_name).replace(/'/g, "\\'") + '\')">Log</button>';
+
+        if (item.status === 'under_review' || wcount > 0) {
+            actions += '<button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Unlock</button>';
+        }
+        if (item.status !== 'invalidated') {
+            actions += '<button type="button" class="btn btn-danger btn-sm" title="Batalkan Ujian / Diskualifikasi" onclick="cbtResolve(' + item.session_id + ', \'invalidated\')">✕ Batalkan</button>';
+        }
+        actions += '</div>';
+
+        html += '<tr id="session-row-' + item.session_id + '">' +
+                '<td>' +
+                '<div class="fw-bold text-dark">' + escapeHtml(item.student_name) + '</div>' +
+                '<div class="text-muted small">' + escapeHtml(item.student_email) + '</div>' +
+                '<span class="badge bg-light text-secondary border mt-1" style="font-size: 0.7rem;">' + escapeHtml(item.role_label) + '</span>' +
+                '</td>' +
+                '<td>' +
+                '<div class="mb-1"><span class="' + badgeClass + '">' + wcount + ' / 3 Peringatan</span></div>' +
+                statusBadge +
+                '</td>' +
+                '<td>' +
+                '<div class="small fw-bold text-dark">' + escapeHtml(item.activity_name) + '</div>' +
+                '<div class="text-muted small">' + escapeHtml(item.course_name) + '</div>' +
+                scoreHtml +
+                '</td>' +
+                '<td class="text-end">' + actions + '</td>' +
+                '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+// Polling live feed and active candidates every 2.5 seconds
+setInterval(function() {
+    fetchLiveData(false);
 }, 2500);
 
 // Resolve candidate session
 function cbtResolve(sessionId, decision) {
-    var promptMsg = (decision === 'reset') ? 'Beri kesempatan ulang & reset peringatan menjadi 0/3?' : 'Konfirmasi tindakan untuk sesi ini?';
+    var promptMsg = (decision === 'reset') ?
+        'Beri kesempatan ulang & buka kunci (reset peringatan 0/3)?' :
+        (decision === 'invalidated' ?
+            'PERINGATAN: Batalkan ujian dan diskualifikasi peserta ini? Jika siswa sedang mengerjakan, layar ujiannya akan seketika dibekukan dan dikeluarkan.' :
+            'Setujui dan proses nilai sesi ini?');
+
     if (!confirm(promptMsg)) return;
 
     var form = new FormData();
@@ -501,8 +748,7 @@ function cbtResolve(sessionId, decision) {
     .then(function(r){ return r.json(); })
     .then(function(data) {
         if (data.success) {
-            alert(data.message || 'Tindakan berhasil diproses!');
-            window.location.reload();
+            fetchLiveData(true);
         } else {
             alert(data.error || 'Gagal memproses tindakan.');
         }
@@ -526,10 +772,10 @@ function cbtViewAudit(sessionId, name) {
             data.events.forEach(function(ev) {
                 html += '<div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">' +
                         '<div>' +
-                        '<div class="fw-bold small">' + ev.label + '</div>' +
-                        '<div class="text-muted" style="font-size:0.75rem;">' + ev.metadata + '</div>' +
+                        '<div class="fw-bold small">' + escapeHtml(ev.label) + '</div>' +
+                        '<div class="text-muted" style="font-size:0.75rem;">' + escapeHtml(ev.metadata) + '</div>' +
                         '</div>' +
-                        '<span class="badge bg-light text-secondary border">' + ev.time + '</span>' +
+                        '<span class="badge bg-light text-secondary border">' + escapeHtml(ev.time) + '</span>' +
                         '</div>';
             });
             html += '</div>';

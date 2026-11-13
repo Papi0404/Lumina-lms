@@ -13,6 +13,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             sessionId: 0,
             cmid: 0,
             courseId: 0,
+            courseUrl: '',
             sesskey: '',
             ajaxUrl: M.cfg.wwwroot + '/local/lumina_cbt/ajax_events.php',
             maxWarnings: 3,
@@ -24,17 +25,23 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
         state: {
             warnings: 0,
             isLocked: false,
+            isDisqualified: false,
             isFullscreen: false,
             audioCtx: null,
-            lastBlurTime: 0
+            lastBlurTime: 0,
+            heartbeatTimer: null
         },
 
         init: function(opts) {
             this.config = Object.assign(this.config, opts || {});
+            if (!this.config.courseUrl) {
+                this.config.courseUrl = this.config.courseId ? (M.cfg.wwwroot + '/course/view.php?id=' + this.config.courseId) : (M.cfg.wwwroot + '/my/');
+            }
             this.initAudio();
             this.suppressAiWidgets();
             this.bindSecurityEvents();
             this.createStrikeHud();
+            this.startHeartbeat();
 
             if (this.config.strictFullscreen) {
                 this.promptFullscreen();
@@ -97,11 +104,42 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             setInterval(hideAi, 1500);
         },
 
+        startHeartbeat: function() {
+            var self = this;
+            if (self.state.heartbeatTimer) clearInterval(self.state.heartbeatTimer);
+
+            self.state.heartbeatTimer = setInterval(function() {
+                if (self.state.isDisqualified) return;
+
+                var url = self.config.ajaxUrl + '?action=heartbeat&session_id=' + self.config.sessionId +
+                          '&cmid=' + self.config.cmid + '&sesskey=' + (self.config.sesskey || M.cfg.sesskey);
+
+                fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (data.status === 'invalidated' || data.is_disqualified) {
+                            self.showDisqualifiedLockdown(data.message);
+                        } else if (data.status === 'under_review' || data.is_suspended) {
+                            self.showLockoutScreen(data.message);
+                        } else if (data.status === 'in_progress') {
+                            if (self.state.isLocked && data.warning_level === 0) {
+                                self.hideLockoutScreen();
+                            }
+                            self.updateStrikeHud(data.warning_level || 0);
+                        }
+                    }
+                })
+                .catch(function(e) {});
+            }, 3000);
+        },
+
         bindSecurityEvents: function() {
             var self = this;
 
             // 1. Right Click / Context Menu
             document.addEventListener('contextmenu', function(e) {
+                if (self.state.isDisqualified) return;
                 e.preventDefault();
                 self.recordViolation('devtools', 'Percobaan klik kanan / context menu');
                 return false;
@@ -110,6 +148,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             // 2. Clipboard Operations (Copy, Cut, Paste)
             ['copy', 'cut', 'paste'].forEach(function(evt) {
                 document.addEventListener(evt, function(e) {
+                    if (self.state.isDisqualified) return;
                     e.preventDefault();
                     self.recordViolation('clipboard_copy', 'Percobaan operasi clipboard: ' + evt);
                     return false;
@@ -118,6 +157,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
             // 3. Window Blur / Tab Switching
             window.addEventListener('blur', function() {
+                if (self.state.isDisqualified) return;
                 var now = Date.now();
                 if (now - self.state.lastBlurTime > 1500 && !self.state.isLocked) {
                     self.state.lastBlurTime = now;
@@ -126,6 +166,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             });
 
             document.addEventListener('visibilitychange', function() {
+                if (self.state.isDisqualified) return;
                 if (document.visibilityState === 'hidden' && !self.state.isLocked) {
                     self.recordViolation('visibility_hidden', 'Beralih tab browser');
                 }
@@ -134,6 +175,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             // 4. Fullscreen State Watcher
             ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function(evt) {
                 document.addEventListener(evt, function() {
+                    if (self.state.isDisqualified) return;
                     var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
                     self.state.isFullscreen = inFs;
                     if (!inFs && self.config.strictFullscreen && !self.state.isLocked) {
@@ -145,6 +187,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
             // 5. Trackpad / Multi-Touch Gesture Detection
             window.addEventListener('wheel', function(e) {
+                if (self.state.isDisqualified) return;
                 if (e.ctrlKey) {
                     e.preventDefault();
                     self.recordViolation('trackpad_gesture', 'Gesture pinch-zoom pada trackpad');
@@ -152,6 +195,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             }, { passive: false });
 
             window.addEventListener('touchstart', function(e) {
+                if (self.state.isDisqualified) return;
                 if (e.touches && e.touches.length >= 3) {
                     e.preventDefault();
                     self.recordViolation('three_finger_gesture', 'Sapuan 3 jari pada touchpad / layar sentuh');
@@ -160,6 +204,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
             // 6. Keyboard Trapping
             window.addEventListener('keydown', function(e) {
+                if (self.state.isDisqualified) return;
                 var k = e.key || '';
                 var isDevtools = (k === 'F12' || (e.ctrlKey && e.shiftKey && (k === 'I' || k === 'J' || k === 'C')) || (e.ctrlKey && (k === 'u' || k === 'U' || k === 'p' || k === 'P')));
                 if (isDevtools) {
@@ -215,6 +260,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
         recordViolation: function(eventType, metadata) {
             var self = this;
+            if (self.state.isDisqualified) return;
             self.playWarningChime();
 
             var form = new FormData();
@@ -233,7 +279,9 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             .then(function(data) {
                 if (data.success) {
                     self.updateStrikeHud(data.warning_level);
-                    if (data.is_suspended || data.warning_level >= self.config.maxWarnings) {
+                    if (data.status === 'invalidated') {
+                        self.showDisqualifiedLockdown(data.message);
+                    } else if (data.is_suspended || data.warning_level >= self.config.maxWarnings) {
                         self.showLockoutScreen(data.message);
                     } else {
                         self.showWarningToast(data.message, data.warning_level);
@@ -294,6 +342,53 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                                 '<button onclick="window.location.reload();" style="background:#4338CA;color:#fff;border:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:0.95rem;cursor:pointer;">Periksa Status Buka Kunci</button>' +
                                 '</div>';
             overlay.style.display = 'flex';
+        },
+
+        hideLockoutScreen: function() {
+            this.state.isLocked = false;
+            var overlay = document.getElementById('lumina-cbt-lockout-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        },
+
+        showDisqualifiedLockdown: function(msg) {
+            var self = this;
+            self.state.isDisqualified = true;
+            self.state.isLocked = true;
+            if (self.state.heartbeatTimer) clearInterval(self.state.heartbeatTimer);
+
+            // Disable all forms and inputs
+            document.querySelectorAll('input, button, select, textarea').forEach(function(el) {
+                el.disabled = true;
+            });
+
+            self.playWarningChime();
+
+            var overlay = document.getElementById('lumina-cbt-disqualified-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'lumina-cbt-disqualified-overlay';
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0B132B;z-index:999999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:system-ui,sans-serif;padding:20px;';
+                document.body.appendChild(overlay);
+            }
+
+            var returnUrl = self.config.courseUrl || (M.cfg.wwwroot + '/my/');
+            overlay.innerHTML = '<div style="max-width:540px;width:100%;background:#1E293B;padding:40px 32px;border-radius:24px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.7);border:2px solid #EF4444;">' +
+                                '<div style="width:80px;height:80px;background:rgba(239,68,68,0.15);color:#EF4444;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;border:1px solid rgba(239,68,68,0.3);">🚫</div>' +
+                                '<h2 style="font-size:1.6rem;font-weight:800;margin-bottom:12px;color:#F8FAFC;">Akses Ujian Dibekukan</h2>' +
+                                '<div style="background:rgba(239,68,68,0.12);border-left:4px solid #EF4444;padding:16px 18px;border-radius:8px;text-align:left;color:#FCA5A5;font-size:0.95rem;line-height:1.6;margin-bottom:24px;">' +
+                                (msg || 'Anda ujiannya telah dibekukan karna melanggar integritas, silahkan hubungi admin.') +
+                                '</div>' +
+                                '<p style="color:#94A3B8;font-size:0.9rem;margin-bottom:28px;">Sesi ujian ini telah dibatalkan oleh pengawas. Nilai didiskualifikasi (0.00).</p>' +
+                                '<a href="' + returnUrl + '" style="display:inline-block;background:#EF4444;color:#fff;text-decoration:none;padding:12px 32px;border-radius:12px;font-weight:700;font-size:0.95rem;box-shadow:0 6px 20px rgba(239,68,68,0.4);">Keluar dari Ujian</a>' +
+                                '</div>';
+            overlay.style.display = 'flex';
+
+            // Auto redirect after 8 seconds
+            setTimeout(function() {
+                window.location.href = returnUrl;
+            }, 8000);
         },
 
         promptFullscreen: function() {

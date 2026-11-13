@@ -26,13 +26,18 @@ defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [
     [
-        'hook'     => \core\hook\output\before_standard_footer_html_generation::class,
-        'callback' => \local_lumina_cbt\hook_callbacks::class . '::before_standard_footer_html_generation',
+        'hook'     => \core\hook\navigation\primary_extend::class,
+        'callback' => \local_lumina_cbt\hook_callbacks::class . '::primary_extend',
         'priority' => 500,
     ],
     [
         'hook'     => \core\hook\navigation\secondary_extend::class,
         'callback' => \local_lumina_cbt\hook_callbacks::class . '::secondary_extend',
+        'priority' => 500,
+    ],
+    [
+        'hook'     => \core\hook\output\before_standard_footer_html_generation::class,
+        'callback' => \local_lumina_cbt\hook_callbacks::class . '::before_standard_footer_html_generation',
         'priority' => 500,
     ],
 ];

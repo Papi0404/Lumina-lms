@@ -15,7 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * AJAX endpoint for proctor live audit feed and candidate resolution.
+ * AJAX endpoint for proctor live audit feed, real-time candidate synchronization,
+ * and instant resolution actions.
  *
  * @package    local_lumina_cbt
  * @copyright  2026 Lumina LMS
@@ -36,6 +37,9 @@ global $USER, $DB;
 
 $sysctx = \context_system::instance();
 $courseid = optional_param('courseid', 0, PARAM_INT);
+$activityid = optional_param('activityid', 0, PARAM_INT);
+$filterscope = optional_param('filterscope', 'violations_only', PARAM_ALPHAEXT);
+
 $coursectx = $courseid > 0 ? \context_course::instance($courseid, IGNORE_MISSING) : $sysctx;
 
 // Authorization check: User must be teacher, manager, or site admin
@@ -51,27 +55,53 @@ if (!$canmonitor) {
 
 $action = optional_param('action', 'feed', PARAM_ALPHAEXT);
 
-// 1. Live Infraction Feed (Polled every 2-3 seconds)
+// 1. Live Infraction Feed & Candidate List (Polled every 2-3 seconds)
 if ($action === 'feed') {
     $since  = optional_param('since', 0, PARAM_INT);
     $date   = optional_param('date', date('Y-m-d'), PARAM_RAW);
     $search = optional_param('search', '', PARAM_RAW_TRIMMED);
 
-    $feed = \local_lumina_cbt\cbt_engine::get_live_audit_feed($since, $date, $search, 50);
+    $feed = \local_lumina_cbt\cbt_engine::get_live_audit_feed(
+        $since,
+        $date,
+        $search,
+        50,
+        $courseid ?: null,
+        $activityid ?: null
+    );
+
+    $candidates = \local_lumina_cbt\cbt_engine::get_sessions_for_review(
+        $date,
+        $search,
+        $courseid ?: null,
+        $activityid ?: null,
+        $filterscope
+    );
 
     $sessiontable = \local_lumina_cbt\cbt_engine::get_session_table();
     $eventstable  = \local_lumina_cbt\cbt_engine::get_events_table();
 
-    $activecount = $DB->count_records($sessiontable, ['status' => 'in_progress']);
-    $reviewcount = $DB->count_records($sessiontable, ['status' => 'under_review']);
-    $totalviolations = $DB->count_records_select($eventstable, "eventtype != 'exam_submitted'");
+    $whereParams = [];
+    $whereParts = [];
+    if ($courseid > 0) {
+        $whereParts[] = "courseid = ?";
+        $whereParams[] = $courseid;
+    }
+    if ($activityid > 0) {
+        $whereParts[] = "activityid = ?";
+        $whereParams[] = $activityid;
+    }
+    $extraWhere = !empty($whereParts) ? ' AND ' . implode(' AND ', $whereParts) : '';
+
+    $activecount = $DB->count_records_select($sessiontable, "status = 'in_progress'" . $extraWhere, $whereParams);
+    $reviewcount = $DB->count_records_select($sessiontable, "status = 'under_review'" . $extraWhere, $whereParams);
 
     echo json_encode([
         'success'          => true,
         'feed'             => $feed,
+        'candidates'       => $candidates,
         'active_count'     => $activecount,
         'review_count'     => $reviewcount,
-        'total_violations' => $totalviolations,
         'server_time'      => time(),
     ]);
     exit;
@@ -106,6 +136,31 @@ if ($action === 'session_events') {
     $sessionid = required_param('session_id', PARAM_INT);
     $events = \local_lumina_cbt\cbt_engine::get_session_events($sessionid);
     echo json_encode(['success' => true, 'events' => $events]);
+    exit;
+}
+
+// 4. Get Activities for selected Course (for dynamic dropdown filter)
+if ($action === 'get_activities') {
+    $cid = required_param('courseid', PARAM_INT);
+    $sql = "SELECT cm.id, COALESCE(q.name, h.name, a.name, cm.id) AS name, m.name AS modname
+              FROM {course_modules} cm
+              JOIN {modules} m ON m.id = cm.module
+         LEFT JOIN {quiz} q ON q.id = cm.instance AND m.name = 'quiz'
+         LEFT JOIN {h5pactivity} h ON h.id = cm.instance AND m.name = 'h5pactivity'
+         LEFT JOIN {assign} a ON a.id = cm.instance AND m.name = 'assign'
+             WHERE cm.course = ? AND m.name IN ('quiz', 'h5pactivity', 'assign') AND cm.deletioninprogress = 0
+          ORDER BY cm.id ASC";
+
+    $records = $DB->get_records_sql($sql, [$cid]);
+    $actList = [];
+    foreach ($records as $r) {
+        $badge = ($r->modname === 'quiz' ? '📝 Quiz' : ($r->modname === 'h5pactivity' ? '🎮 H5P' : '📋 Tugas'));
+        $actList[] = [
+            'id'   => (int)$r->id,
+            'name' => format_string($r->name) . ' (' . $badge . ')',
+        ];
+    }
+    echo json_encode(['success' => true, 'activities' => $actList]);
     exit;
 }
 

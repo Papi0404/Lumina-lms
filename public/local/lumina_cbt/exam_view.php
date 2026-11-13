@@ -125,8 +125,40 @@ if ($session->status === 'completed' || $session->status === 'approved') {
     exit;
 }
 
-// State B: Exam Locked Out / Suspended (3-strikes reached)
-if ($session->status === 'under_review' || $session->status === 'invalidated') {
+// State B1: Exam Disqualified / Invalidated by Admin
+if ($session->status === 'invalidated') {
+    ?>
+    <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; background: #0B132B; padding: 2rem; color: #fff;">
+        <div style="max-width: 540px; width: 100%; background: #1E293B; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 20px 48px rgba(0,0,0,0.6); border: 2px solid #EF4444;">
+            <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(239,68,68,0.15); color: #EF4444; display: inline-flex; align-items: center; justify-content: center; font-size: 38px; margin-bottom: 1.25rem; border: 1px solid rgba(239,68,68,0.3);">
+                🚫
+            </div>
+            <h2 style="font-weight: 800; color: #F8FAFC; margin-bottom: 0.75rem;">Akses Ujian Dibekukan</h2>
+            <div style="background: rgba(239,68,68,0.1); border-left: 4px solid #EF4444; padding: 14px 18px; border-radius: 8px; text-align: left; color: #FCA5A5; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Anda ujiannya telah dibekukan karna melanggar integritas, silahkan hubungi admin.
+            </div>
+            <p style="color: #94A3B8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.75rem;">
+                Sesi ujian Anda telah dibatalkan secara permanen oleh pengawas dan nilai didiskualifikasi (0.00).
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #EF4444; color: #fff; padding: 12px 28px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(239,68,68,0.4);">
+                    Kembali ke Beranda Kelas
+                </a>
+                <?php if ($ismanager): ?>
+                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #334155; color: #F1F5F9; padding: 12px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                    🔄 Reset Simulasi (Pengajar)
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php
+    echo $OUTPUT->footer();
+    exit;
+}
+
+// State B2: Exam Locked Out / Suspended (3-strikes reached)
+if ($session->status === 'under_review') {
     ?>
     <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; background: #0F172A; padding: 2rem; color: #fff;">
         <div style="max-width: 540px; width: 100%; background: #1E293B; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 20px 48px rgba(0,0,0,0.5); border: 1px solid rgba(239,68,68,0.4);">

@@ -620,7 +620,8 @@ class cbt_engine {
     }
 
     /**
-     * Universal question extractor for Quiz (mod_quiz), H5P (mod_h5pactivity), or fallback.
+     * Universal question extractor for Quiz (mod_quiz), H5P (mod_h5pactivity), or Assignment (mod_assign).
+     * Completely dynamic without any hardcoded mock questions.
      *
      * @param int $cmid
      * @return array
@@ -629,8 +630,14 @@ class cbt_engine {
         global $DB;
 
         $cm = get_coursemodule_from_id('', $cmid, 0, false, IGNORE_MISSING);
-        if ($cm && $cm->modname === 'quiz') {
+        if (!$cm) {
+            return [];
+        }
+
+        // 1. Native Moodle Quiz (mod_quiz)
+        if ($cm->modname === 'quiz') {
             try {
+                // Try Moodle 4.0 - 5.x Question Bank schema first
                 $sql = "SELECT q.id, q.questiontext, q.qtype, qs.slot
                           FROM {quiz_slots} qs
                           JOIN {question_references} qr ON qr.itemid = qs.id AND qr.component = 'mod_quiz' AND qr.questionarea = 'slot'
@@ -640,6 +647,17 @@ class cbt_engine {
                          WHERE qs.quizid = ?
                       ORDER BY qs.slot ASC";
                 $quizq = $DB->get_records_sql($sql, [$cm->instance]);
+
+                // Fallback for direct slot relationship if references empty
+                if (empty($quizq)) {
+                    $sql_legacy = "SELECT q.id, q.questiontext, q.qtype, qs.slot
+                                     FROM {quiz_slots} qs
+                                     JOIN {question} q ON q.id = qs.questionid
+                                    WHERE qs.quizid = ?
+                                 ORDER BY qs.slot ASC";
+                    $quizq = $DB->get_records_sql($sql_legacy, [$cm->instance]);
+                }
+
                 if (!empty($quizq)) {
                     $extracted = [];
                     $slotnum = 1;
@@ -649,7 +667,7 @@ class cbt_engine {
                         $correctidx = 0;
                         $aidx = 0;
                         foreach ($answers as $ans) {
-                            if ($ans->fraction > 0) {
+                            if ((float)$ans->fraction > 0) {
                                 $correctidx = $aidx;
                             }
                             $opts[] = [
@@ -658,6 +676,9 @@ class cbt_engine {
                                 'text'  => strip_tags($ans->answer),
                             ];
                             $aidx++;
+                        }
+                        if (empty($opts)) {
+                            $opts[] = ['index' => 0, 'label' => 'A', 'text' => 'Tuliskan jawaban Anda pada lembar ujian'];
                         }
                         $extracted[] = [
                             'id'            => $qq->id,
@@ -677,61 +698,163 @@ class cbt_engine {
             }
         }
 
-        // H5P Question extractor
-        $context = \context_module::instance($cmid, IGNORE_MISSING);
-        if ($context) {
-            $fs = get_file_storage();
-            $files = $fs->get_area_files($context->id, 'mod_h5pactivity', 'package', 0, 'sortorder', false);
-            if (!empty($files)) {
-                $f = reset($files);
-                $content = $f->get_content();
-                $tmp = tempnam(sys_get_temp_dir(), 'h5pq_');
-                file_put_contents($tmp, $content);
-                $zip = new \ZipArchive();
-                if ($zip->open($tmp) === true) {
-                    $json = $zip->getFromName('content/content.json');
-                    if (!$json) {
-                        $json = $zip->getFromName('content.json');
-                    }
-                    if ($json) {
-                        $data = json_decode($json, true);
-                        if (!empty($data['questions'])) {
-                            $extracted = [];
-                            foreach ($data['questions'] as $idx => $q) {
-                                $params = $q['params'] ?? [];
-                                $qtext = strip_tags($params['question'] ?? ('Soal ' . ($idx + 1)));
-                                $opts = [];
-                                $correctidx = 0;
-                                foreach ($params['answers'] ?? [] as $aidx => $ans) {
-                                    if (!empty($ans['correct'])) {
-                                        $correctidx = $aidx;
-                                    }
-                                    $opts[] = [
-                                        'index' => $aidx,
-                                        'label' => chr(65 + $aidx),
-                                        'text'  => strip_tags($ans['text'] ?? ''),
-                                    ];
+        // 2. H5P Interactive Activities (mod_h5pactivity / mod_hvp)
+        if ($cm->modname === 'h5pactivity' || $cm->modname === 'hvp') {
+            $context = \context_module::instance($cmid, IGNORE_MISSING);
+            if ($context) {
+                $fs = get_file_storage();
+                $files = $fs->get_area_files($context->id, $cm->modname, 'package', 0, 'sortorder', false);
+                if (!empty($files)) {
+                    $f = reset($files);
+                    $content = $f->get_content();
+                    $tmp = tempnam(sys_get_temp_dir(), 'h5pq_');
+                    file_put_contents($tmp, $content);
+                    $zip = new \ZipArchive();
+                    if ($zip->open($tmp) === true) {
+                        $json = $zip->getFromName('content/content.json') ?: $zip->getFromName('content.json');
+                        if ($json) {
+                            $data = json_decode($json, true);
+                            if (is_array($data)) {
+                                $extracted = self::extract_h5p_questions($data);
+                                $zip->close();
+                                @unlink($tmp);
+                                if (!empty($extracted)) {
+                                    return $extracted;
                                 }
-                                $extracted[] = [
-                                    'id'            => $idx + 1,
-                                    'number'        => $idx + 1,
-                                    'question'      => $qtext,
-                                    'options'       => $opts,
-                                    'correct_index' => $correctidx,
-                                ];
                             }
-                            $zip->close();
-                            @unlink($tmp);
-                            return $extracted;
                         }
+                        $zip->close();
                     }
-                    $zip->close();
+                    @unlink($tmp);
                 }
-                @unlink($tmp);
             }
         }
 
-        return self::get_standard_fallback_questions();
+        // 3. Assignment task (mod_assign)
+        if ($cm->modname === 'assign') {
+            $assign = $DB->get_record('assign', ['id' => $cm->instance]);
+            if ($assign) {
+                return [
+                    [
+                        'id'            => 1,
+                        'number'        => 1,
+                        'question'      => strip_tags($assign->intro ?: $assign->name),
+                        'options'       => [
+                            ['index' => 0, 'label' => 'A', 'text' => 'Tugas telah selesai dikerjakan'],
+                            ['index' => 1, 'label' => 'B', 'text' => 'Tugas masih dalam proses pengerjaan'],
+                        ],
+                        'correct_index' => 0,
+                    ]
+                ];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Recursively extract questions from decoded H5P content structure.
+     * Supports QuestionSet, SingleChoiceSet, MultiChoice, TrueFalse, Column, etc.
+     *
+     * @param array $data Decoded content.json
+     * @return array Extracted question list
+     */
+    public static function extract_h5p_questions(array $data): array {
+        $questions = [];
+
+        // Direct questions array
+        if (!empty($data['questions']) && is_array($data['questions'])) {
+            foreach ($data['questions'] as $q) {
+                $parsed = self::parse_single_h5p_question($q);
+                if ($parsed) {
+                    $questions[] = $parsed;
+                }
+            }
+        }
+
+        // Column / interactive sub-elements
+        $elements = $data['elements'] ?? $data['activities'] ?? $data['tasks'] ?? [];
+        if (!empty($elements) && is_array($elements)) {
+            foreach ($elements as $el) {
+                $subdata = $el['action'] ?? $el;
+                if (!empty($subdata['params'])) {
+                    $parsed = self::parse_single_h5p_question($subdata);
+                    if ($parsed) {
+                        $questions[] = $parsed;
+                    }
+                }
+            }
+        }
+
+        // Standalone question at root
+        if (empty($questions) && (!empty($data['choices']) || !empty($data['answers']) || !empty($data['question']))) {
+            $parsed = self::parse_single_h5p_question(['params' => $data]);
+            if ($parsed) {
+                $questions[] = $parsed;
+            }
+        }
+
+        // Number sequentially
+        $result = [];
+        $num = 1;
+        foreach ($questions as $q) {
+            $q['number'] = $num;
+            $q['id']     = $num;
+            $result[] = $q;
+            $num++;
+        }
+        return $result;
+    }
+
+    protected static function parse_single_h5p_question(array $item): ?array {
+        $params = $item['params'] ?? $item;
+        $qtext = clean_text($params['question'] ?? ($params['intro'] ?? ''));
+        if (empty($qtext)) {
+            return null;
+        }
+
+        $opts = [];
+        $correctidx = 0;
+        $aidx = 0;
+
+        $rawanswers = $params['answers'] ?? $params['choices'] ?? [];
+        if (!empty($rawanswers) && is_array($rawanswers)) {
+            foreach ($rawanswers as $ans) {
+                $text = clean_text(is_array($ans) ? ($ans['text'] ?? $ans['answer'] ?? '') : (string)$ans);
+                if ($text === '') continue;
+                $iscorrect = is_array($ans) && (!empty($ans['correct']) || !empty($ans['isCorrect']));
+                if ($iscorrect) {
+                    $correctidx = $aidx;
+                }
+                $opts[] = [
+                    'index' => $aidx,
+                    'label' => chr(65 + $aidx),
+                    'text'  => strip_tags($text),
+                ];
+                $aidx++;
+            }
+        }
+
+        if (empty($opts) && isset($params['correct'])) {
+            $isTrue = ($params['correct'] === 'true' || $params['correct'] === true);
+            $opts = [
+                ['index' => 0, 'label' => 'A', 'text' => 'Benar (True)'],
+                ['index' => 1, 'label' => 'B', 'text' => 'Salah (False)'],
+            ];
+            $correctidx = $isTrue ? 0 : 1;
+        }
+
+        if (empty($opts)) {
+            return null;
+        }
+
+        return [
+            'id'            => 0,
+            'number'        => 0,
+            'question'      => strip_tags($qtext),
+            'options'       => $opts,
+            'correct_index' => $correctidx,
+        ];
     }
 
     /**
@@ -769,7 +892,10 @@ class cbt_engine {
         $questions = self::get_exam_questions((int)$session->activityid);
         $total = count($questions);
         if ($total === 0) {
-            $total = 20;
+            return [
+                'success' => false,
+                'message' => 'Tidak ada butir soal yang ditemukan pada aktivitas ini.',
+            ];
         }
 
         $correct = 0;
@@ -891,133 +1017,5 @@ class cbt_engine {
             return 'local_lumina_cbt_warnings';
         }
         return 'local_lumina_exam_warnings';
-    }
-
-    /**
-     * Standard 20-Question Question Bank (PHP & Web Development).
-     */
-    public static function get_standard_fallback_questions(): array {
-        return [
-            ['id' => 1, 'number' => 1, 'question' => '1. Apa fungsi utama PHP dalam pengembangan web?', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Mengatur tampilan perangkat keras'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Memproses logika di sisi server'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Menggantikan sistem operasi'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Mengelola koneksi Wi-Fi'],
-            ]],
-            ['id' => 2, 'number' => 2, 'question' => '2. Kode PHP biasanya diawali dengan tag ...', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => '<script>'],
-                ['index' => 1, 'label' => 'B', 'text' => '<?php'],
-                ['index' => 2, 'label' => 'C', 'text' => '<php>'],
-                ['index' => 3, 'label' => 'D', 'text' => '<code php>'],
-            ]],
-            ['id' => 3, 'number' => 3, 'question' => '3. Variabel dalam PHP diawali dengan simbol ...', 'correct_index' => 2, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => '#'],
-                ['index' => 1, 'label' => 'B', 'text' => '@'],
-                ['index' => 2, 'label' => 'C', 'text' => '$'],
-                ['index' => 3, 'label' => 'D', 'text' => '&'],
-            ]],
-            ['id' => 4, 'number' => 4, 'question' => '4. Manakah contoh deklarasi variabel PHP yang benar?', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => "nama = 'Budi';"],
-                ['index' => 1, 'label' => 'B', 'text' => "\$nama = 'Budi';"],
-                ['index' => 2, 'label' => 'C', 'text' => "var nama = 'Budi';"],
-                ['index' => 3, 'label' => 'D', 'text' => 'string $nama;'],
-            ]],
-            ['id' => 5, 'number' => 5, 'question' => '5. Operator untuk membandingkan nilai dan tipe data secara ketat di PHP adalah ...', 'correct_index' => 2, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => '='],
-                ['index' => 1, 'label' => 'B', 'text' => '=='],
-                ['index' => 2, 'label' => 'C', 'text' => '==='],
-                ['index' => 3, 'label' => 'D', 'text' => '!='],
-            ]],
-            ['id' => 6, 'number' => 6, 'question' => '6. Fungsi echo dalam PHP digunakan untuk ...', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Menghapus variabel'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Menampilkan output'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Membuat database'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Menghentikan server'],
-            ]],
-            ['id' => 7, 'number' => 7, 'question' => '7. Struktur percabangan PHP yang tepat adalah ...', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'if ... else'],
-                ['index' => 1, 'label' => 'B', 'text' => 'repeat ... until'],
-                ['index' => 2, 'label' => 'C', 'text' => 'select ... case only'],
-                ['index' => 3, 'label' => 'D', 'text' => 'foreach ... else'],
-            ]],
-            ['id' => 8, 'number' => 8, 'question' => '8. Perulangan yang cocok untuk menelusuri setiap elemen array adalah ...', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'switch'],
-                ['index' => 1, 'label' => 'B', 'text' => 'foreach'],
-                ['index' => 2, 'label' => 'C', 'text' => 'try'],
-                ['index' => 3, 'label' => 'D', 'text' => 'return'],
-            ]],
-            ['id' => 9, 'number' => 9, 'question' => '9. Fungsi count($data) digunakan untuk ...', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Mengurutkan array'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Menghitung jumlah elemen'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Menghapus array'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Mengubah array menjadi string'],
-            ]],
-            ['id' => 10, 'number' => 10, 'question' => '10. Apa kepanjangan SQL?', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Structured Query Language'],
-                ['index' => 1, 'label' => 'B', 'text' => 'System Question Logic'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Sequential Query Link'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Standard Quick Language'],
-            ]],
-            ['id' => 11, 'number' => 11, 'question' => '11. Perintah SQL untuk mengambil data dari tabel adalah ...', 'correct_index' => 2, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'GET'],
-                ['index' => 1, 'label' => 'B', 'text' => 'OPEN'],
-                ['index' => 2, 'label' => 'C', 'text' => 'SELECT'],
-                ['index' => 3, 'label' => 'D', 'text' => 'FETCHTABLE'],
-            ]],
-            ['id' => 12, 'number' => 12, 'question' => '12. Perintah untuk menambahkan baris baru ke tabel adalah ...', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'INSERT INTO'],
-                ['index' => 1, 'label' => 'B', 'text' => 'ALTER TABLE'],
-                ['index' => 2, 'label' => 'C', 'text' => 'UPDATE'],
-                ['index' => 3, 'label' => 'D', 'text' => 'CREATE USER'],
-            ]],
-            ['id' => 13, 'number' => 13, 'question' => '13. Klausa WHERE pada SQL berfungsi untuk ...', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Mengurutkan hasil'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Memfilter baris berdasarkan kondisi'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Menghapus tabel'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Menggabungkan database'],
-            ]],
-            ['id' => 14, 'number' => 14, 'question' => '14. Perintah untuk mengubah data yang sudah ada adalah ...', 'correct_index' => 2, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'CHANGE'],
-                ['index' => 1, 'label' => 'B', 'text' => 'REPLACE TABLE'],
-                ['index' => 2, 'label' => 'C', 'text' => 'UPDATE'],
-                ['index' => 3, 'label' => 'D', 'text' => 'MODIFY ROW'],
-            ]],
-            ['id' => 15, 'number' => 15, 'question' => '15. Primary key berfungsi untuk ...', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Mengenkripsi seluruh tabel'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Mengidentifikasi setiap baris secara unik'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Menyimpan file gambar'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Mengurutkan database otomatis'],
-            ]],
-            ['id' => 16, 'number' => 16, 'question' => '16. Foreign key digunakan untuk ...', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Menghubungkan relasi antar tabel'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Mengganti nama database'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Menghapus indeks'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Membuat backup otomatis'],
-            ]],
-            ['id' => 17, 'number' => 17, 'question' => '17. Manakah yang termasuk DBMS relasional?', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'MySQL'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Photoshop'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Figma'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Apache HTTP Server'],
-            ]],
-            ['id' => 18, 'number' => 18, 'question' => '18. Apa tujuan prepared statement pada PHP-MySQL?', 'correct_index' => 1, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Mempercantik antarmuka'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Mengurangi risiko SQL injection'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Mempercepat koneksi internet'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Mengubah PHP menjadi Java'],
-            ]],
-            ['id' => 19, 'number' => 19, 'question' => '19. Metode HTTP yang lazim digunakan untuk mengirim data formulir adalah ...', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'POST'],
-                ['index' => 1, 'label' => 'B', 'text' => 'TRACE'],
-                ['index' => 2, 'label' => 'C', 'text' => 'HEAD'],
-                ['index' => 3, 'label' => 'D', 'text' => 'OPTIONS'],
-            ]],
-            ['id' => 20, 'number' => 20, 'question' => '20. Apa kegunaan session pada aplikasi web?', 'correct_index' => 0, 'options' => [
-                ['index' => 0, 'label' => 'A', 'text' => 'Menyimpan status pengguna antar-request'],
-                ['index' => 1, 'label' => 'B', 'text' => 'Menghapus cache browser'],
-                ['index' => 2, 'label' => 'C', 'text' => 'Mengganti alamat IP'],
-                ['index' => 3, 'label' => 'D', 'text' => 'Membuat file CSS'],
-            ]],
-        ];
     }
 }

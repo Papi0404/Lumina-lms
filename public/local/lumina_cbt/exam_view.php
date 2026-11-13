@@ -157,6 +157,37 @@ if ($session->status === 'under_review' || $session->status === 'invalidated') {
     exit;
 }
 
+// State B2: No extracted multiple choice questions (Direct to native proctored runner)
+if (empty($clientquestions)) {
+    $nativeurl = $cm->url ?: (new moodle_url('/mod/' . $cm->modname . '/view.php', ['id' => $cm->id]));
+    ?>
+    <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; background: #0F172A; padding: 2rem; color: #fff;">
+        <div style="max-width: 580px; width: 100%; background: #1E293B; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 20px 48px rgba(0,0,0,0.5); border: 1px solid rgba(99,102,241,0.3);">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(99,102,241,0.15); color: #818CF8; display: inline-flex; align-items: center; justify-content: center; font-size: 34px; margin-bottom: 1.25rem;">
+                🛡️
+            </div>
+            <h2 style="font-weight: 700; color: #F8FAFC; margin-bottom: 0.75rem;">Aktivitas Ujian Interaktif</h2>
+            <p style="color: #94A3B8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Aktivitas <strong><?php echo s($cm->name); ?></strong> dikonfigurasi melalui modul <code><?php echo s($cm->modname); ?></code>. Seluruh pengerjaan akan tetap diawasi secara langsung oleh Proctoring &amp; Real-time Audit Anti-Curang.
+            </p>
+            <div style="background: #0F172A; border: 1px solid #334155; border-radius: 12px; padding: 1rem; color: #CBD5E1; font-size: 0.88rem; margin-bottom: 1.75rem;">
+                Perlindungan anti-curang (kunci layar, deteksi tab baru, larangan copy-paste) tetap aktif mengamankan sesi Anda.
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="<?php echo $nativeurl->out(false); ?>" style="background: #4F46E5; color: #fff; padding: 12px 28px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(79,70,229,0.4);">
+                    Buka Halaman Ujian Terpantau 🚀
+                </a>
+                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #334155; color: #F1F5F9; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                    Kembali ke Kelas
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php
+    echo $OUTPUT->footer();
+    exit;
+}
+
 // State C: Active In-Progress CBT Room
 ?>
 <style>

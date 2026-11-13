@@ -450,8 +450,15 @@ echo $OUTPUT->header();
                                         <td>
                                             <div class="small fw-bold text-dark"><?php echo s($item['activity_name']); ?></div>
                                             <div class="text-muted small"><?php echo s($item['course_name']); ?></div>
-                                            <?php if ($item['score'] !== null): ?>
-                                                <div class="fw-bold text-primary mt-1">Nilai: <?php echo number_format($item['score'], 2); ?></div>
+                                            <?php if ($item['status'] === 'invalidated'): ?>
+                                                <div class="mt-1">
+                                                    <span class="badge bg-danger text-white">🚫 NILAI DIBATALKAN</span>
+                                                    <div class="text-danger small fw-bold">Skor: 0.00 (Diskualifikasi)</div>
+                                                </div>
+                                            <?php elseif ($item['score'] !== null): ?>
+                                                <div class="fw-bold text-success mt-1">Nilai: <?php echo number_format($item['score'], 2); ?></div>
+                                            <?php else: ?>
+                                                <div class="text-muted small mt-1"><em>Belum dinilai</em></div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end">
@@ -459,14 +466,21 @@ echo $OUTPUT->header();
                                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
                                                     Log
                                                 </button>
-                                                <?php if ($item['status'] === 'under_review' || $item['warning_count'] > 0): ?>
-                                                    <button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
-                                                        🔓 Unlock
+                                                <?php if ($item['status'] === 'invalidated'): ?>
+                                                    <button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'restore')">
+                                                        🔄 Pulihkan
                                                     </button>
-                                                <?php endif; ?>
-                                                <?php if ($item['status'] !== 'invalidated'): ?>
-                                                    <button type="button" class="btn btn-danger btn-sm" title="Batalkan Ujian / Diskualifikasi" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
-                                                        ✕ Batalkan
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                        🔓 Reset
+                                                    </button>
+                                                <?php else: ?>
+                                                    <?php if ($item['status'] === 'under_review' || $item['warning_count'] > 0): ?>
+                                                        <button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                            🔓 Unlock
+                                                        </button>
+                                                    <?php endif; ?>
+                                                    <button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
+                                                        🚫 Batalkan Nilai
                                                     </button>
                                                 <?php endif; ?>
                                             </div>
@@ -686,16 +700,26 @@ function renderCandidatesTable(list) {
             statusBadge = '<span class="badge bg-primary text-white">Sedang Mengerjakan</span>';
         }
 
-        var scoreHtml = (item.score !== null) ? '<div class="fw-bold text-primary mt-1">Nilai: ' + parseFloat(item.score).toFixed(2) + '</div>' : '';
+        var scoreHtml = '';
+        if (item.status === 'invalidated') {
+            scoreHtml = '<div class="mt-1"><span class="badge bg-danger text-white">🚫 NILAI DIBATALKAN</span><div class="text-danger small fw-bold">Skor: 0.00 (Diskualifikasi)</div></div>';
+        } else if (item.score !== null) {
+            scoreHtml = '<div class="fw-bold text-success mt-1">Nilai: ' + parseFloat(item.score).toFixed(2) + '</div>';
+        } else {
+            scoreHtml = '<div class="text-muted small mt-1"><em>Belum dinilai</em></div>';
+        }
 
         var actions = '<div class="btn-group btn-group-sm">' +
                       '<button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(' + item.session_id + ', \'' + escapeHtml(item.student_name).replace(/'/g, "\\'") + '\')">Log</button>';
 
-        if (item.status === 'under_review' || wcount > 0) {
-            actions += '<button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Unlock</button>';
-        }
-        if (item.status !== 'invalidated') {
-            actions += '<button type="button" class="btn btn-danger btn-sm" title="Batalkan Ujian / Diskualifikasi" onclick="cbtResolve(' + item.session_id + ', \'invalidated\')">✕ Batalkan</button>';
+        if (item.status === 'invalidated') {
+            actions += '<button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(' + item.session_id + ', \'restore\')">🔄 Pulihkan</button>';
+            actions += '<button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Reset</button>';
+        } else {
+            if (item.status === 'under_review' || wcount > 0) {
+                actions += '<button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Unlock</button>';
+            }
+            actions += '<button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(' + item.session_id + ', \'invalidated\')">🚫 Batalkan Nilai</button>';
         }
         actions += '</div>';
 
@@ -727,11 +751,16 @@ setInterval(function() {
 
 // Resolve candidate session
 function cbtResolve(sessionId, decision) {
-    var promptMsg = (decision === 'reset') ?
-        'Beri kesempatan ulang & buka kunci (reset peringatan 0/3)?' :
-        (decision === 'invalidated' ?
-            'PERINGATAN: Batalkan ujian dan diskualifikasi peserta ini? Jika siswa sedang mengerjakan, layar ujiannya akan seketika dibekukan dan dikeluarkan.' :
-            'Setujui dan proses nilai sesi ini?');
+    var promptMsg = '';
+    if (decision === 'reset') {
+        promptMsg = 'Beri kesempatan ulang & buka kunci (reset peringatan 0/3 dan hapus nilai sementara)?';
+    } else if (decision === 'invalidated') {
+        promptMsg = 'PERINGATAN: BATALKAN NILAI peserta ini?\n\nNilai akan dianulir menjadi 0.00 (didiskualifikasi) di Gradebook, dan akses ujian siswa akan dibekukan seketika.';
+    } else if (decision === 'restore') {
+        promptMsg = 'PULIHKAN NILAI:\n\nBatalkan status diskualifikasi dan pulihkan kembali nilai ujian peserta ini ke Gradebook?';
+    } else {
+        promptMsg = 'Setujui dan proses nilai sesi ini?';
+    }
 
     if (!confirm(promptMsg)) return;
 

@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026111301;
+$plugin->version   = 2026111302;
 $plugin->requires  = 2022041900; // Universally compatible with Moodle 4.0 - 5.3+
 $plugin->component = 'local_lumina_cbt';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.1.0 (Build: 2026111301)';
+$plugin->release   = 'v1.2.0 (Build: 2026111302)';

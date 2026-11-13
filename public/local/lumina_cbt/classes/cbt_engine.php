@@ -589,6 +589,40 @@ class cbt_engine {
             $ev->metadata = clean_text('Sesi ujian disetujui oleh ' . $adminname . ($notes ? ' (Catatan: ' . $notes . ')' : ''));
             $DB->insert_record($eventstable, $ev);
 
+        } else if ($decision === 'restore') {
+            // Restore previous score from submitted event metadata
+            $restoredScore = null;
+            $submitevent = $DB->get_record($eventstable, [
+                'sessionid' => $sessionid,
+                'eventtype' => 'exam_submitted',
+            ]);
+            if ($submitevent && !empty($submitevent->metadata)) {
+                $meta = json_decode($submitevent->metadata, true);
+                if (isset($meta['score'])) {
+                    $restoredScore = (float)$meta['score'];
+                }
+            }
+
+            $session->status = 'completed';
+            $session->score = $restoredScore;
+            $session->adminreviewerid = $adminid;
+            $session->adminreviewtime = $now;
+            $session->adminreviewnotes = clean_text($notes ?: 'Nilai ujian dipulihkan kembali oleh Pengawas.');
+
+            $ev = new stdClass();
+            $ev->sessionid = $sessionid;
+            $ev->userid = $session->userid;
+            $ev->eventtype = 'exam_approved';
+            $ev->eventtime = $now;
+            $ev->metadata = clean_text('Nilai ujian dipulihkan kembali oleh ' . $adminname . ($notes ? ' (' . $notes . ')' : ''));
+            $DB->insert_record($eventstable, $ev);
+
+            $res = $DB->update_record($sessiontable, $session);
+            if ($session->score !== null) {
+                self::sync_grade_to_gradebook((int)$session->activityid, (int)$session->userid, (float)$session->score);
+            }
+            return $res;
+
         } else if ($decision === 'invalidated') {
             $session->score = 0.00;
 
@@ -597,7 +631,7 @@ class cbt_engine {
             $ev->userid = $session->userid;
             $ev->eventtype = 'exam_invalidated';
             $ev->eventtime = $now;
-            $ev->metadata = clean_text('Ujian didiskualifikasi oleh ' . $adminname . ($notes ? ' (Alasan: ' . $notes . ')' : ''));
+            $ev->metadata = clean_text('Nilai ujian dibatalkan & didiskualifikasi oleh ' . $adminname . ($notes ? ' (Alasan: ' . $notes . ')' : ''));
             $DB->insert_record($eventstable, $ev);
         }
 

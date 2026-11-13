@@ -24,8 +24,25 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026111302;
+// Defensive definitions for Moodle calendar constants across all Moodle versions & PHP 8+
+if (!defined('ASSIGN_EVENT_TYPE_DUE')) {
+    define('ASSIGN_EVENT_TYPE_DUE', 'due');
+}
+if (!defined('ASSIGN_EVENT_TYPE_GRADINGDUE')) {
+    define('ASSIGN_EVENT_TYPE_GRADINGDUE', 'gradingdue');
+}
+if (!defined('ASSIGN_EVENT_TYPE_OPEN')) {
+    define('ASSIGN_EVENT_TYPE_OPEN', 'open');
+}
+if (!defined('ASSIGN_EVENT_TYPE_CLOSE')) {
+    define('ASSIGN_EVENT_TYPE_CLOSE', 'close');
+}
+if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
+    define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
+}
+
+$plugin->version   = 2026111400;
 $plugin->requires  = 2022041900; // Universally compatible with Moodle 4.0 - 5.3+
 $plugin->component = 'local_lumina_cbt';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.2.0 (Build: 2026111302)';
+$plugin->release   = 'v1.3.0 (Weighted Marks & Universal Multi-Version Compat)';

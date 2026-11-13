@@ -18,6 +18,23 @@ namespace local_lumina_cbt;
 
 defined('MOODLE_INTERNAL') || die();
 
+// Defensive definitions for Moodle calendar constants across all Moodle versions & PHP 8+
+if (!defined('ASSIGN_EVENT_TYPE_DUE')) {
+    define('ASSIGN_EVENT_TYPE_DUE', 'due');
+}
+if (!defined('ASSIGN_EVENT_TYPE_GRADINGDUE')) {
+    define('ASSIGN_EVENT_TYPE_GRADINGDUE', 'gradingdue');
+}
+if (!defined('ASSIGN_EVENT_TYPE_OPEN')) {
+    define('ASSIGN_EVENT_TYPE_OPEN', 'open');
+}
+if (!defined('ASSIGN_EVENT_TYPE_CLOSE')) {
+    define('ASSIGN_EVENT_TYPE_CLOSE', 'close');
+}
+if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
+    define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
+}
+
 use stdClass;
 
 /**
@@ -689,8 +706,8 @@ class cbt_engine {
         // 1. Native Moodle Quiz (mod_quiz)
         if ($cm->modname === 'quiz') {
             try {
-                // Try Moodle 4.0 - 5.x Question Bank schema first
-                $sql = "SELECT q.id, q.questiontext, q.qtype, qs.slot
+                // Try Moodle 4.0 - 5.x Question Bank schema first (with weighted marks support)
+                $sql = "SELECT q.id, q.questiontext, q.qtype, q.defaultmark, qs.slot, qs.maxmark
                           FROM {quiz_slots} qs
                           JOIN {question_references} qr ON qr.itemid = qs.id AND qr.component = 'mod_quiz' AND qr.questionarea = 'slot'
                           JOIN {question_bank_entries} qbe ON qbe.id = qr.questionbankentryid
@@ -702,7 +719,7 @@ class cbt_engine {
 
                 // Fallback for direct slot relationship if references empty
                 if (empty($quizq)) {
-                    $sql_legacy = "SELECT q.id, q.questiontext, q.qtype, qs.slot
+                    $sql_legacy = "SELECT q.id, q.questiontext, q.qtype, q.defaultmark, qs.slot, qs.maxmark
                                      FROM {quiz_slots} qs
                                      JOIN {question} q ON q.id = qs.questionid
                                     WHERE qs.quizid = ?
@@ -714,6 +731,7 @@ class cbt_engine {
                     $extracted = [];
                     $slotnum = 1;
                     foreach ($quizq as $qq) {
+                        $maxmark = (!empty($qq->maxmark) && (float)$qq->maxmark > 0) ? (float)$qq->maxmark : ((!empty($qq->defaultmark) && (float)$qq->defaultmark > 0) ? (float)$qq->defaultmark : 1.0);
                         $answers = $DB->get_records('question_answers', ['question' => $qq->id], 'id ASC');
                         $opts = [];
                         $correctidx = 0;
@@ -738,6 +756,7 @@ class cbt_engine {
                             'question'      => strip_tags($qq->questiontext),
                             'options'       => $opts,
                             'correct_index' => $correctidx,
+                            'maxmark'       => $maxmark,
                         ];
                         $slotnum++;
                     }
@@ -796,6 +815,7 @@ class cbt_engine {
                             ['index' => 1, 'label' => 'B', 'text' => 'Tugas masih dalam proses pengerjaan'],
                         ],
                         'correct_index' => 0,
+                        'maxmark'       => 100.0,
                     ]
                 ];
             }
@@ -900,12 +920,15 @@ class cbt_engine {
             return null;
         }
 
+        $maxmark = (!empty($params['weight']) && (float)$params['weight'] > 0) ? (float)$params['weight'] : ((!empty($params['score']) && (float)$params['score'] > 0) ? (float)$params['score'] : 1.0);
+
         return [
             'id'            => 0,
             'number'        => 0,
             'question'      => strip_tags($qtext),
             'options'       => $opts,
             'correct_index' => $correctidx,
+            'maxmark'       => $maxmark,
         ];
     }
 
@@ -950,22 +973,27 @@ class cbt_engine {
             ];
         }
 
+        $totalMaxPoints = 0.0;
+        $earnedPoints   = 0.0;
         $correct = 0;
         $wrong = 0;
         $unanswered = 0;
 
         foreach ($questions as $q) {
             $qnum = (int)$q['number'];
+            $weight = (isset($q['maxmark']) && (float)$q['maxmark'] > 0) ? (float)$q['maxmark'] : 1.0;
+            $totalMaxPoints += $weight;
             if (!isset($useranswers[$qnum]) || $useranswers[$qnum] === null || $useranswers[$qnum] === '') {
                 $unanswered++;
             } else if ((int)$useranswers[$qnum] === (int)$q['correct_index']) {
                 $correct++;
+                $earnedPoints += $weight;
             } else {
                 $wrong++;
             }
         }
 
-        $finalscore = round(($correct / $total) * 100, 2);
+        $finalscore = ($totalMaxPoints > 0) ? round(($earnedPoints / $totalMaxPoints) * 100, 2) : 0.00;
         $now = time();
 
         $session->score = $finalscore;
@@ -988,26 +1016,30 @@ class cbt_engine {
         $ev->eventtype = 'exam_submitted';
         $ev->eventtime = $now;
         $ev->metadata = json_encode([
-            'score'      => $finalscore,
-            'correct'    => $correct,
-            'wrong'      => $wrong,
-            'unanswered' => $unanswered,
-            'total'      => $total,
+            'score'            => $finalscore,
+            'earned_points'    => round($earnedPoints, 2),
+            'total_max_points' => round($totalMaxPoints, 2),
+            'correct'          => $correct,
+            'wrong'            => $wrong,
+            'unanswered'       => $unanswered,
+            'total'            => $total,
         ]);
         $DB->insert_record($eventstable, $ev);
 
         return [
-            'success'       => true,
-            'session_id'    => $sessionid,
-            'status'        => $session->status,
-            'score'         => $finalscore,
-            'correct'       => $correct,
-            'wrong'         => $wrong,
-            'unanswered'    => $unanswered,
-            'total'         => $total,
-            'warning_count' => (int)$session->warningcount,
-            'is_suspended'  => ($session->status === 'under_review'),
-            'submitted_at'  => userdate($now, '%d %b %Y, %H:%M WIB'),
+            'success'          => true,
+            'session_id'       => $sessionid,
+            'status'           => $session->status,
+            'score'            => $finalscore,
+            'earned_points'    => round($earnedPoints, 2),
+            'total_max_points' => round($totalMaxPoints, 2),
+            'correct'          => $correct,
+            'wrong'            => $wrong,
+            'unanswered'       => $unanswered,
+            'total'            => $total,
+            'warning_count'    => (int)$session->warningcount,
+            'is_suspended'     => ($session->status === 'under_review'),
+            'submitted_at'     => userdate($now, '%d %b %Y, %H:%M WIB'),
         ];
     }
 

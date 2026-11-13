@@ -61,6 +61,7 @@ foreach ($rawquestions as $q) {
         'number'   => (int)$q['number'],
         'question' => $q['question'],
         'options'  => $q['options'],
+        'maxmark'  => (float)($q['maxmark'] ?? 1.0),
     ];
 }
 
@@ -574,7 +575,8 @@ window.addEventListener('DOMContentLoaded', function() {
     // Render current question
     function renderQuestion() {
         var q = questions[currentIndex];
-        document.getElementById('cbt-qnum-header').innerText = 'Soal Nomor ' + q.number + ' dari ' + questions.length;
+        var pointBadge = (q.maxmark && parseFloat(q.maxmark) > 0) ? ' • Bobot: ' + q.maxmark + ' Poin' : '';
+        document.getElementById('cbt-qnum-header').innerText = 'Soal Nomor ' + q.number + ' dari ' + questions.length + pointBadge;
         document.getElementById('cbt-qtext-box').innerText = q.question;
 
         var optBox = document.getElementById('cbt-options-box');

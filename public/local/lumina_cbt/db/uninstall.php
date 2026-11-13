@@ -39,3 +39,4 @@ function xmldb_local_lumina_cbt_uninstall() {
 
     return true;
 }
+

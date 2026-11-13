@@ -33,7 +33,16 @@ class hook_callbacks {
      * @param \core\hook\output\before_standard_footer_html_generation $hook
      */
     public static function before_standard_footer_html_generation($hook): void {
-        local_lumina_cbt_before_footer();
+        global $CFG;
+
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
+
+        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+        if (function_exists('local_lumina_cbt_before_footer')) {
+            \local_lumina_cbt_before_footer();
+        }
     }
 
     /**
@@ -42,11 +51,13 @@ class hook_callbacks {
      * @param \core\hook\navigation\primary_extend $hook
      */
     public static function primary_extend($hook): void {
-        global $USER;
+        global $USER, $CFG;
 
         if (!isloggedin() || isguestuser()) {
             return;
         }
+
+        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
 
         $syscontext = \context_system::instance();
         $canmonitor = is_siteadmin() ||
@@ -89,11 +100,17 @@ class hook_callbacks {
      * @param \core\hook\navigation\secondary_extend $hook
      */
     public static function secondary_extend($hook): void {
-        global $COURSE;
+        global $COURSE, $CFG;
+
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
 
         if (!$COURSE || $COURSE->id == SITEID) {
             return;
         }
+
+        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
 
         $context = \context_course::instance($COURSE->id, IGNORE_MISSING);
         if (!$context) {

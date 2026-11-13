@@ -417,10 +417,10 @@ class cbt_engine {
         }
 
         // Filter Scope:
-        // By default ('violations_only'), honest candidates who finished with 0 violations pass automatically
-        // and do not clutter the admin review queue.
+        // By default ('violations_only'), show students who committed infractions OR are actively taking the exam (in_progress).
+        // Honest students who already completed with 0 violations pass automatically to Gradebook without cluttering the review queue.
         if ($filterscope === 'violations_only') {
-            $where[] = "(s.status IN ('under_review', 'invalidated') OR s.warningcount >= 1)";
+            $where[] = "(s.status IN ('under_review', 'invalidated', 'in_progress') OR s.warningcount >= 1)";
         } else {
             $where[] = "(s.status IN ('under_review', 'invalidated', 'approved', 'completed', 'in_progress'))";
         }

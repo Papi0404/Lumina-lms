@@ -109,18 +109,32 @@ if ($action === 'feed') {
 
 // 2. Proctor Resolution (Reset/Unlock, Approve, Invalidate)
 if ($action === 'resolve') {
-    $canreview = has_capability('local/lumina_cbt:review', $coursectx) ||
-                 has_capability('moodle/course:manageactivities', $coursectx) ||
-                 is_siteadmin();
+    $sessionid = required_param('session_id', PARAM_INT);
+    $decision  = required_param('decision', PARAM_ALPHA);
+    $notes     = optional_param('notes', '', PARAM_RAW_TRIMMED);
+
+    $sessiontable = \local_lumina_cbt\cbt_engine::get_session_table();
+    $sessionrec = $DB->get_record($sessiontable, ['id' => $sessionid]);
+    if (!$sessionrec) {
+        echo json_encode(['success' => false, 'error' => 'Sesi ujian tidak ditemukan.']);
+        exit;
+    }
+
+    $targetctx = $sessionrec->courseid > 0 ? \context_course::instance((int)$sessionrec->courseid, IGNORE_MISSING) : $coursectx;
+    if (!$targetctx) {
+        $targetctx = $sysctx;
+    }
+
+    $canreview = is_siteadmin() ||
+                 has_capability('local/lumina_cbt:review', $targetctx) ||
+                 has_capability('moodle/course:manageactivities', $targetctx) ||
+                 has_capability('moodle/grade:viewall', $targetctx) ||
+                 has_capability('local/lumina_cbt:monitor', $targetctx);
 
     if (!$canreview) {
         echo json_encode(['success' => false, 'error' => 'Review permission required']);
         exit;
     }
-
-    $sessionid = required_param('session_id', PARAM_INT);
-    $decision  = required_param('decision', PARAM_ALPHA);
-    $notes     = optional_param('notes', '', PARAM_RAW_TRIMMED);
 
     $resolved = \local_lumina_cbt\cbt_engine::resolve_session($sessionid, (int)$USER->id, $decision, $notes);
     echo json_encode([

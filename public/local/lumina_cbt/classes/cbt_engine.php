@@ -470,7 +470,7 @@ class cbt_engine {
                  WHERE $wheresql
               ORDER BY s.warningcount DESC, s.id DESC";
 
-        $rows = $DB->get_records_sql($sql, $params);
+        $rows = $DB->get_records_sql($sql, $params, 0, 150);
         $result = [];
 
         foreach ($rows as $r) {
@@ -706,12 +706,15 @@ class cbt_engine {
         // 1. Native Moodle Quiz (mod_quiz)
         if ($cm->modname === 'quiz') {
             try {
-                // Try Moodle 4.0 - 5.x Question Bank schema first (with weighted marks support)
+                // Try Moodle 4.0 - 5.x Question Bank schema first (with weighted marks support & version filtering)
                 $sql = "SELECT q.id, q.questiontext, q.qtype, q.defaultmark, qs.slot, qs.maxmark
                           FROM {quiz_slots} qs
                           JOIN {question_references} qr ON qr.itemid = qs.id AND qr.component = 'mod_quiz' AND qr.questionarea = 'slot'
                           JOIN {question_bank_entries} qbe ON qbe.id = qr.questionbankentryid
                           JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
+                               AND (qv.version = qr.version OR (qr.version IS NULL AND qv.version = (
+                                   SELECT MAX(v.version) FROM {question_versions} v WHERE v.questionbankentryid = qbe.id
+                               )))
                           JOIN {question} q ON q.id = qv.questionid
                          WHERE qs.quizid = ?
                       ORDER BY qs.slot ASC";

@@ -41,8 +41,8 @@ if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
     define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
 }
 
-$plugin->version   = 2026111401;
+$plugin->version   = 2026111402;
 $plugin->requires  = 2022041900; // Universally compatible with Moodle 4.0 - 5.3+
 $plugin->component = 'local_lumina_cbt';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.3.1 (Fixed secondary_extend navigation & clean uninstallation)';
+$plugin->release   = 'v1.3.2 (Production Scale & High-Concurrency Performance Optimization)';

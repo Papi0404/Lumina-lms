@@ -64,24 +64,9 @@ class hook_callbacks {
         try {
             require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
 
-            $syscontext = \context_system::instance();
-            $canmonitor = is_siteadmin() ||
-                          has_capability('local/lumina_cbt:monitor', $syscontext) ||
-                          has_capability('moodle/grade:viewall', $syscontext) ||
-                          has_capability('moodle/course:manageactivities', $syscontext);
-
-            if (!$canmonitor) {
-                $courses = enrol_get_all_users_courses($USER->id, true);
-                foreach ($courses as $c) {
-                    $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
-                    if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
-                                      has_capability('moodle/grade:viewall', $ccontext) ||
-                                      has_capability('moodle/course:manageactivities', $ccontext))) {
-                        $canmonitor = true;
-                        break;
-                    }
-                }
-            }
+            $canmonitor = function_exists('local_lumina_cbt_can_monitor_cached')
+                ? \local_lumina_cbt_can_monitor_cached()
+                : (is_siteadmin() || has_capability('moodle/course:manageactivities', \context_system::instance()));
 
             if ($canmonitor) {
                 $primaryview = null;

@@ -66,6 +66,60 @@ function local_lumina_cbt_after_config() {
 }
 
 /**
+ * Fast cached capability check to determine if the current user can monitor CBT.
+ * Completely immune to N+1 course loops on massive production sites with 10,000+ users.
+ *
+ * @return bool
+ */
+function local_lumina_cbt_can_monitor_cached(): bool {
+    global $USER, $DB;
+
+    if (!isloggedin() || isguestuser()) {
+        return false;
+    }
+
+    if (is_siteadmin()) {
+        return true;
+    }
+
+    if (isset($USER->lumina_cbt_canmonitor)) {
+        return (bool)$USER->lumina_cbt_canmonitor;
+    }
+
+    $syscontext = \context_system::instance();
+    if (has_capability('local/lumina_cbt:monitor', $syscontext) ||
+        has_capability('moodle/grade:viewall', $syscontext) ||
+        has_capability('moodle/course:manageactivities', $syscontext)) {
+        $USER->lumina_cbt_canmonitor = true;
+        return true;
+    }
+
+    // Fast check: is user assigned any teacher or manager role in any course?
+    try {
+        $teacherroles = $DB->get_fieldset_select('role_capabilities', 'roleid', "capability IN ('local/lumina_cbt:monitor', 'moodle/course:manageactivities') AND permission = 1");
+        if (!empty($teacherroles)) {
+            list($insql, $inparams) = $DB->get_in_or_equal($teacherroles, SQL_PARAMS_NAMED);
+            $inparams['userid'] = $USER->id;
+            $inparams['contextcourse'] = CONTEXT_COURSE;
+            $hasrole = $DB->record_exists_sql("
+                SELECT 1 FROM {role_assignments} ra
+                JOIN {context} ctx ON ctx.id = ra.contextid AND ctx.contextlevel = :contextcourse
+                WHERE ra.userid = :userid AND ra.roleid $insql", $inparams);
+
+            if ($hasrole) {
+                $USER->lumina_cbt_canmonitor = true;
+                return true;
+            }
+        }
+    } catch (\Throwable $e) {
+        // Fallback for custom role schemas
+    }
+
+    $USER->lumina_cbt_canmonitor = false;
+    return false;
+}
+
+/**
  * Global navigation extension: runs on EVERY page load across all Moodle versions (3.9 - 5.x).
  * Guarantees "CBT & Audit" is registered in:
  * 1. Native Moodle 4.0 - 5.x Primary Navigation ($PAGE->primarynav)
@@ -81,24 +135,7 @@ function local_lumina_cbt_extend_navigation(\global_navigation $navigation) {
         return;
     }
 
-    $syscontext = \context_system::instance();
-    $canmonitor = is_siteadmin() ||
-                  has_capability('local/lumina_cbt:monitor', $syscontext) ||
-                  has_capability('moodle/grade:viewall', $syscontext) ||
-                  has_capability('moodle/course:manageactivities', $syscontext);
-
-    if (!$canmonitor) {
-        $courses = enrol_get_all_users_courses($USER->id, true);
-        foreach ($courses as $c) {
-            $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
-            if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
-                              has_capability('moodle/grade:viewall', $ccontext) ||
-                              has_capability('moodle/course:manageactivities', $ccontext))) {
-                $canmonitor = true;
-                break;
-            }
-        }
-    }
+    $canmonitor = local_lumina_cbt_can_monitor_cached();
 
     if ($canmonitor) {
         $cbturl = new \moodle_url('/local/lumina_cbt/monitor.php');

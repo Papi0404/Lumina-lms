@@ -104,3 +104,4 @@ Navigate to **Site administration > Plugins > Local plugins > Lumina CBT & Anti-
 ## 📄 License
 This plugin is licensed under the **GNU General Public License v3 or later (GPLv3+)**.  
 Copyright &copy; 2026 Lumina LMS. Developed by Januar Zidane Tinendeng.
+

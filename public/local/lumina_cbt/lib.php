@@ -197,27 +197,31 @@ function local_lumina_cbt_extend_navigation(\global_navigation $navigation) {
  * @param context_course $context
  */
 function local_lumina_cbt_extend_navigation_course(\navigation_node $navigation, \stdClass $course, \context_course $context) {
-    if ($course->id == SITEID) {
+    if (!$course || $course->id == SITEID) {
         return;
     }
 
-    $canmonitor = has_capability('local/lumina_cbt:monitor', $context) ||
-                  has_capability('moodle/grade:viewall', $context) ||
-                  has_capability('moodle/course:manageactivities', $context) ||
-                  is_siteadmin();
+    try {
+        $canmonitor = has_capability('local/lumina_cbt:monitor', $context) ||
+                      has_capability('moodle/grade:viewall', $context) ||
+                      has_capability('moodle/course:manageactivities', $context) ||
+                      is_siteadmin();
 
-    if ($canmonitor) {
-        $url = new \moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $course->id]);
-        $cbtnode = \navigation_node::create(
-            get_string('course_cbt_menu', 'local_lumina_cbt'),
-            $url,
-            \navigation_node::TYPE_SETTING,
-            null,
-            'lumina_cbt_monitor',
-            new \pix_icon('i/shield', '')
-        );
-        $cbtnode->showinflatnavigation = true;
-        $navigation->add_node($cbtnode);
+        if ($canmonitor && method_exists($navigation, 'add_node')) {
+            $url = new \moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $course->id]);
+            $cbtnode = \navigation_node::create(
+                get_string('course_cbt_menu', 'local_lumina_cbt'),
+                $url,
+                \navigation_node::TYPE_SETTING,
+                null,
+                'lumina_cbt_monitor',
+                new \pix_icon('i/shield', '')
+            );
+            $cbtnode->showinflatnavigation = true;
+            $navigation->add_node($cbtnode);
+        }
+    } catch (\Throwable $e) {
+        // Fail-safe: ensure course pages never crash
     }
 }
 
@@ -228,23 +232,27 @@ function local_lumina_cbt_extend_navigation_course(\navigation_node $navigation,
  * @param context $context
  */
 function local_lumina_cbt_extend_settings_navigation(\settings_navigation $nav, \context $context) {
-    if ($context->contextlevel == CONTEXT_COURSE && $context->instanceid != SITEID) {
-        $canmonitor = has_capability('local/lumina_cbt:monitor', $context) ||
-                      has_capability('moodle/course:manageactivities', $context) ||
-                      is_siteadmin();
+    try {
+        if ($context->contextlevel == CONTEXT_COURSE && $context->instanceid != SITEID) {
+            $canmonitor = has_capability('local/lumina_cbt:monitor', $context) ||
+                          has_capability('moodle/course:manageactivities', $context) ||
+                          is_siteadmin();
 
-        if ($canmonitor) {
-            $coursenode = $nav->find('courseadmin', \navigation_node::TYPE_COURSE);
-            if ($coursenode) {
-                $coursenode->add(
-                    get_string('course_cbt_menu', 'local_lumina_cbt'),
-                    new \moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $context->instanceid]),
-                    \navigation_node::TYPE_SETTING,
-                    null,
-                    'lumina_cbt_settings_monitor'
-                );
+            if ($canmonitor) {
+                $coursenode = $nav->find('courseadmin', \navigation_node::TYPE_COURSE);
+                if ($coursenode) {
+                    $coursenode->add(
+                        get_string('course_cbt_menu', 'local_lumina_cbt'),
+                        new \moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $context->instanceid]),
+                        \navigation_node::TYPE_SETTING,
+                        null,
+                        'lumina_cbt_settings_monitor'
+                    );
+                }
             }
         }
+    } catch (\Throwable $e) {
+        // Fail-safe
     }
 }
 

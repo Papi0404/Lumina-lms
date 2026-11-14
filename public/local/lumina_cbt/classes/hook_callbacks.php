@@ -39,9 +39,13 @@ class hook_callbacks {
             return;
         }
 
-        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
-        if (function_exists('local_lumina_cbt_before_footer')) {
-            \local_lumina_cbt_before_footer();
+        try {
+            require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+            if (function_exists('local_lumina_cbt_before_footer')) {
+                \local_lumina_cbt_before_footer();
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe: never interrupt footer rendering
         }
     }
 
@@ -57,40 +61,56 @@ class hook_callbacks {
             return;
         }
 
-        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+        try {
+            require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
 
-        $syscontext = \context_system::instance();
-        $canmonitor = is_siteadmin() ||
-                      has_capability('local/lumina_cbt:monitor', $syscontext) ||
-                      has_capability('moodle/grade:viewall', $syscontext) ||
-                      has_capability('moodle/course:manageactivities', $syscontext);
+            $syscontext = \context_system::instance();
+            $canmonitor = is_siteadmin() ||
+                          has_capability('local/lumina_cbt:monitor', $syscontext) ||
+                          has_capability('moodle/grade:viewall', $syscontext) ||
+                          has_capability('moodle/course:manageactivities', $syscontext);
 
-        if (!$canmonitor) {
-            $courses = enrol_get_all_users_courses($USER->id, true);
-            foreach ($courses as $c) {
-                $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
-                if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
-                                  has_capability('moodle/grade:viewall', $ccontext) ||
-                                  has_capability('moodle/course:manageactivities', $ccontext))) {
-                    $canmonitor = true;
-                    break;
+            if (!$canmonitor) {
+                $courses = enrol_get_all_users_courses($USER->id, true);
+                foreach ($courses as $c) {
+                    $ccontext = \context_course::instance($c->id, IGNORE_MISSING);
+                    if ($ccontext && (has_capability('local/lumina_cbt:monitor', $ccontext) ||
+                                      has_capability('moodle/grade:viewall', $ccontext) ||
+                                      has_capability('moodle/course:manageactivities', $ccontext))) {
+                        $canmonitor = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if ($canmonitor) {
-            $primaryview = $hook->get_primaryview();
-            $url = new \moodle_url('/local/lumina_cbt/monitor.php');
-            $node = $primaryview->add(
-                '🛡️ CBT & Audit',
-                $url,
-                \navigation_node::TYPE_CUSTOM,
-                null,
-                'lumina_cbt_primary_monitor'
-            );
-            if ($node) {
-                $node->showinflatnavigation = true;
+            if ($canmonitor) {
+                $primaryview = null;
+                if (method_exists($hook, 'get_primaryview')) {
+                    $primaryview = $hook->get_primaryview();
+                } else if (method_exists($hook, 'get_primary_view')) {
+                    $primaryview = $hook->get_primary_view();
+                } else if (isset($hook->primaryview)) {
+                    $primaryview = $hook->primaryview;
+                }
+
+                if ($primaryview && method_exists($primaryview, 'add')) {
+                    $url = new \moodle_url('/local/lumina_cbt/monitor.php');
+                    if (!$primaryview->find('lumina_cbt_primary_monitor', \navigation_node::TYPE_CUSTOM)) {
+                        $node = $primaryview->add(
+                            '🛡️ CBT & Audit',
+                            $url,
+                            \navigation_node::TYPE_CUSTOM,
+                            null,
+                            'lumina_cbt_primary_monitor'
+                        );
+                        if ($node) {
+                            $node->showinflatnavigation = true;
+                        }
+                    }
+                }
             }
+        } catch (\Throwable $e) {
+            // Fail-safe: never crash header navigation
         }
     }
 
@@ -110,29 +130,45 @@ class hook_callbacks {
             return;
         }
 
-        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+        try {
+            require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
 
-        $context = \context_course::instance($COURSE->id, IGNORE_MISSING);
-        if (!$context) {
-            return;
-        }
+            $context = \context_course::instance($COURSE->id, IGNORE_MISSING);
+            if (!$context) {
+                return;
+            }
 
-        $canmonitor = has_capability('local/lumina_cbt:monitor', $context) ||
-                      has_capability('moodle/grade:viewall', $context) ||
-                      has_capability('moodle/course:manageactivities', $context) ||
-                      is_siteadmin();
+            $canmonitor = has_capability('local/lumina_cbt:monitor', $context) ||
+                          has_capability('moodle/grade:viewall', $context) ||
+                          has_capability('moodle/course:manageactivities', $context) ||
+                          is_siteadmin();
 
-        if ($canmonitor) {
-            $secondarynav = $hook->get_navigation();
-            $url = new \moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $COURSE->id]);
-            $secondarynav->add(
-                get_string('course_cbt_menu', 'local_lumina_cbt'),
-                $url,
-                \navigation_node::TYPE_SETTING,
-                null,
-                'lumina_cbt_secondary_monitor',
-                new \pix_icon('i/shield', '')
-            );
+            if ($canmonitor) {
+                $secondarynav = null;
+                if (method_exists($hook, 'get_secondaryview')) {
+                    $secondarynav = $hook->get_secondaryview();
+                } else if (method_exists($hook, 'get_navigation')) {
+                    $secondarynav = $hook->get_navigation();
+                } else if (isset($hook->secondaryview)) {
+                    $secondarynav = $hook->secondaryview;
+                }
+
+                if ($secondarynav && method_exists($secondarynav, 'add')) {
+                    $url = new \moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $COURSE->id]);
+                    if (!$secondarynav->find('lumina_cbt_secondary_monitor', \navigation_node::TYPE_SETTING)) {
+                        $secondarynav->add(
+                            get_string('course_cbt_menu', 'local_lumina_cbt'),
+                            $url,
+                            \navigation_node::TYPE_SETTING,
+                            null,
+                            'lumina_cbt_secondary_monitor',
+                            new \pix_icon('i/shield', '')
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe: never crash course page
         }
     }
 }

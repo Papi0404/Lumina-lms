@@ -26,6 +26,14 @@ defined('MOODLE_INTERNAL') || die();
 
 $callbacks = [];
 
+if (class_exists('core\hook\output\before_http_headers')) {
+    $callbacks[] = [
+        'hook'     => \core\hook\output\before_http_headers::class,
+        'callback' => \local_lumina_cbt\hook_callbacks::class . '::before_http_headers',
+        'priority' => 1000,
+    ];
+}
+
 if (class_exists('core\hook\navigation\primary_extend')) {
     $callbacks[] = [
         'hook'     => \core\hook\navigation\primary_extend::class,

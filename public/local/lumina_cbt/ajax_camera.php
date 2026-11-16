@@ -238,3 +238,4 @@ if ($action === 'save_evidence') {
 }
 
 echo json_encode(['success' => false, 'error' => 'Unknown action']);
+

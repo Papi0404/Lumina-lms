@@ -28,6 +28,76 @@ defined('MOODLE_INTERNAL') || die();
 class hook_callbacks {
 
     /**
+     * Intercept requests to exam activities (mod_quiz, mod_h5pactivity) and redirect to the CBT exam view
+     * when CBT mode is enabled for that activity.
+     *
+     * @param \core\hook\output\before_http_headers $hook
+     */
+    public static function before_http_headers($hook): void {
+        global $PAGE, $USER, $CFG, $DB;
+
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
+
+        $pagetype = $PAGE->pagetype ?? '';
+        $urlpath = $PAGE->url ? $PAGE->url->get_path() : '';
+
+        // Universal check: any H5P activity, Moodle Quiz, or question attempt
+        $isexamactivity = (
+            $pagetype === 'mod-h5pactivity-view' ||
+            strpos($urlpath, 'mod/h5pactivity/view.php') !== false ||
+            $pagetype === 'mod-quiz-view' ||
+            $pagetype === 'mod-quiz-attempt' ||
+            strpos($urlpath, 'mod/quiz/view.php') !== false ||
+            strpos($urlpath, 'mod/quiz/attempt.php') !== false
+        );
+
+        if (!$isexamactivity) {
+            return;
+        }
+
+        $cmid = optional_param('id', 0, PARAM_INT);
+        if (!$cmid && (strpos($urlpath, 'mod/quiz/attempt.php') !== false || $pagetype === 'mod-quiz-attempt')) {
+            $attemptid = optional_param('attempt', 0, PARAM_INT);
+            if ($attemptid) {
+                $attempt = $DB->get_record('quiz_attempts', ['id' => $attemptid]);
+                if ($attempt) {
+                    $cmrec = get_coursemodule_from_instance('quiz', $attempt->quiz);
+                    if ($cmrec) {
+                        $cmid = (int)$cmrec->id;
+                    }
+                }
+            }
+        }
+
+        if (!$cmid) {
+            return;
+        }
+
+        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+
+        // Check if CBT mode is enabled for this activity!
+        if (!function_exists('local_lumina_cbt_is_quiz_cbt_enabled') || !local_lumina_cbt_is_quiz_cbt_enabled($cmid)) {
+            return;
+        }
+
+        // If user explicitly passed noredirect=1 (e.g. to access native settings/attempts), don't redirect
+        if (optional_param('noredirect', 0, PARAM_INT) == 1) {
+            return;
+        }
+
+        // Check if there is an explicit editing or management action
+        $action = optional_param('action', '', PARAM_ALPHA);
+        if (!empty($action) && in_array($action, ['edit', 'delete', 'update', 'grade'], true)) {
+            return;
+        }
+
+        // Automatically launch the dedicated CBT Exam Room!
+        redirect(new \moodle_url('/local/lumina_cbt/exam_view.php', ['cmid' => $cmid]));
+    }
+
+    /**
      * Inject universal CBT proctoring and navbar menu fallback into footer.
      *
      * @param \core\hook\output\before_standard_footer_html_generation $hook

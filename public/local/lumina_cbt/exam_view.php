@@ -457,6 +457,9 @@ html, body {
             <a href="?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: rgba(239,68,68,0.2); color: #FCA5A5; border: 1px solid rgba(239,68,68,0.4); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; text-decoration: none; font-weight: 600;">
                 🔄 Reset Simulasi
             </a>
+            <a href="<?php echo $CFG->wwwroot; ?>/mod/<?php echo $cm->modname; ?>/view.php?id=<?php echo $cm->id; ?>&noredirect=1" style="background: rgba(255,255,255,0.1); color: #E2E8F0; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; text-decoration: none; font-weight: 600;" title="Buka Halaman Standar Moodle (Pengaturan/Laporan)">
+                ⚙️ Halaman Moodle
+            </a>
             <?php endif; ?>
         </div>
     </div>

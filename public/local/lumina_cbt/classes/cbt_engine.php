@@ -1000,7 +1000,11 @@ class cbt_engine {
             $context = \context_module::instance($cmid, IGNORE_MISSING);
             if ($context) {
                 $fs = get_file_storage();
-                $files = $fs->get_area_files($context->id, $cm->modname, 'package', 0, 'sortorder', false);
+                $component = ($cm->modname === 'hvp') ? 'mod_hvp' : 'mod_h5pactivity';
+                $files = $fs->get_area_files($context->id, $component, 'package', 0, 'sortorder', false);
+                if (empty($files)) {
+                    $files = $fs->get_area_files($context->id, $cm->modname, 'package', 0, 'sortorder', false);
+                }
                 if (!empty($files)) {
                     $f = reset($files);
                     $content = $f->get_content();

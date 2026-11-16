@@ -80,7 +80,10 @@ class hook_callbacks {
                     $action = optional_param('action', '', PARAM_ALPHA);
 
                     if ($isstudent && empty($action) && !optional_param('noredirect', 0, PARAM_INT)) {
-                        redirect(new \moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $cm->id]));
+                        $targetUrl = file_exists($CFG->dirroot . '/local/lumina_cbt/exam_view.php')
+                            ? '/local/lumina_cbt/exam_view.php'
+                            : '/local/lumina_core/exam_view.php';
+                        redirect(new \moodle_url($targetUrl, ['cmid' => $cm->id]));
                     }
                 }
             }

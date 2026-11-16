@@ -789,7 +789,8 @@ window.addEventListener('DOMContentLoaded', function() {
             strictFullscreen: true,
             blockKeyboard: true,
             suppressAi: true,
-            enableCamera: true
+            enableCamera: true,
+            cameraInterval: 350
         });
     });
 });

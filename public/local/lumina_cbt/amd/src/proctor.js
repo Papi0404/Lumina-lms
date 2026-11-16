@@ -22,7 +22,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             blockKeyboard: true,
             suppressAi: true,
             enableCamera: true,
-            cameraInterval: 1200
+            cameraInterval: 350
         },
 
         state: {
@@ -526,19 +526,21 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             if (self.state.cameraTimer) clearInterval(self.state.cameraTimer);
 
             var canvas = document.createElement('canvas');
-            canvas.width = 320;
-            canvas.height = 240;
+            canvas.width = 280;
+            canvas.height = 210;
             var ctx = canvas.getContext('2d');
             self.state.cameraCanvas = canvas;
 
+            var isPushing = false;
+
             self.state.cameraTimer = setInterval(function() {
-                if (!self.state.isCameraActive || self.state.isDisqualified) return;
+                if (!self.state.isCameraActive || self.state.isDisqualified || isPushing) return;
                 var video = self.state.cameraVideo;
                 if (!video || video.readyState < 2) return;
 
                 try {
-                    ctx.drawImage(video, 0, 0, 320, 240);
-                    var frameData = canvas.toDataURL('image/jpeg', 0.55);
+                    ctx.drawImage(video, 0, 0, 280, 210);
+                    var frameData = canvas.toDataURL('image/jpeg', 0.45);
 
                     var form = new FormData();
                     form.append('action', 'push_frame');
@@ -547,12 +549,19 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                     form.append('frame', frameData);
                     form.append('sesskey', self.config.sesskey || M.cfg.sesskey);
 
+                    isPushing = true;
                     fetch(self.config.cameraAjaxUrl, {
                         method: 'POST',
                         body: form
-                    }).catch(function(){});
-                } catch(e) {}
-            }, self.config.cameraInterval || 1200);
+                    })
+                    .catch(function(){})
+                    .finally(function() {
+                        isPushing = false;
+                    });
+                } catch(e) {
+                    isPushing = false;
+                }
+            }, self.config.cameraInterval || 350);
         },
 
         showCameraAlert: function() {

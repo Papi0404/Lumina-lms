@@ -30,7 +30,11 @@ require_once(__DIR__ . '/classes/cbt_engine.php');
 require_login();
 require_sesskey();
 
+// Release session lock so events/heartbeats don't block other requests
+\core\session\manager::write_close();
+
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 global $USER, $DB;
 

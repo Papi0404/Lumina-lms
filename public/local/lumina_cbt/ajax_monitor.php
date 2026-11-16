@@ -31,7 +31,11 @@ require_once(__DIR__ . '/classes/cbt_engine.php');
 require_login();
 require_sesskey();
 
+// Release session lock to allow concurrent AJAX requests
+\core\session\manager::write_close();
+
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 global $USER, $DB;
 
@@ -89,10 +93,27 @@ if ($action === 'feed') {
         $dateto
     );
 
+    // Scan active cameras without extra roundtrip HTTP calls
+    $camdir = $CFG->dataroot . '/cbt_cam';
+    $activecams = [];
+    $now = time();
+    $files = @glob($camdir . '/session_*.jpg');
+    if ($files) {
+        foreach ($files as $file) {
+            $mtime = filemtime($file);
+            if (($now - $mtime) <= 10) {
+                if (preg_match('/session_(\d+)\.jpg$/', $file, $m)) {
+                    $activecams[(int)$m[1]] = true;
+                }
+            }
+        }
+    }
+
     echo json_encode([
         'success'          => true,
         'feed'             => $feed,
         'candidates'       => $candidates,
+        'active_cameras'   => $activecams,
         'active_count'     => $metrics['active_count'],
         'review_count'     => $metrics['locked_count'],
         'clean_count'      => $metrics['clean_count'],

@@ -1021,6 +1021,15 @@ function fetchLiveData(resetFeed) {
             var summarySessions = document.getElementById('cbt-summary-sessions');
             if (summarySessions) summarySessions.innerText = data.candidates.length;
         }
+
+        // Instant camera status indicator sync (zero extra HTTP requests)
+        if (data.active_cameras) {
+            document.querySelectorAll('.cbt-cam-badge').forEach(function(el){ el.style.display = 'none'; });
+            for (var sid in data.active_cameras) {
+                var el = document.getElementById('cbt-cam-badge-' + sid);
+                if (el) el.style.display = 'inline-flex';
+            }
+        }
     })
     .catch(function(e){});
 }
@@ -1124,11 +1133,10 @@ function renderCandidatesTable(list) {
     tbody.innerHTML = html;
 }
 
-// Polling live feed and active candidates every 1.5 seconds (Ultra-smooth Real-time)
+// Polling live feed and active candidates every 2 seconds
 setInterval(function() {
     fetchLiveData(false);
-    cbtSyncActiveCameras();
-}, 1500);
+}, 2000);
 
 // Resolve candidate session
 function cbtResolve(sessionId, decision) {
@@ -1271,7 +1279,9 @@ function cbtViewAudit(sessionId, name) {
 // Live Stealth Camera Proctoring Module
 // -------------------------------------------------------------
 var cbtCurrentCamSession = null;
-var cbtCamPollInterval = null;
+var cbtCamStreaming = false;
+var cbtLastFrameTime = 0;
+var cbtIsCamFetching = false;
 var currentCandidatesList = <?php echo json_encode(array_values($reviewlist)); ?>;
 
 function cbtOpenLiveCam(sessionId, name, email, activity, course, warnings, status) {
@@ -1331,61 +1341,83 @@ function cbtOpenLiveCam(sessionId, name, email, activity, course, warnings, stat
 
     cbtShowModal('cbtLiveCamModal');
 
-    // Start polling frames immediately & every 800ms
-    if (cbtCamPollInterval) clearInterval(cbtCamPollInterval);
-    cbtFetchLiveCamFrame();
-    cbtCamPollInterval = setInterval(cbtFetchLiveCamFrame, 800);
+    // Launch continuous adaptive low-latency stream loop
+    cbtCamStreaming = true;
+    cbtLastFrameTime = 0;
+    cbtIsCamFetching = false;
+    cbtStreamNextFrame();
 }
 
-function cbtFetchLiveCamFrame() {
-    if (!cbtCurrentCamSession) return;
-    var sid = cbtCurrentCamSession.id;
+function cbtStreamNextFrame() {
+    if (!cbtCamStreaming || !cbtCurrentCamSession || cbtIsCamFetching) return;
 
-    fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_camera.php?action=get_frame&session_id=' + sid + '&sesskey=<?php echo sesskey(); ?>')
+    var sid = cbtCurrentCamSession.id;
+    cbtIsCamFetching = true;
+
+    var url = '<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_camera.php?action=get_frame&session_id=' + sid + 
+              '&since=' + cbtLastFrameTime + 
+              '&sesskey=<?php echo sesskey(); ?>';
+
+    fetch(url)
     .then(function(r){ return r.json(); })
     .then(function(data) {
+        if (!cbtCamStreaming || !cbtCurrentCamSession || cbtCurrentCamSession.id !== sid) return;
+
         var vImg = document.getElementById('cbtCamVideoFeed');
         var placeholder = document.getElementById('cbtCamPlaceholder');
         var fpsEl = document.getElementById('cbtCamFps');
         var liveTimeEl = document.getElementById('cbtCamLiveTime');
         var liveBadge = document.getElementById('cbtCamLiveBadge');
 
-        if (data.success && data.has_frame && data.frame) {
-            vImg.src = data.frame;
-            vImg.style.display = 'block';
-            placeholder.style.display = 'none';
+        if (data.success) {
+            if (data.unchanged) {
+                if (data.is_live) {
+                    liveBadge.className = 'badge bg-danger rounded-pill px-2.5 py-1 fw-bold tracking-wider d-inline-flex align-items-center gap-1 shadow-sm';
+                    liveBadge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: cbtPulse 1s infinite;"></span> LIVE STREAM';
+                }
+            } else if (data.has_frame && data.frame) {
+                vImg.src = data.frame;
+                vImg.style.display = 'block';
+                placeholder.style.display = 'none';
+                cbtLastFrameTime = data.timestamp || 0;
 
-            if (data.is_live) {
-                liveBadge.className = 'badge bg-danger rounded-pill px-2.5 py-1 fw-bold tracking-wider d-inline-flex align-items-center gap-1 shadow-sm';
-                liveBadge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: cbtPulse 1s infinite;"></span> LIVE STREAM';
-                fpsEl.innerText = '30 FPS • ' + (data.age_seconds || 1) + 's LATENCY';
+                if (data.is_live) {
+                    liveBadge.className = 'badge bg-danger rounded-pill px-2.5 py-1 fw-bold tracking-wider d-inline-flex align-items-center gap-1 shadow-sm';
+                    liveBadge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: cbtPulse 1s infinite;"></span> LIVE STREAM';
+                    fpsEl.innerText = 'ULTRA-LOW LATENCY (' + (data.age_seconds || 0) + 's)';
+                } else {
+                    liveBadge.className = 'badge bg-secondary rounded-pill px-2.5 py-1 fw-bold tracking-wider';
+                    liveBadge.innerText = 'STANDBY (' + data.age_seconds + 's LALU)';
+                    fpsEl.innerText = 'FRAME TERSIMPAN';
+                }
+
+                var now = new Date();
+                liveTimeEl.innerText = now.getFullYear() + '-' +
+                                      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                                      String(now.getDate()).padStart(2, '0') + ' ' +
+                                      now.toTimeString().split(' ')[0] + '.' +
+                                      String(now.getMilliseconds()).padStart(3, '0') + ' WIB';
             } else {
-                liveBadge.className = 'badge bg-secondary rounded-pill px-2.5 py-1 fw-bold tracking-wider';
-                liveBadge.innerText = 'STANDBY (' + data.age_seconds + 's LALU)';
-                fpsEl.innerText = 'FRAME TERSIMPAN';
+                vImg.style.display = 'none';
+                placeholder.style.display = 'block';
+                document.getElementById('cbtCamPlaceholderTitle').innerText = 'Kamera Belum Aktif';
+                document.getElementById('cbtCamPlaceholderText').innerText = data.message || 'Siswa belum mengizinkan akses kamera atau sesi belum dimulai.';
             }
-
-            var now = new Date();
-            liveTimeEl.innerText = now.getFullYear() + '-' +
-                                  String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                                  String(now.getDate()).padStart(2, '0') + ' ' +
-                                  now.toTimeString().split(' ')[0] + '.' +
-                                  String(now.getMilliseconds()).padStart(3, '0') + ' WIB';
-        } else {
-            vImg.style.display = 'none';
-            placeholder.style.display = 'block';
-            document.getElementById('cbtCamPlaceholderTitle').innerText = 'Kamera Belum Aktif';
-            document.getElementById('cbtCamPlaceholderText').innerText = data.message || 'Siswa belum mengizinkan akses kamera atau sesi belum dimulai.';
         }
     })
-    .catch(function(){});
+    .catch(function(){})
+    .finally(function() {
+        cbtIsCamFetching = false;
+        if (cbtCamStreaming) {
+            // Adaptive loop: short delay (60ms) before requesting the next updated frame
+            setTimeout(cbtStreamNextFrame, 60);
+        }
+    });
 }
 
 function cbtCloseLiveCam() {
-    if (cbtCamPollInterval) {
-        clearInterval(cbtCamPollInterval);
-        cbtCamPollInterval = null;
-    }
+    cbtCamStreaming = false;
+    cbtIsCamFetching = false;
     cbtCurrentCamSession = null;
     var vImg = document.getElementById('cbtCamVideoFeed');
     if (vImg) vImg.src = '';

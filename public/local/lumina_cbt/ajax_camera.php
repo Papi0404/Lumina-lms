@@ -35,7 +35,12 @@ require_once(__DIR__ . '/classes/cbt_engine.php');
 require_login();
 require_sesskey();
 
+// CRITICAL PERFORMANCE BOOST: Release PHP session lock immediately!
+// This enables non-blocking, fully concurrent camera frame streaming & viewing without queuing.
+\core\session\manager::write_close();
+
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 global $USER, $DB, $CFG;
 
@@ -87,13 +92,16 @@ if ($action === 'push_frame') {
 
     file_put_contents($jpgfile, $imgdata, LOCK_EX);
 
-    $meta = [
-        'session_id' => $sessionid,
-        'userid'     => (int)$USER->id,
-        'timestamp'  => time(),
-        'ip'         => getremoteaddr(),
-    ];
-    file_put_contents($metafile, json_encode($meta), LOCK_EX);
+    // Only update metadata JSON file every 8 seconds to minimize disk I/O overhead
+    if (!file_exists($metafile) || (time() - filemtime($metafile)) >= 8) {
+        $meta = [
+            'session_id' => $sessionid,
+            'userid'     => (int)$USER->id,
+            'timestamp'  => time(),
+            'ip'         => getremoteaddr(),
+        ];
+        @file_put_contents($metafile, json_encode($meta), LOCK_EX);
+    }
 
     echo json_encode([
         'success'   => true,
@@ -125,8 +133,7 @@ if ($action === 'get_frame') {
         exit;
     }
 
-    $jpgfile  = $camdir . '/session_' . $sessionid . '.jpg';
-    $metafile = $camdir . '/session_' . $sessionid . '.json';
+    $jpgfile = $camdir . '/session_' . $sessionid . '.jpg';
 
     if (!file_exists($jpgfile)) {
         echo json_encode([
@@ -138,9 +145,35 @@ if ($action === 'get_frame') {
         exit;
     }
 
+    $since = optional_param('since', 0, PARAM_INT);
     $mtime = filemtime($jpgfile);
+
+    // Fast Long-Poll: If client provided 'since' and file hasn't updated yet,
+    // wait up to 1 second (checking every 80ms) for an incoming frame from student
+    if ($since > 0 && $mtime <= $since) {
+        $waited = 0;
+        while ($waited < 12) { // 12 x 80ms = ~960ms max wait
+            usleep(80000); // 80ms
+            clearstatcache(true, $jpgfile);
+            $mtime = filemtime($jpgfile);
+            if ($mtime > $since) {
+                break;
+            }
+            $waited++;
+        }
+        if ($mtime <= $since) {
+            echo json_encode([
+                'success'   => true,
+                'unchanged' => true,
+                'is_live'   => ((time() - $mtime) <= 8),
+                'timestamp' => $mtime,
+            ]);
+            exit;
+        }
+    }
+
     $age = time() - $mtime;
-    $islive = ($age <= 10); // Live if frame updated within last 10 seconds
+    $islive = ($age <= 8);
 
     $data = file_get_contents($jpgfile);
     $base64 = 'data:image/jpeg;base64,' . base64_encode($data);

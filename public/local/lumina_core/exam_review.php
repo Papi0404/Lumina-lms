@@ -51,6 +51,9 @@ $sessionid    = optional_param('sessionid', 0, PARAM_INT);
 $decision     = optional_param('decision', '', PARAM_ALPHA);
 $notes        = optional_param('notes', '', PARAM_TEXT);
 $selecteddate = optional_param('date', date('Y-m-d'), PARAM_TEXT);
+if (empty($selecteddate) || ($selecteddate !== 'all' && strtotime($selecteddate) === false)) {
+    $selecteddate = date('Y-m-d');
+}
 $search       = optional_param('search', '', PARAM_TEXT);
 
 $notice = '';
@@ -175,9 +178,11 @@ echo $OUTPUT->header();
                         if ($selecteddate === 'all') {
                             echo 'Menampilkan Seluruh Riwayat Tanggal';
                         } else if ($selecteddate === date('Y-m-d')) {
-                            echo 'Menampilkan Data Hari Ini (' . userdate(strtotime($selecteddate), '%A, %d %B %Y') . ')';
+                            $ts = strtotime($selecteddate) ?: time();
+                            echo 'Menampilkan Data Hari Ini (' . userdate($ts, '%A, %d %B %Y') . ')';
                         } else {
-                            echo 'Menampilkan Data Tanggal: ' . userdate(strtotime($selecteddate), '%A, %d %B %Y');
+                            $ts = strtotime($selecteddate) ?: time();
+                            echo 'Menampilkan Data Tanggal: ' . userdate($ts, '%A, %d %B %Y');
                         }
                     ?>
                 </span>
@@ -411,7 +416,8 @@ echo $OUTPUT->header();
                                         } else if ($selecteddate === date('Y-m-d')) {
                                             echo 'Belum ada pelanggaran (peringatan 1, 2, atau 3) yang terdeteksi pada peserta ujian hari ini. Pilih tanggal lain di kalender untuk melihat arsip lampau.';
                                         } else {
-                                            echo 'Tidak ada sesi ujian dengan riwayat pelanggaran yang tercatat pada tanggal ' . userdate(strtotime($selecteddate), '%d %B %Y') . '.';
+                                            $ts = ($selecteddate !== 'all' && strtotime($selecteddate) !== false) ? strtotime($selecteddate) : time();
+                                            echo 'Tidak ada sesi ujian dengan riwayat pelanggaran yang tercatat pada tanggal ' . userdate($ts, '%d %B %Y') . '.';
                                         }
                                     ?>
                                 </p>

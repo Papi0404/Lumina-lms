@@ -104,7 +104,12 @@ if ($activityid > 0) {
 }
 $extraWhere = !empty($whereParts) ? ' AND ' . implode(' AND ', $whereParts) : '';
 
-$activecount = $DB->count_records_select($sessiontable, "status = 'in_progress'" . $extraWhere, $whereParams);
+$activecount = 0;
+foreach ($reviewlist as $item) {
+    if ($item['status'] === 'in_progress') {
+        $activecount++;
+    }
+}
 $reviewcount = $DB->count_records_select($sessiontable, "status = 'under_review'" . $extraWhere, $whereParams);
 $completedcount = $DB->count_records_select($sessiontable, "status = 'completed'" . $extraWhere, $whereParams);
 
@@ -443,6 +448,8 @@ echo $OUTPUT->header();
                                                 <span class="badge bg-info text-white">✓ Disetujui</span>
                                             <?php elseif ($item['status'] === 'invalidated'): ?>
                                                 <span class="badge bg-dark text-white">✕ Dibatalkan</span>
+                                            <?php elseif ($item['status'] === 'not_started'): ?>
+                                                <span class="badge bg-secondary text-white">Belum Mengerjakan</span>
                                             <?php else: ?>
                                                 <span class="badge bg-primary text-white">Sedang Mengerjakan</span>
                                             <?php endif; ?>
@@ -696,6 +703,8 @@ function renderCandidatesTable(list) {
             statusBadge = '<span class="badge bg-info text-white">✓ Disetujui</span>';
         } else if (item.status === 'invalidated') {
             statusBadge = '<span class="badge bg-dark text-white">✕ Dibatalkan</span>';
+        } else if (item.status === 'not_started') {
+            statusBadge = '<span class="badge bg-secondary text-white">Belum Mengerjakan</span>';
         } else {
             statusBadge = '<span class="badge bg-primary text-white">Sedang Mengerjakan</span>';
         }

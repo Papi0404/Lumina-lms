@@ -316,16 +316,13 @@ function local_lumina_cbt_init_proctor_if_needed() {
         return;
     }
 
-    $universal = get_config('local_lumina_cbt', 'universal_mode');
-    if ($universal === false || $universal === null) {
-        $universal = 1;
-    }
-    if (!(int)$universal) {
+    $cm = $PAGE->cm;
+    if (!$cm || empty($cm->id) || empty($cm->course)) {
         return;
     }
 
-    $cm = $PAGE->cm;
-    if (!$cm || empty($cm->id) || empty($cm->course)) {
+    // Verify whether CBT is enabled for this exam activity
+    if (!local_lumina_cbt_is_quiz_cbt_enabled((int)$cm->id)) {
         return;
     }
 
@@ -375,3 +372,92 @@ function local_lumina_cbt_init_proctor_if_needed() {
         'suppressAi'       => (bool)(get_config('local_lumina_cbt', 'suppress_ai') ?? true),
     ]]);
 }
+
+/**
+ * Check whether CBT mode is enabled for a specific course module.
+ *
+ * @param int $cmid
+ * @return bool
+ */
+function local_lumina_cbt_is_quiz_cbt_enabled(int $cmid): bool {
+    // 1. Check module-specific configuration
+    $val = get_config('local_lumina_cbt', 'cbt_enabled_' . $cmid);
+    if ($val !== false && $val !== null) {
+        return ((int)$val === 1);
+    }
+
+    // 2. Fall back to universal mode setting
+    $universal = get_config('local_lumina_cbt', 'universal_mode');
+    if ($universal !== false && $universal !== null && (int)$universal === 1) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Add Lumina CBT options to module edit forms (mod_quiz, mod_h5pactivity).
+ *
+ * @param moodleform_mod $formwrapper
+ * @param MoodleQuickForm $mform
+ */
+function local_lumina_cbt_coursemodule_standard_elements($formwrapper, $mform) {
+    $current = $formwrapper->get_current();
+    $modname = $current->modulename ?? '';
+
+    // Only apply to quiz and exam activities
+    if (!in_array($modname, ['quiz', 'h5pactivity'], true)) {
+        return;
+    }
+
+    // Section header
+    $headertext = get_string('cbt_settings_header', 'local_lumina_cbt');
+    $mform->addElement('header', 'lumina_cbt_section', '🛡️ ' . $headertext);
+
+    // Toggle select / yesno
+    $options = [
+        0 => 'Tidak (Ujian Moodle Standar)',
+        1 => 'Ya (Aktifkan Mode CBT Anti-Curang Otomatis)',
+    ];
+    $label = get_string('cbt_enable', 'local_lumina_cbt');
+    $mform->addElement('select', 'lumina_cbt_enabled', $label, $options);
+    $mform->setDefault('lumina_cbt_enabled', 0);
+    $mform->addHelpButton('lumina_cbt_enabled', 'cbt_enable', 'local_lumina_cbt');
+    $mform->setType('lumina_cbt_enabled', PARAM_INT);
+}
+
+/**
+ * Populate current CBT state when editing an existing module.
+ *
+ * @param moodleform_mod $formwrapper
+ * @param MoodleQuickForm $mform
+ */
+function local_lumina_cbt_coursemodule_definition_after_data($formwrapper, $mform) {
+    $current = $formwrapper->get_current();
+    if (empty($current->coursemodule)) {
+        return;
+    }
+
+    $cmid = (int)$current->coursemodule;
+    $enabled = get_config('local_lumina_cbt', 'cbt_enabled_' . $cmid);
+    if ($enabled !== false && $enabled !== null) {
+        if ($mform->elementExists('lumina_cbt_enabled')) {
+            $mform->getElement('lumina_cbt_enabled')->setValue((int)$enabled);
+        }
+    }
+}
+
+/**
+ * Save CBT configuration for this course module upon form submission.
+ *
+ * @param stdClass $moduleinfo
+ * @param stdClass $course
+ * @return stdClass
+ */
+function local_lumina_cbt_coursemodule_edit_post_actions($moduleinfo, $course) {
+    if (!empty($moduleinfo->coursemodule) && isset($moduleinfo->lumina_cbt_enabled)) {
+        set_config('cbt_enabled_' . (int)$moduleinfo->coursemodule, (int)$moduleinfo->lumina_cbt_enabled, 'local_lumina_cbt');
+    }
+    return $moduleinfo;
+}
+

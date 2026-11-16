@@ -420,9 +420,9 @@ class cbt_engine {
         // By default ('violations_only'), show students who committed infractions OR are actively taking the exam (in_progress).
         // Honest students who already completed with 0 violations pass automatically to Gradebook without cluttering the review queue.
         if ($filterscope === 'violations_only') {
-            $where[] = "(s.status IN ('under_review', 'invalidated', 'in_progress') OR s.warningcount >= 1)";
+            $where[] = "(s.status IN ('under_review', 'invalidated', 'in_progress', 'not_started') OR s.warningcount >= 1)";
         } else {
-            $where[] = "(s.status IN ('under_review', 'invalidated', 'approved', 'completed', 'in_progress'))";
+            $where[] = "(s.status IN ('under_review', 'invalidated', 'approved', 'completed', 'in_progress', 'not_started'))";
         }
 
         // Date Filter
@@ -507,6 +507,56 @@ class cbt_engine {
                 }
             }
 
+            $sessionstatus = $r->status;
+            if ($sessionstatus === 'in_progress' || $sessionstatus === 'not_started') {
+                $cmrec = $DB->get_record_sql(
+                    "SELECT cm.id, cm.instance, m.name AS modname
+                       FROM {course_modules} cm
+                       JOIN {modules} m ON m.id = cm.module
+                      WHERE cm.id = ?",
+                    [$r->activityid]
+                );
+
+                if ($cmrec && $cmrec->modname === 'quiz') {
+                    $hasactiveattempt = $DB->record_exists('quiz_attempts', [
+                        'quiz' => $cmrec->instance,
+                        'userid' => $r->userid,
+                        'state' => 'inprogress'
+                    ]);
+                    $hasfinishedattempt = $DB->record_exists('quiz_attempts', [
+                        'quiz' => $cmrec->instance,
+                        'userid' => $r->userid,
+                        'state' => 'finished'
+                    ]);
+                    if ($hasfinishedattempt && !$hasactiveattempt) {
+                        $sessionstatus = 'completed';
+                    } else if (!$hasactiveattempt) {
+                        $sessionstatus = 'not_started';
+                    } else {
+                        $sessionstatus = 'in_progress';
+                    }
+                } else {
+                    $hasstudentactivity = false;
+                    if ($eventcount > 0) {
+                        $lastevent = $DB->get_record_sql("SELECT eventtype FROM {{$eventstable}} WHERE sessionid = ? ORDER BY id DESC LIMIT 1", [$r->id]);
+                        if ($lastevent && $lastevent->eventtype !== 'exam_reset') {
+                            $hasstudentactivity = true;
+                        }
+                    }
+
+                    if (!$hasstudentactivity && (int)$r->timefinish == 0) {
+                        $sessionstatus = 'not_started';
+                    }
+                }
+            }
+
+            $finishtimestr = 'Sedang Berlangsung';
+            if ($sessionstatus === 'not_started') {
+                $finishtimestr = 'Belum Dimulai';
+            } else if ($r->timefinish) {
+                $finishtimestr = userdate($r->timefinish, '%d %b %Y, %H:%M');
+            }
+
             $result[] = [
                 'session_id'          => $r->id,
                 'course_name'         => format_string($r->coursename, true, ['context' => $sysctx]),
@@ -521,8 +571,8 @@ class cbt_engine {
                 'latest_violation'    => $latestlabel,
                 'latest_time'         => $latesttime,
                 'start_time'          => userdate($r->timestart, '%d %b %Y, %H:%M'),
-                'finish_time'         => $r->timefinish ? userdate($r->timefinish, '%d %b %Y, %H:%M') : 'Sedang Berlangsung',
-                'status'              => $r->status,
+                'finish_time'         => $finishtimestr,
+                'status'              => $sessionstatus,
                 'admin_reviewer_name' => $adminreviewername,
                 'admin_review_notes'  => $r->adminreviewnotes ?: '',
                 'events'              => self::get_session_events((int)$r->id),
@@ -554,8 +604,8 @@ class cbt_engine {
         $now = time();
 
         if ($decision === 'reset') {
-            // Unlock session: resets strikes to 0/3, in_progress, keeps saved answers
-            $session->status = 'in_progress';
+            // Unlock session: resets strikes to 0/3, marks as not_started until candidate begins
+            $session->status = 'not_started';
             $session->warningcount = 0;
             $session->score = null;
             $session->timefinish = 0;

@@ -90,3 +90,11 @@ $string['enter_fullscreen_btn'] = 'Masuk Layar Penuh & Mulai Ujian';
 $string['submit_exam'] = 'Kumpulkan Ujian';
 $string['flag_doubtful'] = 'Ragu-ragu';
 $string['question_palette'] = 'Navigasi Soal';
+
+// Per-Quiz CBT Configuration
+$string['cbt_settings_header'] = 'Mode CBT Lumina (Anti-Curang)';
+$string['cbt_enable'] = 'Izinkan Mode CBT';
+$string['cbt_enable_help'] = 'Jika diaktifkan (Ya), ujian ini otomatis berjalan di ruang ujian CBT layar penuh dengan pengawasan anti-curang real-time (mendeteksi pindah tab, minimize, shortcut, gesture touchpad). Jika dimatikan (Tidak), ujian berjalan sebagai kuis Moodle standar biasa.';
+$string['status_not_started'] = 'Belum Mengerjakan';
+$string['status_in_progress'] = 'Sedang Mengerjakan';
+

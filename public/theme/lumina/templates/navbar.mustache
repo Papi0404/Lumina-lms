@@ -55,10 +55,28 @@
             </div>
         </button>
 
-        <!-- Language menu if present -->
-        {{#langmenu}}
-            {{> theme_boost/language_menu }}
-        {{/langmenu}}
+        <!-- Quick Language Switcher Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1.5 font-semibold text-secondary shadow-xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Ubah Bahasa / Change Language">
+                <span>{{ lumina_user.current_lang_flag }}</span>
+                <span class="small font-bold">{{ lumina_user.current_lang_label }}</span>
+                <span class="material-symbols-outlined text-[16px] text-muted">expand_more</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-xl py-1 mt-1 text-sm">
+                <li>
+                    <a class="dropdown-item py-2 px-3 d-flex align-items-center justify-content-between gap-3 {{#lumina_user.is_lang_id}}active font-bold{{/lumina_user.is_lang_id}}" href="?lang=id">
+                        <span class="d-inline-flex align-items-center gap-2">🇮🇩 Bahasa Indonesia</span>
+                        {{#lumina_user.is_lang_id}}<span class="material-symbols-outlined text-[16px] text-success">check</span>{{/lumina_user.is_lang_id}}
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3 d-flex align-items-center justify-content-between gap-3 {{#lumina_user.is_lang_en}}active font-bold{{/lumina_user.is_lang_en}}" href="?lang=en">
+                        <span class="d-inline-flex align-items-center gap-2">🇬🇧 English</span>
+                        {{#lumina_user.is_lang_en}}<span class="material-symbols-outlined text-[16px] text-success">check</span>{{/lumina_user.is_lang_en}}
+                    </a>
+                </li>
+            </ul>
+        </div>
 
         <div class="h-6 w-[1px] bg-outline-variant mx-1 d-none d-sm-block"></div>
 
@@ -82,7 +100,22 @@
                 <li><a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="{{{ config.wwwroot }}}/calendar/view.php"><span class="material-symbols-outlined text-[18px]">event</span> Kalender Akademik</a></li>
                 <li><a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="{{{ config.wwwroot }}}/local/lumina_core/library.php?tab=private"><span class="material-symbols-outlined text-[18px]">lock</span> Berkas Belajar Pribadi</a></li>
                 <li><a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="{{{ config.wwwroot }}}/user/preferences.php"><span class="material-symbols-outlined text-[18px]">settings</span> Preferensi Akun</a></li>
-                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-primary fw-semibold" href="{{{ config.wwwroot }}}/local/lumina_cbt/monitor.php"><span class="material-symbols-outlined text-[18px]">verified_user</span> CBT &amp; Audit Ujian</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li class="dropdown-header text-xs text-muted px-3 py-1 fw-bold">BAHASA / LANGUAGE</li>
+                <li>
+                    <a class="dropdown-item py-2 px-3 d-flex align-items-center justify-content-between {{#lumina_user.is_lang_id}}fw-bold text-primary{{/lumina_user.is_lang_id}}" href="?lang=id">
+                        <span>🇮🇩 Bahasa Indonesia</span>
+                        {{#lumina_user.is_lang_id}}<span class="material-symbols-outlined text-[16px] text-success">check</span>{{/lumina_user.is_lang_id}}
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3 d-flex align-items-center justify-content-between {{#lumina_user.is_lang_en}}fw-bold text-primary{{/lumina_user.is_lang_en}}" href="?lang=en">
+                        <span>🇬🇧 English</span>
+                        {{#lumina_user.is_lang_en}}<span class="material-symbols-outlined text-[16px] text-success">check</span>{{/lumina_user.is_lang_en}}
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
                 <li><a class="dropdown-item py-2 px-3 text-danger d-flex align-items-center gap-2" href="{{{ config.wwwroot }}}/login/logout.php?sesskey={{{ config.sesskey }}}"><span class="material-symbols-outlined text-[18px]">logout</span> Keluar (Logout)</a></li>
             </ul>
         </div>

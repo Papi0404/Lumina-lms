@@ -25,11 +25,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $ADMIN->add('localplugins', new admin_category('local_lumina_cbt_cat', get_string('pluginname', 'local_lumina_cbt')));
+    // 1. Add CBT Category & Submenu directly to root (appears in Site Administration -> General tab)
+    $ADMIN->add('root', new admin_category('local_lumina_cbt_general_cat', '🛡️ CBT Proctoring & Live Audit'));
 
-    // 1. Live Proctoring Monitor Link
-    $ADMIN->add('local_lumina_cbt_cat', new admin_externalpage(
-        'local_lumina_cbt_monitor',
+    // Live Proctoring Monitor Link under General
+    $ADMIN->add('local_lumina_cbt_general_cat', new admin_externalpage(
+        'local_lumina_cbt_monitor_general',
         get_string('monitor_dashboard', 'local_lumina_cbt'),
         new moodle_url('/local/lumina_cbt/monitor.php'),
         'local/lumina_cbt:monitor'
@@ -43,7 +44,7 @@ if ($hassiteconfig) {
         'local_lumina_cbt/universal_mode',
         get_string('universal_mode', 'local_lumina_cbt'),
         get_string('universal_mode_desc', 'local_lumina_cbt'),
-        1
+        0
     ));
 
     // Strike limit
@@ -95,5 +96,5 @@ if ($hassiteconfig) {
         1
     ));
 
-    $ADMIN->add('local_lumina_cbt_cat', $settings);
+    $ADMIN->add('local_lumina_cbt_general_cat', $settings);
 }

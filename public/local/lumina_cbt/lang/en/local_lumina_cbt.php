@@ -90,3 +90,11 @@ $string['enter_fullscreen_btn'] = 'Enter Fullscreen & Begin Exam';
 $string['submit_exam'] = 'Submit Exam';
 $string['flag_doubtful'] = 'Flag Doubtful';
 $string['question_palette'] = 'Question Navigator';
+
+// Per-Quiz CBT Configuration
+$string['cbt_settings_header'] = 'Lumina CBT Anti-Cheat Mode';
+$string['cbt_enable'] = 'Allow CBT Mode';
+$string['cbt_enable_help'] = 'If enabled (Yes), this exam automatically runs in a secure fullscreen CBT environment with real-time proctoring (detecting tab switching, minimizing, keyboard shortcuts, touchpad gestures). If disabled (No), the exam runs as a standard Moodle quiz.';
+$string['status_not_started'] = 'Not Attempted';
+$string['status_in_progress'] = 'In Progress';
+

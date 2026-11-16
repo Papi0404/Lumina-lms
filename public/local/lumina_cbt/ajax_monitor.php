@@ -93,7 +93,12 @@ if ($action === 'feed') {
     }
     $extraWhere = !empty($whereParts) ? ' AND ' . implode(' AND ', $whereParts) : '';
 
-    $activecount = $DB->count_records_select($sessiontable, "status = 'in_progress'" . $extraWhere, $whereParams);
+    $activecount = 0;
+    foreach ($candidates as $cand) {
+        if ($cand['status'] === 'in_progress') {
+            $activecount++;
+        }
+    }
     $reviewcount = $DB->count_records_select($sessiontable, "status = 'under_review'" . $extraWhere, $whereParams);
 
     echo json_encode([

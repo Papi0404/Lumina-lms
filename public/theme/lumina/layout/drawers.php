@@ -77,70 +77,83 @@ if ($isexamactivity) {
     if ($cmid) {
         $proctorcm = get_coursemodule_from_id('', $cmid, 0, false, IGNORE_MISSING);
         if ($proctorcm && in_array($proctorcm->modname, ['h5pactivity', 'quiz'], true)) {
-            $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
-            $isstudent = (!empty($roleinfo['is_student']) || !has_capability('moodle/course:manageactivities', $PAGE->context));
-            $isaction = optional_param('action', '', PARAM_ALPHA);
-            if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
-                $examurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
-                echo "<script>window.location.replace('" . $examurl . "');</script>";
-                echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
-                exit;
-            } else if (!$isstudent) {
-                // Teacher / Admin viewing CBT Exam in Moodle - Inject modern Teacher Hub Banner & Iframe auto-resizer
-                $cbtpreviewurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
-                $auditurl = (new moodle_url('/local/lumina_core/exam_review.php'))->out(false);
-                $editsettingsurl = (new moodle_url('/course/modedit.php', ['update' => $proctorcm->id, 'return' => 1]))->out(false);
+            $iscbtenabled = false;
+            if (file_exists($CFG->dirroot . '/local/lumina_cbt/lib.php')) {
+                require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+                if (function_exists('local_lumina_cbt_is_quiz_cbt_enabled')) {
+                    $iscbtenabled = local_lumina_cbt_is_quiz_cbt_enabled((int)$proctorcm->id);
+                }
+            }
+            if (!$iscbtenabled) {
+                $iscbtenabled = (bool)get_config('local_lumina_cbt', 'cbt_enabled_' . (int)$proctorcm->id);
+            }
 
-                $quizguidehtml .= '
-                <div class="lumina-exam-teacher-hub card border-0 mb-4 shadow-sm" style="border-radius: 20px; background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%); border: 1.5px solid #C7D2FE !important; overflow: hidden;">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center shadow-xs" style="width: 52px; height: 52px; min-width: 52px; background: #4338CA; color: white;">
-                                    <span class="material-symbols-outlined" style="font-size: 28px;">quiz</span>
-                                </div>
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge rounded-pill bg-primary px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700;">Ujian CBT Lumina</span>
-                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem; font-weight: 600;">Anti-Curang Live Proctoring</span>
+            if ($iscbtenabled) {
+                $roleinfo = theme_lumina_role_resolver::resolve_role($USER);
+                $isstudent = (!empty($roleinfo['is_student']) || !has_capability('moodle/course:manageactivities', $PAGE->context));
+                $isaction = optional_param('action', '', PARAM_ALPHA);
+                if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
+                    $examurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+                    echo "<script>window.location.replace('" . $examurl . "');</script>";
+                    echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
+                    exit;
+                } else if (!$isstudent) {
+                    // Teacher / Admin viewing CBT Exam in Moodle - Inject modern Teacher Hub Banner & Iframe auto-resizer
+                    $cbtpreviewurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+                    $auditurl = (new moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $proctorcm->course, 'activityid' => $proctorcm->id]))->out(false);
+                    $editsettingsurl = (new moodle_url('/course/modedit.php', ['update' => $proctorcm->id, 'return' => 1]))->out(false);
+
+                    $quizguidehtml .= '
+                    <div class="lumina-exam-teacher-hub card border-0 mb-4 shadow-sm" style="border-radius: 20px; background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%); border: 1.5px solid #C7D2FE !important; overflow: hidden;">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center shadow-xs" style="width: 52px; height: 52px; min-width: 52px; background: #4338CA; color: white;">
+                                        <span class="material-symbols-outlined" style="font-size: 28px;">quiz</span>
                                     </div>
-                                    <h5 class="fw-bold mb-1 text-dark">Pratinjau &amp; Manajemen Ujian (Mode Guru)</h5>
-                                    <p class="text-muted small mb-0">Uji coba simulasi lembar soal layar penuh seperti yang dilihat mahasiswa atau pantau audit integritas.</p>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge rounded-pill bg-primary px-2.5 py-1" style="font-size: 0.72rem; font-weight: 700;">Ujian CBT Lumina</span>
+                                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem; font-weight: 600;">Anti-Curang Live Proctoring</span>
+                                        </div>
+                                        <h5 class="fw-bold mb-1 text-dark">Pratinjau &amp; Manajemen Ujian (Mode Guru)</h5>
+                                        <p class="text-muted small mb-0">Uji coba simulasi lembar soal layar penuh seperti yang dilihat mahasiswa atau pantau audit integritas.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <a href="' . $cbtpreviewurl . '" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-xs" style="background: #4338CA; border: none;" target="_blank">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">fullscreen</span>
-                                    Simulasi Ruang Ujian CBT &rarr;
-                                </a>
-                                <a href="' . $auditurl . '" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 bg-white">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">security</span>
-                                    Audit Pelanggaran
-                                </a>
-                                <a href="' . $editsettingsurl . '" class="btn btn-light border rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
-                                    Edit Pengaturan
-                                </a>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <a href="' . $cbtpreviewurl . '" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-xs" style="background: #4338CA; border: none;" target="_blank">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">fullscreen</span>
+                                        Simulasi Ruang Ujian CBT &rarr;
+                                    </a>
+                                    <a href="' . $auditurl . '" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 bg-white">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">security</span>
+                                        Audit Pelanggaran
+                                    </a>
+                                    <a href="' . $editsettingsurl . '" class="btn btn-light border rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                                        Edit Pengaturan
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    var ifr = document.querySelector("iframe.h5p-player");
-                    if (ifr) {
-                        ifr.style.setProperty("min-height", "650px", "important");
-                        ifr.style.setProperty("height", "650px", "important");
-                        ifr.addEventListener("load", function() {
-                            setTimeout(function() {
-                                if (ifr.clientHeight < 400) {
-                                    ifr.style.setProperty("height", "700px", "important");
-                                }
-                            }, 500);
-                        });
-                    }
-                });
-                </script>';
+                    <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        var ifr = document.querySelector("iframe.h5p-player");
+                        if (ifr) {
+                            ifr.style.setProperty("min-height", "650px", "important");
+                            ifr.style.setProperty("height", "650px", "important");
+                            ifr.addEventListener("load", function() {
+                                setTimeout(function() {
+                                    if (ifr.clientHeight < 400) {
+                                        ifr.style.setProperty("height", "700px", "important");
+                                    }
+                                }, 500);
+                            });
+                        }
+                    });
+                    </script>';
+                }
             }
         }
     }
@@ -1216,6 +1229,11 @@ $templatecontext = [
         'enrolled_count' => $enrolledcoursescount,
         'unread_messages' => $unreadmessagescount,
         'unread_notifications' => $unreadnotificationscount,
+        'current_lang' => current_language(),
+        'is_lang_id' => (current_language() === 'id'),
+        'is_lang_en' => (current_language() === 'en'),
+        'current_lang_label' => (current_language() === 'id' ? 'ID' : 'EN'),
+        'current_lang_flag' => (current_language() === 'id' ? '🇮🇩' : '🇬🇧'),
     ],
     'lumina_stats' => [
         'active_week_label' => 'Pekan ke-' . $currentweek,
@@ -1252,7 +1270,9 @@ $templatecontext = [
         'is_manage_users' => (strpos($currentpagepath, '/admin/user.php') !== false),
         'is_manage_courses' => (strpos($currentpagepath, '/course/management.php') !== false),
         'is_security_report' => (strpos($currentpagepath, '/report/security') !== false),
-        'is_exam_review' => (strpos($currentpagepath, '/local/lumina_core/exam_review.php') !== false),
+        'is_cbt_monitor' => (strpos($currentpagepath, '/local/lumina_cbt/monitor.php') !== false || strpos($currentpagepath, '/local/lumina_core/exam_review.php') !== false),
+        'is_exam_review' => (strpos($currentpagepath, '/local/lumina_cbt/monitor.php') !== false || strpos($currentpagepath, '/local/lumina_core/exam_review.php') !== false),
+        'cbt_monitor_url' => (new \moodle_url('/local/lumina_cbt/monitor.php'))->out(false),
         'is_forum' => (strpos($currentpagepath, '/local/lumina_core/forum.php') !== false || strpos($currentpagepath, '/mod/forum') !== false),
         'is_classlist' => (strpos($currentpagepath, '/local/lumina_core/attendance.php') !== false || strpos($currentpagepath, '/user/index.php') !== false),
         'forum_url' => $forumurl,

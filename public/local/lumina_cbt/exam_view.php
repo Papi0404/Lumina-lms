@@ -68,7 +68,7 @@ foreach ($rawquestions as $q) {
 $PAGE->set_url('/local/lumina_cbt/exam_view.php', ['cmid' => $cmid]);
 $PAGE->set_context($context);
 $PAGE->set_title('CBT Ujian Terpantau: ' . format_string($cm->name));
-$PAGE->set_pagelayout('base');
+$PAGE->set_pagelayout('embedded');
 
 $ismanager = has_capability('moodle/course:manageactivities', $context) || is_siteadmin();
 
@@ -89,6 +89,64 @@ if ($ismanager && optional_param('resetsim', 0, PARAM_INT)) {
 }
 
 echo $OUTPUT->header();
+?>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+/* Universal distraction-free reset across all Moodle themes (Lumina, Moon, Boost) */
+.lumina-sidebar,
+.sidebar-wrapper,
+#sidebar-wrapper,
+.navbar,
+#page-header,
+#usernavigation,
+.drawer-toggles,
+.drawers-container,
+aside,
+#nav-drawer,
+.drawer,
+.header-wrap,
+footer,
+#page-footer,
+.popover-region,
+#luminaAiFab,
+.lumina-ai-fab,
+#luminaAiChatWindow,
+.lumina-ai-chat-window,
+.lumina-chatbot-widget {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}
+
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    background: #0B132B !important;
+}
+
+#page, #page-wrapper, .drawers, .drag-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+}
+
+#page-content, #region-main-box, #region-main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+</style>
+<?php
 
 // State A: Exam already submitted / completed
 if ($session->status === 'completed' || $session->status === 'approved') {

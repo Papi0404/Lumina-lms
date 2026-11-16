@@ -93,13 +93,13 @@ if ($isexamactivity) {
                 $isstudent = (!empty($roleinfo['is_student']) || !has_capability('moodle/course:manageactivities', $PAGE->context));
                 $isaction = optional_param('action', '', PARAM_ALPHA);
                 if ($isstudent && empty($isaction) && !optional_param('noredirect', 0, PARAM_INT)) {
-                    $examurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+                    $examurl = (new moodle_url('/local/lumina_cbt/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
                     echo "<script>window.location.replace('" . $examurl . "');</script>";
                     echo "<div style='padding: 50px; text-align: center; font-family: sans-serif;'><h3>Mengalihkan ke Ruang Ujian CBT Layar Penuh...</h3><p><a href='" . $examurl . "'>Klik di sini jika tidak beralih otomatis</a></p></div>";
                     exit;
                 } else if (!$isstudent) {
                     // Teacher / Admin viewing CBT Exam in Moodle - Inject modern Teacher Hub Banner & Iframe auto-resizer
-                    $cbtpreviewurl = (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
+                    $cbtpreviewurl = (new moodle_url('/local/lumina_cbt/exam_view.php', ['cmid' => $proctorcm->id]))->out(false);
                     $auditurl = (new moodle_url('/local/lumina_cbt/monitor.php', ['courseid' => $proctorcm->course, 'activityid' => $proctorcm->id]))->out(false);
                     $editsettingsurl = (new moodle_url('/course/modedit.php', ['update' => $proctorcm->id, 'return' => 1]))->out(false);
 
@@ -881,7 +881,7 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
 
                         if (isExam && cmidMatch) {
                             var rootUrl = (window.M && window.M.cfg && window.M.cfg.wwwroot) ? window.M.cfg.wwwroot : "";
-                            actionBtn.href = rootUrl + "/local/lumina_core/exam_view.php?cmid=" + cmidMatch[1];
+                            actionBtn.href = rootUrl + "/local/lumina_cbt/exam_view.php?cmid=" + cmidMatch[1];
                         }
 
                         actionBtn.onclick = function(e) {

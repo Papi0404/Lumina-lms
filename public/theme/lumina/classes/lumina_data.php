@@ -421,7 +421,7 @@ class theme_lumina_data {
                     $typeicon = 'quiz';
                     $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
                 } elseif ($row->activitytype === 'cbt') {
-                    $modpath = '/local/lumina_core/exam_view.php';
+                    $modpath = '/local/lumina_cbt/exam_view.php';
                     $typeicon = 'timer';
                     $cmurl = (new \core\url($modpath, ['cmid' => $row->cmid]))->out(false);
                 } else {
@@ -572,7 +572,7 @@ class theme_lumina_data {
                     'letter_grade'     => $letter,
                     'badge_class'      => 'success',
                     'status_label'     => $cb->status === 'approved' ? '✅ Sah & Disetujui' : 'Tuntas',
-                    'view_url'         => (new \core\url('/local/lumina_core/exam_view.php', ['cmid' => $cb->cmid]))->out(false),
+                    'view_url'         => (new \core\url('/local/lumina_cbt/exam_view.php', ['cmid' => $cb->cmid]))->out(false),
                     'action_label'     => 'Review Hasil Ujian',
                 ];
             }

@@ -399,7 +399,7 @@ echo $OUTPUT->header();
                                         <td class="py-3 px-3 text-end">
                                             <div class="d-inline-flex gap-1 align-items-center">
                                                 <?php if (in_array($m['modname'], ['h5pactivity', 'quiz'])): ?>
-                                                    <a href="<?php echo (new moodle_url('/local/lumina_core/exam_view.php', ['cmid' => $m['id']]))->out(false); ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1" title="Buka Pratinjau Ujian CBT Layar Penuh" target="_blank" style="background: #4338CA; border-color: #4338CA;">
+                                                    <a href="<?php echo (new moodle_url('/local/lumina_cbt/exam_view.php', ['cmid' => $m['id']]))->out(false); ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1" title="Buka Pratinjau Ujian CBT Layar Penuh" target="_blank" style="background: #4338CA; border-color: #4338CA;">
                                                         <span class="material-symbols-outlined align-middle" style="font-size: 16px;">fullscreen</span> Lihat Ujian (CBT)
                                                     </a>
                                                     <a href="<?php echo $m['url']; ?>" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-medium text-secondary" title="Kelola Nilai & Laporan">

@@ -73,7 +73,13 @@ class cbt_engine {
         );
 
         if (!empty($sessions)) {
-            return reset($sessions);
+            $sess = reset($sessions);
+            if ($sess->status === 'not_started') {
+                $sess->status = 'in_progress';
+                $sess->timestart = time();
+                $DB->update_record($table, $sess);
+            }
+            return $sess;
         }
 
         $newsess = new stdClass();
@@ -455,7 +461,8 @@ class cbt_engine {
             $dayend   = strtotime($dateto_clean . ' 23:59:59');
 
             if ($daystart !== false && $dayend !== false) {
-                $sessionWhere[] = "((s.timestart >= :sdaystart1 AND s.timestart <= :sdayend1) OR " .
+                $sessionWhere[] = "((s.status = 'in_progress') OR " .
+                                  "(s.timestart >= :sdaystart1 AND s.timestart <= :sdayend1) OR " .
                                   "(s.timefinish >= :sdaystart2 AND s.timefinish <= :sdayend2) OR " .
                                   "EXISTS (SELECT 1 FROM {{$eventstable}} ev_date WHERE ev_date.sessionid = s.id AND ev_date.eventtime >= :sdaystart3 AND ev_date.eventtime <= :sdayend3))";
                 $sessionParams['sdaystart1'] = $daystart;
@@ -606,7 +613,8 @@ class cbt_engine {
             $daystart = strtotime($datefrom . ' 00:00:00');
             $dayend   = strtotime($dateto_clean . ' 23:59:59');
             if ($daystart !== false && $dayend !== false) {
-                $where[] = "((s.timestart >= :daystart1 AND s.timestart <= :dayend1) OR " .
+                $where[] = "((s.status = 'in_progress') OR " .
+                           "(s.timestart >= :daystart1 AND s.timestart <= :dayend1) OR " .
                            "(s.timefinish >= :daystart2 AND s.timefinish <= :dayend2) OR " .
                            "EXISTS (SELECT 1 FROM {{$eventstable}} ev_date WHERE ev_date.sessionid = s.id AND ev_date.eventtime >= :daystart3 AND ev_date.eventtime <= :dayend3))";
                 $params['daystart1'] = $daystart;

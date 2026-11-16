@@ -151,6 +151,14 @@ if ($action === 'heartbeat') {
         exit;
     }
 
+    if ($sess->status === 'not_started') {
+        $sess->status = 'in_progress';
+        if (empty($sess->timestart)) {
+            $sess->timestart = time();
+        }
+        $DB->update_record($sessiontable, $sess);
+    }
+
     $isDisqualified = ($sess->status === 'invalidated');
     $isSuspended    = ($sess->status === 'under_review' || (int)$sess->warningcount >= 3);
 

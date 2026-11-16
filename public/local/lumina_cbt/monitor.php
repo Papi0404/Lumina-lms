@@ -644,7 +644,7 @@ echo $OUTPUT->header();
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header bg-dark text-white rounded-top-4">
                 <h5 class="modal-title fw-bold" id="cbtAuditModalTitle">Riwayat Audit Peserta</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="cbtHideModal('cbtAuditModal')"></button>
             </div>
             <div class="modal-body p-4" id="cbtAuditModalBody">
                 <div class="text-center py-4 text-muted">Memuat data log audit...</div>
@@ -1124,11 +1124,11 @@ function renderCandidatesTable(list) {
     tbody.innerHTML = html;
 }
 
-// Polling live feed and active candidates every 2.5 seconds
+// Polling live feed and active candidates every 1.5 seconds (Ultra-smooth Real-time)
 setInterval(function() {
     fetchLiveData(false);
     cbtSyncActiveCameras();
-}, 2500);
+}, 1500);
 
 // Resolve candidate session
 function cbtResolve(sessionId, decision) {
@@ -1165,14 +1165,85 @@ function cbtResolve(sessionId, decision) {
     });
 }
 
+// Universal Modal Utility (Works with Bootstrap 5, jQuery, or Vanilla Fallback)
+function cbtShowModal(modalEl) {
+    if (typeof modalEl === 'string') modalEl = document.getElementById(modalEl);
+    if (!modalEl) return;
+
+    if (window.bootstrap && window.bootstrap.Modal) {
+        try {
+            var inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            inst.show();
+            return;
+        } catch(e) {}
+    }
+
+    if (window.jQuery && typeof jQuery(modalEl).modal === 'function') {
+        try {
+            jQuery(modalEl).modal('show');
+            return;
+        } catch(e) {}
+    }
+
+    // Direct DOM fallback (works 100% on any theme)
+    modalEl.classList.add('show');
+    modalEl.style.display = 'block';
+    modalEl.removeAttribute('aria-hidden');
+    modalEl.setAttribute('aria-modal', 'true');
+
+    var backdrop = document.getElementById('cbt-custom-modal-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'cbt-custom-modal-backdrop';
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:1050;';
+        backdrop.onclick = function() {
+            cbtHideModal(modalEl);
+            if (modalEl.id === 'cbtLiveCamModal') cbtCloseLiveCam();
+        };
+        document.body.appendChild(backdrop);
+    } else {
+        backdrop.style.display = 'block';
+    }
+    document.body.classList.add('modal-open');
+}
+
+function cbtHideModal(modalEl) {
+    if (typeof modalEl === 'string') modalEl = document.getElementById(modalEl);
+    if (!modalEl) return;
+
+    if (window.bootstrap && window.bootstrap.Modal) {
+        try {
+            var inst = bootstrap.Modal.getInstance(modalEl);
+            if (inst) inst.hide();
+        } catch(e) {}
+    }
+
+    if (window.jQuery && typeof jQuery(modalEl).modal === 'function') {
+        try {
+            jQuery(modalEl).modal('hide');
+        } catch(e) {}
+    }
+
+    modalEl.classList.remove('show');
+    modalEl.style.display = 'none';
+    modalEl.setAttribute('aria-hidden', 'true');
+    modalEl.removeAttribute('aria-modal');
+
+    var backdrop = document.getElementById('cbt-custom-modal-backdrop');
+    if (backdrop) {
+        backdrop.style.display = 'none';
+    }
+    document.body.classList.remove('modal-open');
+}
+
 // View audit modal
 function cbtViewAudit(sessionId, name) {
     document.getElementById('cbtAuditModalTitle').innerText = 'Riwayat Audit: ' + name;
     var body = document.getElementById('cbtAuditModalBody');
     body.innerHTML = '<div class="text-center py-4 text-muted">Memuat data log audit...</div>';
 
-    var modal = new bootstrap.Modal(document.getElementById('cbtAuditModal'));
-    modal.show();
+    cbtShowModal('cbtAuditModal');
 
     fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_monitor.php?action=session_events&session_id=' + sessionId + '&sesskey=<?php echo sesskey(); ?>')
     .then(function(r){ return r.json(); })
@@ -1201,7 +1272,6 @@ function cbtViewAudit(sessionId, name) {
 // -------------------------------------------------------------
 var cbtCurrentCamSession = null;
 var cbtCamPollInterval = null;
-var cbtCamModalInstance = null;
 var currentCandidatesList = <?php echo json_encode(array_values($reviewlist)); ?>;
 
 function cbtOpenLiveCam(sessionId, name, email, activity, course, warnings, status) {
@@ -1259,12 +1329,9 @@ function cbtOpenLiveCam(sessionId, name, email, activity, course, warnings, stat
     document.getElementById('cbtCamPlaceholderTitle').innerText = 'Menghubungkan ke Kamera Peserta...';
     document.getElementById('cbtCamPlaceholderText').innerText = 'Menunggu transmisi frame video real-time dari browser siswa...';
 
-    if (!cbtCamModalInstance) {
-        cbtCamModalInstance = new bootstrap.Modal(document.getElementById('cbtLiveCamModal'));
-    }
-    cbtCamModalInstance.show();
+    cbtShowModal('cbtLiveCamModal');
 
-    // Start polling frames
+    // Start polling frames immediately & every 800ms
     if (cbtCamPollInterval) clearInterval(cbtCamPollInterval);
     cbtFetchLiveCamFrame();
     cbtCamPollInterval = setInterval(cbtFetchLiveCamFrame, 800);
@@ -1322,6 +1389,7 @@ function cbtCloseLiveCam() {
     cbtCurrentCamSession = null;
     var vImg = document.getElementById('cbtCamVideoFeed');
     if (vImg) vImg.src = '';
+    cbtHideModal('cbtLiveCamModal');
 }
 
 function cbtCycleCandidate(delta) {

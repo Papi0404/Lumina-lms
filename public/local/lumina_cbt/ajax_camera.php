@@ -108,7 +108,8 @@ if ($action === 'push_frame') {
 $canmonitor = local_lumina_cbt_can_monitor_cached() ||
               is_siteadmin() ||
               has_capability('local/lumina_cbt:monitor', \context_system::instance()) ||
-              has_capability('moodle/grade:viewall', \context_system::instance());
+              has_capability('moodle/grade:viewall', \context_system::instance()) ||
+              has_capability('moodle/course:manageactivities', \context_system::instance());
 
 if (!$canmonitor) {
     echo json_encode(['success' => false, 'error' => 'Access denied: Proctor privilege required.']);

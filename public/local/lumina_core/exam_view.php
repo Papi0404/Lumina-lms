@@ -32,6 +32,13 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+
+$cmid = optional_param('cmid', 0, PARAM_INT);
+if ($cmid > 0 && file_exists(__DIR__ . '/../lumina_cbt/exam_view.php')) {
+    redirect(new moodle_url('/local/lumina_cbt/exam_view.php', $_GET));
+    exit;
+}
+
 require_once(__DIR__ . '/classes/exam_monitor.php');
 
 use local_lumina_core\exam_monitor;

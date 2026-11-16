@@ -65,3 +65,4 @@ tsconfig.aliases.json
 # Ignore the types for AMD code.
 /.types
 .env
+/public/lumina_cbt.zip

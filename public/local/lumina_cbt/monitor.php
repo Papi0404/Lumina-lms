@@ -41,6 +41,23 @@ $selecteddateto = optional_param('dateto', '', PARAM_RAW);
 $rangepreset = optional_param('preset', '', PARAM_ALPHAEXT);
 $search = optional_param('search', '', PARAM_RAW_TRIMMED);
 
+// Defensive sanitization of date parameters (prevent "dd/mm/yyyy" or invalid strings from breaking DateTime)
+if ($selecteddate === 'dd/mm/yyyy' || empty($selecteddate)) {
+    if (!empty($search)) {
+        $selecteddate = 'all';
+    } else {
+        $selecteddate = date('Y-m-d');
+    }
+} else if ($selecteddate !== 'all' && strtotime($selecteddate) === false) {
+    $selecteddate = date('Y-m-d');
+}
+
+if (!empty($selecteddateto) && $selecteddateto !== 'all') {
+    if ($selecteddateto === 'dd/mm/yyyy' || strtotime($selecteddateto) === false) {
+        $selecteddateto = '';
+    }
+}
+
 // Auto-determine preset if empty
 if (empty($rangepreset)) {
     if ($selecteddate === 'all') {

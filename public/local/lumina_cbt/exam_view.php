@@ -30,7 +30,13 @@ require_once(__DIR__ . '/classes/cbt_engine.php');
 
 use local_lumina_cbt\cbt_engine;
 
-$cmid = required_param('cmid', PARAM_INT);
+$cmid = optional_param('cmid', 0, PARAM_INT);
+if (!$cmid) {
+    $cmid = optional_param('id', 0, PARAM_INT);
+}
+if (!$cmid) {
+    throw new moodle_exception('missingparam', 'error', '', 'cmid');
+}
 $cm = get_coursemodule_from_id('', $cmid, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 

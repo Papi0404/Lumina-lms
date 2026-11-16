@@ -34,8 +34,13 @@
 require_once(__DIR__ . '/../../config.php');
 
 $cmid = optional_param('cmid', 0, PARAM_INT);
+if (!$cmid) {
+    $cmid = optional_param('id', 0, PARAM_INT);
+}
 if ($cmid > 0 && file_exists(__DIR__ . '/../lumina_cbt/exam_view.php')) {
-    redirect(new moodle_url('/local/lumina_cbt/exam_view.php', $_GET));
+    $params = $_GET;
+    $params['cmid'] = $cmid;
+    redirect(new moodle_url('/local/lumina_cbt/exam_view.php', $params));
     exit;
 }
 

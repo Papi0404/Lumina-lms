@@ -563,10 +563,27 @@ class cbt_engine {
             $eventParams['eactivityid'] = $activityid;
         }
 
-        $datefrom = $date ?: date('Y-m-d');
-        $dateto_clean = (!empty($dateto) && $dateto !== 'all') ? $dateto : $datefrom;
+        // Defensive date normalization: handles empty, dd/mm/yyyy, or invalid text safely
+        $isall = false;
+        if ($date === 'all' || $date === 'dd/mm/yyyy' || (empty($date) && !empty($search))) {
+            $isall = true;
+            $datefrom = '';
+            $dateto_clean = '';
+        } else {
+            if (empty($date) || strtotime($date) === false) {
+                $datefrom = date('Y-m-d');
+            } else {
+                $datefrom = date('Y-m-d', strtotime($date));
+            }
 
-        if ($date !== 'all') {
+            if (empty($dateto) || $dateto === 'all' || $dateto === 'dd/mm/yyyy' || strtotime($dateto) === false) {
+                $dateto_clean = $datefrom;
+            } else {
+                $dateto_clean = date('Y-m-d', strtotime($dateto));
+            }
+        }
+
+        if (!$isall) {
             if (strtotime($datefrom) > strtotime($dateto_clean)) {
                 $tmp = $datefrom;
                 $datefrom = $dateto_clean;
@@ -651,18 +668,27 @@ class cbt_engine {
         }
 
         // Human readable range label
-        if ($date === 'all') {
+        if ($isall) {
             $rangeLabel = 'Semua Riwayat Waktu';
         } else if ($datefrom === $dateto_clean) {
-            if ($datefrom === date('Y-m-d')) {
-                $rangeLabel = 'Hari Ini (' . userdate(strtotime($datefrom), '%d %b %Y') . ')';
+            $tsFrom = strtotime($datefrom);
+            if ($tsFrom === false) {
+                $rangeLabel = 'Semua Riwayat Waktu';
+            } else if ($datefrom === date('Y-m-d')) {
+                $rangeLabel = 'Hari Ini (' . userdate($tsFrom, '%d %b %Y') . ')';
             } else if ($datefrom === date('Y-m-d', strtotime('-1 day'))) {
-                $rangeLabel = 'Kemarin (' . userdate(strtotime($datefrom), '%d %b %Y') . ')';
+                $rangeLabel = 'Kemarin (' . userdate($tsFrom, '%d %b %Y') . ')';
             } else {
-                $rangeLabel = userdate(strtotime($datefrom), '%d %b %Y');
+                $rangeLabel = userdate($tsFrom, '%d %b %Y');
             }
         } else {
-            $rangeLabel = userdate(strtotime($datefrom), '%d %b %Y') . ' – ' . userdate(strtotime($dateto_clean), '%d %b %Y');
+            $tsFrom = strtotime($datefrom);
+            $tsTo   = strtotime($dateto_clean);
+            if ($tsFrom !== false && $tsTo !== false) {
+                $rangeLabel = userdate($tsFrom, '%d %b %Y') . ' – ' . userdate($tsTo, '%d %b %Y');
+            } else {
+                $rangeLabel = 'Semua Riwayat Waktu';
+            }
         }
 
         return [
@@ -713,13 +739,24 @@ class cbt_engine {
             $where[] = "(s.status IN ('under_review', 'invalidated', 'approved', 'completed', 'in_progress', 'not_started'))";
         }
 
-        // Date Range Filter
-        if ($date === null || $date === '') {
-            $date = date('Y-m-d');
+        // Date Range Filter (handles empty, dd/mm/yyyy, or invalid date strings safely)
+        $isall = false;
+        if ($date === 'all' || $date === 'dd/mm/yyyy' || (empty($date) && !empty($search))) {
+            $isall = true;
+        } else {
+            if (empty($date) || strtotime($date) === false) {
+                $datefrom = date('Y-m-d');
+            } else {
+                $datefrom = date('Y-m-d', strtotime($date));
+            }
+            if (empty($dateto) || $dateto === 'all' || $dateto === 'dd/mm/yyyy' || strtotime($dateto) === false) {
+                $dateto_clean = $datefrom;
+            } else {
+                $dateto_clean = date('Y-m-d', strtotime($dateto));
+            }
         }
-        if ($date !== 'all') {
-            $datefrom = $date;
-            $dateto_clean = (!empty($dateto) && $dateto !== 'all') ? $dateto : $datefrom;
+
+        if (!$isall) {
             if (strtotime($datefrom) > strtotime($dateto_clean)) {
                 $tmp = $datefrom;
                 $datefrom = $dateto_clean;
@@ -849,7 +886,7 @@ class cbt_engine {
             $finishtimestr = 'Sedang Berlangsung';
             if ($sessionstatus === 'not_started') {
                 $finishtimestr = 'Belum Dimulai';
-            } else if ($r->timefinish) {
+            } else if (!empty($r->timefinish) && (int)$r->timefinish > 0) {
                 $finishtimestr = userdate($r->timefinish, '%d %b %Y, %H:%M');
             }
 
@@ -866,7 +903,7 @@ class cbt_engine {
                 'event_count'         => $eventcount,
                 'latest_violation'    => $latestlabel,
                 'latest_time'         => $latesttime,
-                'start_time'          => userdate($r->timestart, '%d %b %Y, %H:%M'),
+                'start_time'          => (!empty($r->timestart) && (int)$r->timestart > 0) ? userdate($r->timestart, '%d %b %Y, %H:%M') : 'Belum Dimulai',
                 'finish_time'         => $finishtimestr,
                 'status'              => $sessionstatus,
                 'admin_reviewer_name' => $adminreviewername,

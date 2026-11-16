@@ -294,6 +294,26 @@ function local_lumina_cbt_extend_settings_navigation(\settings_navigation $nav, 
 }
 
 /**
+ * Add CBT Proctor & Audit link to the user profile navigation.
+ *
+ * @param \core_user\output\myprofile\tree $tree
+ * @param stdClass $user
+ * @param bool $iscurrentuser
+ * @param stdClass $course
+ */
+function local_lumina_cbt_myprofile_navigation(\core_user\output\myprofile\tree $tree, $user, $iscurrentuser, $course) {
+    try {
+        if (local_lumina_cbt_can_monitor_cached()) {
+            $url = new \moodle_url('/local/lumina_cbt/monitor.php');
+            $node = new \core_user\output\myprofile\node('administration', 'lumina_cbt_monitor', '🛡️ Audit Ujian CBT', null, $url);
+            $tree->add_node($node);
+        }
+    } catch (\Throwable $e) {
+        // Fail-safe
+    }
+}
+
+/**
  * Legacy & PSR-14 before_footer callback.
  */
 function local_lumina_cbt_before_footer() {

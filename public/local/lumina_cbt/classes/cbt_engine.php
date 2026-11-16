@@ -298,7 +298,7 @@ class cbt_engine {
      * @param int $limit Max records
      * @return array
      */
-    public static function get_live_audit_feed(int $since = 0, ?string $date = null, string $search = '', int $limit = 50, ?int $courseid = null, ?int $activityid = null): array {
+    public static function get_live_audit_feed(int $since = 0, ?string $date = null, string $search = '', int $limit = 50, ?int $courseid = null, ?int $activityid = null, ?string $dateto = null): array {
         global $DB;
 
         $sessiontable = self::get_session_table();
@@ -322,13 +322,20 @@ class cbt_engine {
             $params[] = $since;
         }
 
-        // Date Filter
+        // Date Range Filter
         if ($date === null || $date === '') {
             $date = date('Y-m-d');
         }
         if ($date !== 'all') {
-            $daystart = strtotime($date . ' 00:00:00');
-            $dayend   = strtotime($date . ' 23:59:59');
+            $datefrom = $date;
+            $dateto_clean = (!empty($dateto) && $dateto !== 'all') ? $dateto : $datefrom;
+            if (strtotime($datefrom) > strtotime($dateto_clean)) {
+                $tmp = $datefrom;
+                $datefrom = $dateto_clean;
+                $dateto_clean = $tmp;
+            }
+            $daystart = strtotime($datefrom . ' 00:00:00');
+            $dayend   = strtotime($dateto_clean . ' 23:59:59');
             if ($daystart !== false && $dayend !== false) {
                 $where[] = "ev.eventtime >= ? AND ev.eventtime <= ?";
                 $params[] = $daystart;
@@ -390,6 +397,154 @@ class cbt_engine {
     }
 
     /**
+     * Compute comprehensive metrics aggregated across a selected date range.
+     *
+     * @param string|null $date Start date (Y-m-d) or 'all'
+     * @param string|null $dateto End date (Y-m-d) or null
+     * @param int|null $courseid Course ID filter
+     * @param int|null $activityid Activity ID filter
+     * @param string $search Search query
+     * @return array
+     */
+    public static function get_range_metrics(?string $date = null, ?string $dateto = null, ?int $courseid = null, ?int $activityid = null, string $search = ''): array {
+        global $DB;
+
+        $sessiontable = self::get_session_table();
+        $eventstable  = self::get_events_table();
+
+        $sessionWhere = [];
+        $sessionParams = [];
+
+        $eventWhere = ["ev.eventtype != 'exam_submitted'"];
+        $eventParams = [];
+
+        if ($courseid > 0) {
+            $sessionWhere[] = "s.courseid = :scourseid";
+            $sessionParams['scourseid'] = $courseid;
+            $eventWhere[] = "s.courseid = :ecourseid";
+            $eventParams['ecourseid'] = $courseid;
+        }
+
+        if ($activityid > 0) {
+            $sessionWhere[] = "s.activityid = :sactivityid";
+            $sessionParams['sactivityid'] = $activityid;
+            $eventWhere[] = "s.activityid = :eactivityid";
+            $eventParams['eactivityid'] = $activityid;
+        }
+
+        $datefrom = $date ?: date('Y-m-d');
+        $dateto_clean = (!empty($dateto) && $dateto !== 'all') ? $dateto : $datefrom;
+
+        if ($date !== 'all') {
+            if (strtotime($datefrom) > strtotime($dateto_clean)) {
+                $tmp = $datefrom;
+                $datefrom = $dateto_clean;
+                $dateto_clean = $tmp;
+            }
+            $daystart = strtotime($datefrom . ' 00:00:00');
+            $dayend   = strtotime($dateto_clean . ' 23:59:59');
+
+            if ($daystart !== false && $dayend !== false) {
+                $sessionWhere[] = "((s.timestart >= :sdaystart1 AND s.timestart <= :sdayend1) OR " .
+                                  "(s.timefinish >= :sdaystart2 AND s.timefinish <= :sdayend2) OR " .
+                                  "EXISTS (SELECT 1 FROM {{$eventstable}} ev_date WHERE ev_date.sessionid = s.id AND ev_date.eventtime >= :sdaystart3 AND ev_date.eventtime <= :sdayend3))";
+                $sessionParams['sdaystart1'] = $daystart;
+                $sessionParams['sdayend1']   = $dayend;
+                $sessionParams['sdaystart2'] = $daystart;
+                $sessionParams['sdayend2']   = $dayend;
+                $sessionParams['sdaystart3'] = $daystart;
+                $sessionParams['sdayend3']   = $dayend;
+
+                $eventWhere[] = "ev.eventtime >= :edaystart AND ev.eventtime <= :edayend";
+                $eventParams['edaystart'] = $daystart;
+                $eventParams['edayend']   = $dayend;
+            }
+        }
+
+        // Search Filter
+        if (!empty($search)) {
+            $searchterm = '%' . $DB->sql_like_escape(trim($search)) . '%';
+            $sessionWhere[] = "(" . $DB->sql_like('u.firstname', ':search1', false) . " OR " .
+                                    $DB->sql_like('u.lastname', ':search2', false) . " OR " .
+                                    $DB->sql_like($DB->sql_fullname('u.firstname', 'u.lastname'), ':search3', false) . " OR " .
+                                    $DB->sql_like('u.email', ':search4', false) . ")";
+            $sessionParams['search1'] = $searchterm;
+            $sessionParams['search2'] = $searchterm;
+            $sessionParams['search3'] = $searchterm;
+            $sessionParams['search4'] = $searchterm;
+
+            $eventWhere[] = "(" . $DB->sql_like('u.firstname', ':esearch1', false) . " OR " .
+                                  $DB->sql_like('u.lastname', ':esearch2', false) . " OR " .
+                                  $DB->sql_like($DB->sql_fullname('u.firstname', 'u.lastname'), ':esearch3', false) . " OR " .
+                                  $DB->sql_like('u.email', ':esearch4', false) . ")";
+            $eventParams['esearch1'] = $searchterm;
+            $eventParams['esearch2'] = $searchterm;
+            $eventParams['esearch3'] = $searchterm;
+            $eventParams['esearch4'] = $searchterm;
+        }
+
+        $sessionWhereSql = !empty($sessionWhere) ? 'WHERE ' . implode(' AND ', $sessionWhere) : '';
+        $eventWhereSql   = !empty($eventWhere) ? 'WHERE ' . implode(' AND ', $eventWhere) : '';
+
+        // Total infractions in range
+        $eventSql = "SELECT COUNT(ev.id)
+                       FROM {{$eventstable}} ev
+                       JOIN {{$sessiontable}} s ON s.id = ev.sessionid
+                       JOIN {user} u ON u.id = ev.userid
+                       $eventWhereSql";
+        $totalViolations = (int)$DB->count_records_sql($eventSql, $eventParams);
+
+        // Locked sessions in range
+        $lockedSql = "SELECT COUNT(s.id)
+                        FROM {{$sessiontable}} s
+                        JOIN {user} u ON u.id = s.userid
+                        $sessionWhereSql" . (!empty($sessionWhereSql) ? " AND " : " WHERE ") . "s.status = 'under_review'";
+        $lockedCount = (int)$DB->count_records_sql($lockedSql, $sessionParams);
+
+        // Clean passed sessions in range
+        $cleanSql = "SELECT COUNT(s.id)
+                       FROM {{$sessiontable}} s
+                       JOIN {user} u ON u.id = s.userid
+                       $sessionWhereSql" . (!empty($sessionWhereSql) ? " AND " : " WHERE ") . "s.status IN ('completed', 'approved') AND s.warningcount = 0";
+        $cleanCount = (int)$DB->count_records_sql($cleanSql, $sessionParams);
+
+        // Review list to accurately determine active candidates
+        $candidates = self::get_sessions_for_review($date, $search, $courseid, $activityid, 'all', $dateto);
+        $activeCount = 0;
+        foreach ($candidates as $c) {
+            if ($c['status'] === 'in_progress') {
+                $activeCount++;
+            }
+        }
+
+        // Human readable range label
+        if ($date === 'all') {
+            $rangeLabel = 'Semua Riwayat Waktu';
+        } else if ($datefrom === $dateto_clean) {
+            if ($datefrom === date('Y-m-d')) {
+                $rangeLabel = 'Hari Ini (' . userdate(strtotime($datefrom), '%d %b %Y') . ')';
+            } else if ($datefrom === date('Y-m-d', strtotime('-1 day'))) {
+                $rangeLabel = 'Kemarin (' . userdate(strtotime($datefrom), '%d %b %Y') . ')';
+            } else {
+                $rangeLabel = userdate(strtotime($datefrom), '%d %b %Y');
+            }
+        } else {
+            $rangeLabel = userdate(strtotime($datefrom), '%d %b %Y') . ' – ' . userdate(strtotime($dateto_clean), '%d %b %Y');
+        }
+
+        return [
+            'total_violations' => $totalViolations,
+            'locked_count'     => $lockedCount,
+            'clean_count'      => $cleanCount,
+            'active_count'     => $activeCount,
+            'total_candidates' => count($candidates),
+            'date_from'        => $datefrom,
+            'date_to'          => $dateto_clean,
+            'range_label'      => $rangeLabel,
+        ];
+    }
+
+    /**
      * Get candidate attempts flagged for review and proctor management.
      *
      * @param string|null $date
@@ -397,7 +552,7 @@ class cbt_engine {
      * @param int|null $courseid
      * @return array
      */
-    public static function get_sessions_for_review(?string $date = null, string $search = '', ?int $courseid = null, ?int $activityid = null, string $filterscope = 'violations_only'): array {
+    public static function get_sessions_for_review(?string $date = null, string $search = '', ?int $courseid = null, ?int $activityid = null, string $filterscope = 'violations_only', ?string $dateto = null): array {
         global $DB;
 
         $sessiontable = self::get_session_table();
@@ -425,13 +580,20 @@ class cbt_engine {
             $where[] = "(s.status IN ('under_review', 'invalidated', 'approved', 'completed', 'in_progress', 'not_started'))";
         }
 
-        // Date Filter
+        // Date Range Filter
         if ($date === null || $date === '') {
             $date = date('Y-m-d');
         }
         if ($date !== 'all') {
-            $daystart = strtotime($date . ' 00:00:00');
-            $dayend   = strtotime($date . ' 23:59:59');
+            $datefrom = $date;
+            $dateto_clean = (!empty($dateto) && $dateto !== 'all') ? $dateto : $datefrom;
+            if (strtotime($datefrom) > strtotime($dateto_clean)) {
+                $tmp = $datefrom;
+                $datefrom = $dateto_clean;
+                $dateto_clean = $tmp;
+            }
+            $daystart = strtotime($datefrom . ' 00:00:00');
+            $dayend   = strtotime($dateto_clean . ' 23:59:59');
             if ($daystart !== false && $dayend !== false) {
                 $where[] = "((s.timestart >= :daystart1 AND s.timestart <= :dayend1) OR " .
                            "(s.timefinish >= :daystart2 AND s.timefinish <= :dayend2) OR " .

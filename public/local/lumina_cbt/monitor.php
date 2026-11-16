@@ -37,7 +37,32 @@ $courseid = optional_param('courseid', 0, PARAM_INT);
 $activityid = optional_param('activityid', 0, PARAM_INT);
 $filterscope = optional_param('filterscope', 'violations_only', PARAM_ALPHAEXT);
 $selecteddate = optional_param('date', date('Y-m-d'), PARAM_RAW);
+$selecteddateto = optional_param('dateto', '', PARAM_RAW);
+$rangepreset = optional_param('preset', '', PARAM_ALPHAEXT);
 $search = optional_param('search', '', PARAM_RAW_TRIMMED);
+
+// Auto-determine preset if empty
+if (empty($rangepreset)) {
+    if ($selecteddate === 'all') {
+        $rangepreset = 'all';
+    } else if (empty($selecteddateto) || $selecteddateto === $selecteddate) {
+        if ($selecteddate === date('Y-m-d')) {
+            $rangepreset = 'today';
+        } else if ($selecteddate === date('Y-m-d', strtotime('-1 day'))) {
+            $rangepreset = 'yesterday';
+        } else {
+            $rangepreset = 'custom';
+        }
+    } else if ($selecteddate === date('Y-m-d', strtotime('-6 days')) && $selecteddateto === date('Y-m-d')) {
+        $rangepreset = 'last7';
+    } else if ($selecteddate === date('Y-m-d', strtotime('-29 days')) && $selecteddateto === date('Y-m-d')) {
+        $rangepreset = 'last30';
+    } else if ($selecteddate === date('Y-m-01') && $selecteddateto === date('Y-m-d')) {
+        $rangepreset = 'this_month';
+    } else {
+        $rangepreset = 'custom';
+    }
+}
 
 $course = null;
 if ($courseid > 0) {
@@ -61,6 +86,8 @@ $PAGE->set_url(new moodle_url('/local/lumina_cbt/monitor.php', array_filter([
     'activityid'  => $activityid,
     'filterscope' => $filterscope,
     'date'        => $selecteddate,
+    'dateto'      => $selecteddateto,
+    'preset'      => $rangepreset,
     'search'      => $search,
 ])));
 $PAGE->set_context($context);
@@ -88,38 +115,48 @@ if ($courseid > 0) {
     $activitieslist = $DB->get_records_sql($sql_act, [$courseid]);
 }
 
-$reviewlist = cbt_engine::get_sessions_for_review($selecteddate, $search, $courseid ?: null, $activityid ?: null, $filterscope);
-$livefeed = cbt_engine::get_live_audit_feed(0, $selecteddate, $search, 50, $courseid ?: null, $activityid ?: null);
+// Compute metrics aggregated across the selected range
+$metrics = cbt_engine::get_range_metrics($selecteddate, $selecteddateto, $courseid ?: null, $activityid ?: null, $search);
 
-$sessiontable = cbt_engine::get_session_table();
-$whereParams = [];
-$whereParts = [];
-if ($courseid > 0) {
-    $whereParts[] = "courseid = ?";
-    $whereParams[] = $courseid;
-}
-if ($activityid > 0) {
-    $whereParts[] = "activityid = ?";
-    $whereParams[] = $activityid;
-}
-$extraWhere = !empty($whereParts) ? ' AND ' . implode(' AND ', $whereParts) : '';
+$reviewlist = cbt_engine::get_sessions_for_review($selecteddate, $search, $courseid ?: null, $activityid ?: null, $filterscope, $selecteddateto);
+$livefeed = cbt_engine::get_live_audit_feed(0, $selecteddate, $search, 50, $courseid ?: null, $activityid ?: null, $selecteddateto);
 
-$activecount = 0;
-foreach ($reviewlist as $item) {
-    if ($item['status'] === 'in_progress') {
-        $activecount++;
-    }
-}
-$reviewcount = $DB->count_records_select($sessiontable, "status = 'under_review'" . $extraWhere, $whereParams);
-$completedcount = $DB->count_records_select($sessiontable, "status = 'completed'" . $extraWhere, $whereParams);
+$activecount     = $metrics['active_count'];
+$reviewcount     = $metrics['locked_count'];
+$completedcount  = $metrics['clean_count'];
+$totalviolations = $metrics['total_violations'];
 
 echo $OUTPUT->header();
 ?>
 
 <style>
+/* Universal Theme Neutrality & Spacing */
 .lumina-cbt-monitor-wrap {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: #1E293B;
+    padding-top: 1.75rem !important;
+    margin-top: 0.5rem !important;
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure no navbar clipping across Moon, Boost, and child themes */
+#page.drawers .lumina-cbt-monitor-wrap,
+#page-content .lumina-cbt-monitor-wrap,
+.moon-layout-content .lumina-cbt-monitor-wrap {
+    padding-top: 2rem !important;
+}
+
+.cbt-header-banner {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.03);
+    margin-bottom: 1.25rem;
 }
 
 .cbt-stat-card {
@@ -131,19 +168,24 @@ echo $OUTPUT->header();
     display: flex;
     align-items: center;
     justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cbt-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15,23,42,0.06);
 }
 .cbt-stat-val {
-    font-size: 1.85rem;
+    font-size: 2rem;
     font-weight: 800;
     line-height: 1.1;
     margin-top: 4px;
 }
 .cbt-stat-label {
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
     color: #64748B;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 
 .cbt-live-pulse {
@@ -215,44 +257,55 @@ echo $OUTPUT->header();
 .badge-strike-1 { background: #FEF3C7; color: #92400E; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
 .badge-strike-2 { background: #FFEDD5; color: #9A3412; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
 .badge-strike-3 { background: #FEE2E2; color: #991B1B; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+
+.cbt-preset-btn {
+    transition: all 0.15s ease;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
 </style>
 
 <div class="lumina-cbt-monitor-wrap py-2">
     <!-- Header Banner -->
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-        <div>
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="cbt-live-pulse"></span>
-                <span class="text-success fw-bold small text-uppercase tracking-wider">Live Proctoring Active</span>
+    <div class="cbt-header-banner">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="cbt-live-pulse"></span>
+                    <span class="text-success fw-bold small text-uppercase tracking-wider">Live Proctoring Active</span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-0.5 small" id="cbt-active-range-badge">
+                        📅 <?php echo s($metrics['range_label']); ?>
+                    </span>
+                </div>
+                <h2 class="fw-bold mb-1" style="color: #0F172A;">
+                    🛡️ <?php echo get_string('monitor_dashboard', 'local_lumina_cbt'); ?>
+                </h2>
+                <div class="text-muted small">
+                    Pengawasan langsung real-time: deteksi tab, gesture touchpad, shortcut, dan rekapitulasi data pelanggaran berbasis rentang kalender.
+                </div>
             </div>
-            <h2 class="fw-bold mb-1" style="color: #0F172A;">
-                🛡️ <?php echo get_string('monitor_dashboard', 'local_lumina_cbt'); ?>
-            </h2>
-            <div class="text-muted small">
-                Pengawasan langsung real-time: mendeteksi perpindahan tab, gesture touchpad, shortcut DevTools, dan status kunci ujian.
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Audio Chime Toggle -->
+                <label class="btn btn-sm btn-light border d-inline-flex align-items-center gap-2 rounded-pill px-3 py-2 cursor-pointer m-0 shadow-xs" style="background: #ffffff;">
+                    <input type="checkbox" id="cbt-sound-toggle" checked style="accent-color: #4338CA;">
+                    <span>🔊 Alarm Suara</span>
+                </label>
+
+                <?php if ($courseid > 0): ?>
+                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $courseid; ?>" class="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-semibold shadow-xs" style="background: #ffffff;">
+                    &larr; Kembali ke Kelas
+                </a>
+                <?php else: ?>
+                <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-sm btn-light border rounded-pill px-3 py-2 fw-semibold shadow-xs" style="background: #ffffff;">
+                    &larr; Dashboard
+                </a>
+                <?php endif; ?>
             </div>
-        </div>
-
-        <div class="d-flex align-items-center gap-2">
-            <!-- Audio Chime Toggle -->
-            <label class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 rounded-pill px-3 py-2 cursor-pointer m-0">
-                <input type="checkbox" id="cbt-sound-toggle" checked style="accent-color: #4338CA;">
-                <span>🔊 Alarm Suara</span>
-            </label>
-
-            <?php if ($courseid > 0): ?>
-            <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $courseid; ?>" class="btn btn-sm btn-light border rounded-pill px-3 py-2">
-                &larr; Kembali ke Kelas
-            </a>
-            <?php else: ?>
-            <a href="<?php echo $CFG->wwwroot; ?>/my/" class="btn btn-sm btn-light border rounded-pill px-3 py-2">
-                &larr; Dashboard
-            </a>
-            <?php endif; ?>
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards (Aggregated for Selected Date Range) -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
             <div class="cbt-stat-card">
@@ -260,7 +313,7 @@ echo $OUTPUT->header();
                     <div class="cbt-stat-label">Peserta Ujian Aktif</div>
                     <div class="cbt-stat-val text-primary" id="cbt-stat-active"><?php echo $activecount; ?></div>
                 </div>
-                <div style="font-size: 28px; opacity: 0.8;">✍️</div>
+                <div style="font-size: 28px; opacity: 0.85;">✍️</div>
             </div>
         </div>
 
@@ -270,7 +323,7 @@ echo $OUTPUT->header();
                     <div class="cbt-stat-label">Terkunci / Ditangguhkan</div>
                     <div class="cbt-stat-val text-danger" id="cbt-stat-review"><?php echo $reviewcount; ?></div>
                 </div>
-                <div style="font-size: 28px; opacity: 0.8;">🔒</div>
+                <div style="font-size: 28px; opacity: 0.85;">🔒</div>
             </div>
         </div>
 
@@ -280,7 +333,7 @@ echo $OUTPUT->header();
                     <div class="cbt-stat-label">Lolos Bersih (0 Pelanggaran)</div>
                     <div class="cbt-stat-val text-success" id="cbt-stat-completed"><?php echo $completedcount; ?></div>
                 </div>
-                <div style="font-size: 28px; opacity: 0.8;">✓</div>
+                <div style="font-size: 28px; opacity: 0.85;">✓</div>
             </div>
         </div>
 
@@ -288,62 +341,131 @@ echo $OUTPUT->header();
             <div class="cbt-stat-card">
                 <div>
                     <div class="cbt-stat-label">Total Pelanggaran Terdeteksi</div>
-                    <div class="cbt-stat-val text-warning" id="cbt-stat-violations"><?php echo count($livefeed); ?></div>
+                    <div class="cbt-stat-val text-warning" id="cbt-stat-violations"><?php echo $totalviolations; ?></div>
                 </div>
-                <div style="font-size: 28px; opacity: 0.8;">🚨</div>
+                <div style="font-size: 28px; opacity: 0.85;">🚨</div>
             </div>
         </div>
     </div>
 
-    <!-- Real-time Filter & Search Toolbar -->
+    <!-- Real-time Filter & Date Range Calendar Toolbar -->
     <div class="cbt-panel p-3 mb-4">
-        <form method="get" id="cbt-filter-form" class="row g-2 align-items-center">
-            <!-- Course Filter -->
-            <div class="col-md-3">
-                <label class="form-label small text-muted mb-1 fw-bold">Kelas / Kursus:</label>
-                <select name="courseid" id="cbt-filter-course" class="form-select form-select-sm">
-                    <option value="0">Semua Kelas</option>
-                    <?php foreach ($courseslist as $c): ?>
-                        <option value="<?php echo $c->id; ?>" <?php echo ($courseid == $c->id ? 'selected' : ''); ?>>
-                            <?php echo format_string($c->fullname); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+        <form method="get" id="cbt-filter-form">
+            <!-- Row 1: Course, Activity, Scope, Search -->
+            <div class="row g-2 align-items-center mb-3">
+                <!-- Course Filter -->
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1 fw-bold">Kelas / Kursus:</label>
+                    <select name="courseid" id="cbt-filter-course" class="form-select form-select-sm" onchange="document.getElementById('cbt-filter-form').submit();">
+                        <option value="0">Semua Kelas</option>
+                        <?php foreach ($courseslist as $c): ?>
+                            <option value="<?php echo $c->id; ?>" <?php echo ($courseid == $c->id ? 'selected' : ''); ?>>
+                                <?php echo format_string($c->fullname); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Activity Filter -->
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1 fw-bold">Ujian / Aktivitas:</label>
+                    <select name="activityid" id="cbt-filter-activity" class="form-select form-select-sm" onchange="document.getElementById('cbt-filter-form').submit();">
+                        <option value="0">Semua Ujian</option>
+                        <?php foreach ($activitieslist as $a): ?>
+                            <?php $badge = ($a->modname === 'quiz' ? '📝 Quiz' : ($a->modname === 'h5pactivity' ? '🎮 H5P' : '📋 Tugas')); ?>
+                            <option value="<?php echo $a->id; ?>" <?php echo ($activityid == $a->id ? 'selected' : ''); ?>>
+                                <?php echo format_string($a->name) . ' (' . $badge . ')'; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Scope Filter -->
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1 fw-bold">Tampilan:</label>
+                    <select name="filterscope" id="cbt-filter-scope" class="form-select form-select-sm" onchange="document.getElementById('cbt-filter-form').submit();">
+                        <option value="violations_only" <?php echo ($filterscope === 'violations_only' ? 'selected' : ''); ?>>⚠️ Perlu Ditindak</option>
+                        <option value="all" <?php echo ($filterscope === 'all' ? 'selected' : ''); ?>>📋 Semua Peserta</option>
+                    </select>
+                </div>
+
+                <!-- Search -->
+                <div class="col-md-4">
+                    <label class="form-label small text-muted mb-1 fw-bold">Cari Siswa:</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" id="cbt-filter-search" class="form-control" placeholder="Nama siswa atau email..." value="<?php echo s($search); ?>" onkeydown="if(event.key==='Enter'){document.getElementById('cbt-filter-form').submit();}">
+                        <button type="submit" class="btn btn-primary px-3 fw-semibold">Cari</button>
+                        <?php if (!empty($search)): ?>
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('cbt-filter-search').value=''; document.getElementById('cbt-filter-form').submit();" title="Reset Cari">✕</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
-            <!-- Activity Filter -->
-            <div class="col-md-3">
-                <label class="form-label small text-muted mb-1 fw-bold">Ujian / Aktivitas:</label>
-                <select name="activityid" id="cbt-filter-activity" class="form-select form-select-sm">
-                    <option value="0">Semua Ujian</option>
-                    <?php foreach ($activitieslist as $a): ?>
-                        <?php $badge = ($a->modname === 'quiz' ? '📝 Quiz' : ($a->modname === 'h5pactivity' ? '🎮 H5P' : '📋 Tugas')); ?>
-                        <option value="<?php echo $a->id; ?>" <?php echo ($activityid == $a->id ? 'selected' : ''); ?>>
-                            <?php echo format_string($a->name) . ' (' . $badge . ')'; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+            <!-- Row 2: Date Range Picker & Quick Presets -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                <!-- Left: Custom Date Range Inputs -->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="small fw-bold text-muted d-inline-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined text-primary" style="font-size: 18px;">date_range</span>
+                        Rentang Kalender:
+                    </span>
+                    <div class="d-inline-flex align-items-center gap-1 bg-light border rounded-pill px-2.5 py-1">
+                        <span class="small text-muted fw-semibold ps-1">Dari:</span>
+                        <input type="date" name="date" id="cbt-filter-date" class="form-control form-control-sm border-0 bg-transparent px-1 py-0 fw-semibold text-primary" style="width: 135px; outline: none; box-shadow: none;" value="<?php echo ($selecteddate === 'all' ? '' : s($selecteddate)); ?>">
+                        <span class="text-muted small">&mdash;</span>
+                        <span class="small text-muted fw-semibold">Sampai:</span>
+                        <input type="date" name="dateto" id="cbt-filter-dateto" class="form-control form-control-sm border-0 bg-transparent px-1 py-0 fw-semibold text-primary" style="width: 135px; outline: none; box-shadow: none;" value="<?php echo ($selecteddateto === 'all' ? '' : s($selecteddateto)); ?>">
+                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 py-0.5 fw-bold shadow-xs ms-1" title="Terapkan Rentang Kalender">
+                            Terapkan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Quick Preset Buttons -->
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    <div class="btn-group btn-group-sm rounded-pill border p-0.5 bg-light" role="group">
+                        <button type="button" class="btn cbt-preset-btn rounded-pill px-2.5 py-1 <?php echo ($rangepreset === 'today' ? 'btn-primary text-white shadow-xs' : 'btn-light text-secondary border-0'); ?>" onclick="cbtSetDatePreset('today')">
+                            Hari Ini
+                        </button>
+                        <button type="button" class="btn cbt-preset-btn rounded-pill px-2.5 py-1 <?php echo ($rangepreset === 'yesterday' ? 'btn-primary text-white shadow-xs' : 'btn-light text-secondary border-0'); ?>" onclick="cbtSetDatePreset('yesterday')">
+                            Kemarin
+                        </button>
+                        <button type="button" class="btn cbt-preset-btn rounded-pill px-2.5 py-1 <?php echo ($rangepreset === 'last7' ? 'btn-primary text-white shadow-xs' : 'btn-light text-secondary border-0'); ?>" onclick="cbtSetDatePreset('last7')">
+                            7 Hari Terakhir
+                        </button>
+                        <button type="button" class="btn cbt-preset-btn rounded-pill px-2.5 py-1 <?php echo ($rangepreset === 'last30' ? 'btn-primary text-white shadow-xs' : 'btn-light text-secondary border-0'); ?>" onclick="cbtSetDatePreset('last30')">
+                            30 Hari Terakhir
+                        </button>
+                        <button type="button" class="btn cbt-preset-btn rounded-pill px-2.5 py-1 <?php echo ($rangepreset === 'this_month' ? 'btn-primary text-white shadow-xs' : 'btn-light text-secondary border-0'); ?>" onclick="cbtSetDatePreset('this_month')">
+                            Bulan Ini
+                        </button>
+                        <button type="button" class="btn cbt-preset-btn rounded-pill px-2.5 py-1 <?php echo ($rangepreset === 'all' ? 'btn-primary text-white shadow-xs' : 'btn-light text-secondary border-0'); ?>" onclick="cbtSetDatePreset('all')">
+                            Semua Riwayat
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="preset" id="cbt-range-preset" value="<?php echo s($rangepreset); ?>">
             </div>
 
-            <!-- Scope Filter -->
-            <div class="col-md-2">
-                <label class="form-label small text-muted mb-1 fw-bold">Tampilan:</label>
-                <select name="filterscope" id="cbt-filter-scope" class="form-select form-select-sm">
-                    <option value="violations_only" <?php echo ($filterscope === 'violations_only' ? 'selected' : ''); ?>>⚠️ Perlu Ditindak</option>
-                    <option value="all" <?php echo ($filterscope === 'all' ? 'selected' : ''); ?>>📋 Semua Peserta</option>
-                </select>
-            </div>
-
-            <!-- Search -->
-            <div class="col-md-2">
-                <label class="form-label small text-muted mb-1 fw-bold">Cari Siswa:</label>
-                <input type="text" name="search" id="cbt-filter-search" class="form-control form-control-sm" placeholder="Nama / Email..." value="<?php echo s($search); ?>">
-            </div>
-
-            <!-- Date -->
-            <div class="col-md-2">
-                <label class="form-label small text-muted mb-1 fw-bold">Tanggal:</label>
-                <input type="date" name="date" id="cbt-filter-date" class="form-control form-control-sm" value="<?php echo s($selecteddate); ?>">
+            <!-- Active Range Indicator Summary -->
+            <div class="d-flex align-items-center justify-content-between pt-2 mt-2 border-top flex-wrap gap-2 small">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-1 fw-semibold">
+                        📅 Periode: <strong id="cbt-summary-range"><?php echo s($metrics['range_label']); ?></strong>
+                    </span>
+                    <span class="badge bg-warning bg-opacity-15 text-dark border border-warning border-opacity-50 rounded-pill px-3 py-1 fw-semibold">
+                        🚨 Total Pelanggaran dalam Rentang: <strong id="cbt-summary-violations"><?php echo $totalviolations; ?></strong>
+                    </span>
+                    <?php if (!empty($search)): ?>
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-3 py-1 fw-semibold">
+                        Filter Siswa: "<strong><?php echo s($search); ?></strong>"
+                    </span>
+                    <?php endif; ?>
+                </div>
+                <span class="text-muted">
+                    Ditemukan <strong id="cbt-summary-sessions"><?php echo count($reviewlist); ?></strong> sesi peserta &bull; <strong id="cbt-summary-events"><?php echo count($livefeed); ?></strong> aktivitas live
+                </span>
             </div>
         </form>
     </div>
@@ -546,6 +668,56 @@ function playChime() {
     } catch(e){}
 }
 
+// Quick Preset Date Selector
+function cbtSetDatePreset(preset) {
+    var dateInput = document.getElementById('cbt-filter-date');
+    var datetoInput = document.getElementById('cbt-filter-dateto');
+    var presetInput = document.getElementById('cbt-range-preset');
+
+    function fmt(d) {
+        var month = '' + (d.getMonth() + 1);
+        var day = '' + d.getDate();
+        var year = d.getFullYear();
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+        return [year, month, day].join('-');
+    }
+
+    var now = new Date();
+
+    if (preset === 'today') {
+        var str = fmt(now);
+        dateInput.value = str;
+        datetoInput.value = str;
+    } else if (preset === 'yesterday') {
+        var yest = new Date(now.getTime() - 86400000);
+        var str = fmt(yest);
+        dateInput.value = str;
+        datetoInput.value = str;
+    } else if (preset === 'last7') {
+        var past = new Date(now.getTime() - (6 * 86400000));
+        dateInput.value = fmt(past);
+        datetoInput.value = fmt(now);
+    } else if (preset === 'last30') {
+        var past = new Date(now.getTime() - (29 * 86400000));
+        dateInput.value = fmt(past);
+        datetoInput.value = fmt(now);
+    } else if (preset === 'this_month') {
+        var first = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateInput.value = fmt(first);
+        datetoInput.value = fmt(now);
+    } else if (preset === 'all') {
+        dateInput.value = 'all';
+        datetoInput.value = 'all';
+    }
+
+    if (presetInput) {
+        presetInput.value = preset;
+    }
+
+    document.getElementById('cbt-filter-form').submit();
+}
+
 // Dynamic Activity dropdown when course changes
 document.getElementById('cbt-filter-course').addEventListener('change', function() {
     var cid = parseInt(this.value, 10);
@@ -579,10 +751,13 @@ document.getElementById('cbt-filter-course').addEventListener('change', function
 });
 
 // Trigger live update on filter controls change
-['cbt-filter-activity', 'cbt-filter-scope', 'cbt-filter-date'].forEach(function(id) {
-    document.getElementById(id).addEventListener('change', function() {
-        fetchLiveData(true);
-    });
+['cbt-filter-activity', 'cbt-filter-scope', 'cbt-filter-date', 'cbt-filter-dateto'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('change', function() {
+            fetchLiveData(true);
+        });
+    }
 });
 
 var searchTimeout = null;
@@ -600,6 +775,8 @@ function fetchLiveData(resetFeed) {
     var scope = document.getElementById('cbt-filter-scope').value;
     var search = document.getElementById('cbt-filter-search').value;
     var date = document.getElementById('cbt-filter-date').value;
+    var datetoEl = document.getElementById('cbt-filter-dateto');
+    var dateto = datetoEl ? datetoEl.value : '';
 
     var sinceParam = resetFeed ? 0 : cbtLatestTimestamp;
 
@@ -610,6 +787,7 @@ function fetchLiveData(resetFeed) {
               '&filterscope=' + encodeURIComponent(scope) +
               '&search=' + encodeURIComponent(search) +
               '&date=' + encodeURIComponent(date) +
+              '&dateto=' + encodeURIComponent(dateto) +
               '&sesskey=<?php echo sesskey(); ?>';
 
     fetch(url)
@@ -617,12 +795,26 @@ function fetchLiveData(resetFeed) {
     .then(function(data) {
         if (!data.success) return;
 
-        // Update stats
+        // Update stats (Aggregated over selected range)
         if (data.active_count !== undefined) {
             document.getElementById('cbt-stat-active').innerText = data.active_count;
         }
         if (data.review_count !== undefined) {
             document.getElementById('cbt-stat-review').innerText = data.review_count;
+        }
+        if (data.clean_count !== undefined) {
+            document.getElementById('cbt-stat-completed').innerText = data.clean_count;
+        }
+        if (data.violations_count !== undefined) {
+            document.getElementById('cbt-stat-violations').innerText = data.violations_count;
+            var summaryViolations = document.getElementById('cbt-summary-violations');
+            if (summaryViolations) summaryViolations.innerText = data.violations_count;
+        }
+        if (data.range_label !== undefined) {
+            var activeBadge = document.getElementById('cbt-active-range-badge');
+            if (activeBadge) activeBadge.innerText = '📅 ' + data.range_label;
+            var summaryRange = document.getElementById('cbt-summary-range');
+            if (summaryRange) summaryRange.innerText = data.range_label;
         }
 
         // Update Live Infraction Feed
@@ -656,7 +848,8 @@ function fetchLiveData(resetFeed) {
             });
 
             document.getElementById('cbt-feed-count').innerText = listEl.querySelectorAll('.cbt-feed-item').length + ' event';
-            document.getElementById('cbt-stat-violations').innerText = listEl.querySelectorAll('.cbt-feed-item').length;
+            var summaryEvents = document.getElementById('cbt-summary-events');
+            if (summaryEvents) summaryEvents.innerText = listEl.querySelectorAll('.cbt-feed-item').length;
         }
 
         if (data.server_time) {
@@ -666,6 +859,8 @@ function fetchLiveData(resetFeed) {
         // Update Candidate Roster Table
         if (data.candidates) {
             renderCandidatesTable(data.candidates);
+            var summarySessions = document.getElementById('cbt-summary-sessions');
+            if (summarySessions) summarySessions.innerText = data.candidates.length;
         }
     })
     .catch(function(e){});

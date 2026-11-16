@@ -59,7 +59,16 @@ $action = optional_param('action', 'feed', PARAM_ALPHAEXT);
 if ($action === 'feed') {
     $since  = optional_param('since', 0, PARAM_INT);
     $date   = optional_param('date', date('Y-m-d'), PARAM_RAW);
+    $dateto = optional_param('dateto', '', PARAM_RAW);
     $search = optional_param('search', '', PARAM_RAW_TRIMMED);
+
+    $metrics = \local_lumina_cbt\cbt_engine::get_range_metrics(
+        $date,
+        $dateto,
+        $courseid ?: null,
+        $activityid ?: null,
+        $search
+    );
 
     $feed = \local_lumina_cbt\cbt_engine::get_live_audit_feed(
         $since,
@@ -67,7 +76,8 @@ if ($action === 'feed') {
         $search,
         50,
         $courseid ?: null,
-        $activityid ?: null
+        $activityid ?: null,
+        $dateto
     );
 
     $candidates = \local_lumina_cbt\cbt_engine::get_sessions_for_review(
@@ -75,38 +85,19 @@ if ($action === 'feed') {
         $search,
         $courseid ?: null,
         $activityid ?: null,
-        $filterscope
+        $filterscope,
+        $dateto
     );
-
-    $sessiontable = \local_lumina_cbt\cbt_engine::get_session_table();
-    $eventstable  = \local_lumina_cbt\cbt_engine::get_events_table();
-
-    $whereParams = [];
-    $whereParts = [];
-    if ($courseid > 0) {
-        $whereParts[] = "courseid = ?";
-        $whereParams[] = $courseid;
-    }
-    if ($activityid > 0) {
-        $whereParts[] = "activityid = ?";
-        $whereParams[] = $activityid;
-    }
-    $extraWhere = !empty($whereParts) ? ' AND ' . implode(' AND ', $whereParts) : '';
-
-    $activecount = 0;
-    foreach ($candidates as $cand) {
-        if ($cand['status'] === 'in_progress') {
-            $activecount++;
-        }
-    }
-    $reviewcount = $DB->count_records_select($sessiontable, "status = 'under_review'" . $extraWhere, $whereParams);
 
     echo json_encode([
         'success'          => true,
         'feed'             => $feed,
         'candidates'       => $candidates,
-        'active_count'     => $activecount,
-        'review_count'     => $reviewcount,
+        'active_count'     => $metrics['active_count'],
+        'review_count'     => $metrics['locked_count'],
+        'clean_count'      => $metrics['clean_count'],
+        'violations_count' => $metrics['total_violations'],
+        'range_label'      => $metrics['range_label'],
         'server_time'      => time(),
     ]);
     exit;

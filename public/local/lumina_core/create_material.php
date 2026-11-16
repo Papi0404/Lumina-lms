@@ -398,7 +398,18 @@ echo $OUTPUT->header();
                                         </td>
                                         <td class="py-3 px-3 text-end">
                                             <div class="d-inline-flex gap-1 align-items-center">
-                                                <?php if (in_array($m['modname'], ['h5pactivity', 'quiz'])): ?>
+                                                <?php
+                                                    $iscbt = false;
+                                                    if (in_array($m['modname'], ['h5pactivity', 'quiz'])) {
+                                                        if (file_exists($CFG->dirroot . '/local/lumina_cbt/lib.php')) {
+                                                            require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+                                                            if (function_exists('local_lumina_cbt_is_quiz_cbt_enabled')) {
+                                                                $iscbt = local_lumina_cbt_is_quiz_cbt_enabled((int)$m['id']);
+                                                            }
+                                                        }
+                                                    }
+                                                ?>
+                                                <?php if ($iscbt): ?>
                                                     <a href="<?php echo (new moodle_url('/local/lumina_cbt/exam_view.php', ['cmid' => $m['id']]))->out(false); ?>" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1" title="Buka Pratinjau Ujian CBT Layar Penuh" target="_blank" style="background: #4338CA; border-color: #4338CA;">
                                                         <span class="material-symbols-outlined align-middle" style="font-size: 16px;">fullscreen</span> Lihat Ujian (CBT)
                                                     </a>

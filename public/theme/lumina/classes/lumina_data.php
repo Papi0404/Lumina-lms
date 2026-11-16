@@ -416,14 +416,26 @@ class theme_lumina_data {
                     $duelabel = $daysleft . ' hari lagi';
                 }
 
-                if ($row->activitytype === 'quiz') {
-                    $modpath = '/mod/quiz/view.php';
-                    $typeicon = 'quiz';
-                    $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
-                } elseif ($row->activitytype === 'cbt') {
+                $iscbt = false;
+                if (file_exists($CFG->dirroot . '/local/lumina_cbt/lib.php')) {
+                    require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+                    if (function_exists('local_lumina_cbt_is_quiz_cbt_enabled')) {
+                        $iscbt = local_lumina_cbt_is_quiz_cbt_enabled((int)$row->cmid);
+                    }
+                }
+
+                if ($iscbt) {
                     $modpath = '/local/lumina_cbt/exam_view.php';
                     $typeicon = 'timer';
                     $cmurl = (new \core\url($modpath, ['cmid' => $row->cmid]))->out(false);
+                } elseif ($row->activitytype === 'quiz') {
+                    $modpath = '/mod/quiz/view.php';
+                    $typeicon = 'quiz';
+                    $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
+                } elseif ($row->activitytype === 'h5p' || $row->activitytype === 'cbt') {
+                    $modpath = '/mod/h5pactivity/view.php';
+                    $typeicon = 'extension';
+                    $cmurl = (new \core\url($modpath, ['id' => $row->cmid]))->out(false);
                 } else {
                     $modpath = '/mod/assign/view.php';
                     $typeicon = 'assignment';

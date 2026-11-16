@@ -80,6 +80,11 @@ class hook_callbacks {
                     $action = optional_param('action', '', PARAM_ALPHA);
 
                     if ($isstudent && empty($action) && !optional_param('noredirect', 0, PARAM_INT)) {
+                        require_once($CFG->dirroot . '/local/lumina_cbt/lib.php');
+                        if (!function_exists('local_lumina_cbt_is_quiz_cbt_enabled') || !local_lumina_cbt_is_quiz_cbt_enabled((int)$cm->id)) {
+                            return; // Do NOT redirect to CBT if CBT mode is disabled!
+                        }
+
                         $targetUrl = file_exists($CFG->dirroot . '/local/lumina_cbt/exam_view.php')
                             ? '/local/lumina_cbt/exam_view.php'
                             : '/local/lumina_core/exam_view.php';

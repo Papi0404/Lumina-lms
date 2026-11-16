@@ -874,16 +874,6 @@ if ($iscalendarpage && $USER && !empty($USER->id)) {
                         actionBtn.className = "lumina-btn-pending text-decoration-none";
                         actionBtn.innerHTML = "<span class=\'material-symbols-outlined\' style=\'font-size: 16px; vertical-align: -2px;\'>arrow_forward</span> Kerjakan Sekarang";
 
-                        // If it is a Quiz or H5P exam activity, route DIRECTLY to Lumina CBT Exam View
-                        var cmidMatch = actionBtn.href ? actionBtn.href.match(/id=(\d+)/) : null;
-                        var component = (eventEl.getAttribute("data-event-component") || "").toLowerCase();
-                        var isExam = (component === "mod_quiz" || component === "mod_h5pactivity" || actionBtn.href.indexOf("mod/quiz/") !== -1 || actionBtn.href.indexOf("mod/h5pactivity/") !== -1);
-
-                        if (isExam && cmidMatch) {
-                            var rootUrl = (window.M && window.M.cfg && window.M.cfg.wwwroot) ? window.M.cfg.wwwroot : "";
-                            actionBtn.href = rootUrl + "/local/lumina_cbt/exam_view.php?cmid=" + cmidMatch[1];
-                        }
-
                         actionBtn.onclick = function(e) {
                             e.stopPropagation();
                             if (this.href && this.href !== "#" && !this.href.startsWith("javascript:")) {

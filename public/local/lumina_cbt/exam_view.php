@@ -42,6 +42,13 @@ $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 
 require_login($course, false, $cm);
 
+require_once(__DIR__ . '/lib.php');
+if (!local_lumina_cbt_is_quiz_cbt_enabled((int)$cm->id)) {
+    // If CBT mode is not enabled for this activity, redirect to standard Moodle view
+    redirect(new moodle_url('/mod/' . $cm->modname . '/view.php', ['id' => $cm->id]));
+    exit;
+}
+
 $context = context_module::instance($cm->id);
 $session = cbt_engine::start_or_get_session((int)$course->id, (int)$cm->id, (int)$USER->id);
 

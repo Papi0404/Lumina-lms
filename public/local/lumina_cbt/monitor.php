@@ -546,7 +546,12 @@ echo $OUTPUT->header();
                                 <?php foreach ($reviewlist as $item): ?>
                                     <tr id="session-row-<?php echo $item['session_id']; ?>">
                                         <td>
-                                            <div class="fw-bold text-dark"><?php echo s($item['student_name']); ?></div>
+                                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                                <span class="fw-bold text-dark"><?php echo s($item['student_name']); ?></span>
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-0.5 cbt-cam-badge" id="cbt-cam-badge-<?php echo $item['session_id']; ?>" style="font-size: 0.68rem; display: none;">
+                                                    <span class="cbt-live-pulse" style="width: 5px; height: 5px; margin-right: 2px;"></span>LIVE CAM
+                                                </span>
+                                            </div>
                                             <div class="text-muted small"><?php echo s($item['student_email']); ?></div>
                                             <span class="badge bg-light text-secondary border mt-1" style="font-size: 0.7rem;">
                                                 <?php echo s($item['role_label']); ?>
@@ -591,27 +596,35 @@ echo $OUTPUT->header();
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end">
-                                            <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
-                                                    Log
+                                            <div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">
+                                                <button type="button" class="btn btn-primary btn-sm rounded-pill px-2.5 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1"
+                                                        title="Pantau Kamera Siswa secara Senyap (Stealth Videocall)"
+                                                        onclick="cbtOpenLiveCam(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>', '<?php echo addslashes(s($item['student_email'])); ?>', '<?php echo addslashes(s($item['activity_name'])); ?>', '<?php echo addslashes(s($item['course_name'])); ?>', <?php echo (int)$item['warning_count']; ?>, '<?php echo $item['status']; ?>')">
+                                                    <span>📹</span>
+                                                    <span>Pantau Kamera</span>
                                                 </button>
-                                                <?php if ($item['status'] === 'invalidated'): ?>
-                                                    <button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'restore')">
-                                                        🔄 Pulihkan
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
+                                                        Log
                                                     </button>
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
-                                                        🔓 Reset
-                                                    </button>
-                                                <?php else: ?>
-                                                    <?php if ($item['status'] === 'under_review' || $item['warning_count'] > 0): ?>
-                                                        <button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
-                                                            🔓 Unlock
+                                                    <?php if ($item['status'] === 'invalidated'): ?>
+                                                        <button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'restore')">
+                                                            🔄 Pulihkan
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                            🔓 Reset
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <?php if ($item['status'] === 'under_review' || $item['warning_count'] > 0): ?>
+                                                            <button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                                🔓 Unlock
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
+                                                            🚫 Batalkan Nilai
                                                         </button>
                                                     <?php endif; ?>
-                                                    <button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
-                                                        🚫 Batalkan Nilai
-                                                    </button>
-                                                <?php endif; ?>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -635,6 +648,152 @@ echo $OUTPUT->header();
             </div>
             <div class="modal-body p-4" id="cbtAuditModalBody">
                 <div class="text-center py-4 text-muted">Memuat data log audit...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stealth Live Camera Videocall Proctoring Modal -->
+<div class="modal fade" id="cbtLiveCamModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow-2xl rounded-4 overflow-hidden" style="background: #0B132B; color: #F8FAFC;">
+            <!-- Modal Top Bar -->
+            <div class="modal-header border-0 px-4 py-3" style="background: #0F172A; border-bottom: 1px solid rgba(255,255,255,0.08) !important;">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span style="font-size: 24px;">📹</span>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="modal-title fw-bold mb-0 text-white" id="cbtCamModalStudentName">Memuat Kamera Siswa...</h5>
+                            <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-30 rounded-pill px-2.5 py-0.5 small d-inline-flex align-items-center gap-1">
+                                <span class="cbt-live-pulse" style="width: 7px; height: 7px;"></span>
+                                <span>Mode Senyap (Stealth)</span>
+                            </span>
+                        </div>
+                        <div class="small text-muted" id="cbtCamModalSub">
+                            Siswa sedang dipantau tanpa notifikasi atau perubahan di layar ujian mereka.
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3" onclick="cbtCycleCandidate(-1)" title="Peserta Sebelumnya">
+                        &larr; Prev
+                    </button>
+                    <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3" onclick="cbtCycleCandidate(1)" title="Peserta Berikutnya">
+                        Next &rarr;
+                    </button>
+                    <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="modal" aria-label="Close" onclick="cbtCloseLiveCam()"></button>
+                </div>
+            </div>
+
+            <!-- Modal Body: High-tech CCTV Viewport & Side Control Deck -->
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <!-- Left Column: Video Screen with Security OSD -->
+                    <div class="col-lg-8 position-relative d-flex align-items-center justify-content-center p-3" style="background: #020617; min-height: 480px;">
+                        <!-- OSD: Top Left -->
+                        <div class="position-absolute top-0 start-0 m-3 d-flex align-items-center gap-2" style="z-index: 10;">
+                            <span class="badge bg-danger rounded-pill px-2.5 py-1 fw-bold tracking-wider d-inline-flex align-items-center gap-1 shadow-sm" id="cbtCamLiveBadge">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: cbtPulse 1s infinite;"></span>
+                                LIVE STREAM
+                            </span>
+                            <span class="badge bg-dark bg-opacity-75 text-light border border-secondary rounded-pill px-2.5 py-1 small font-monospace" id="cbtCamFps">
+                                30 FPS • 1.0s LATENCY
+                            </span>
+                        </div>
+
+                        <!-- OSD: Top Right Security Watermark -->
+                        <div class="position-absolute top-0 end-0 m-3 text-end d-none d-sm-block" style="z-index: 10;">
+                            <div class="small fw-bold text-white text-opacity-75 tracking-wider font-monospace" id="cbtCamOsdId">PROCTOR-CAM</div>
+                            <div class="text-muted" style="font-size: 0.72rem; letter-spacing: 0.05em;">LUMINA CBT AUDIT CCTV</div>
+                        </div>
+
+                        <!-- The Live Frame Video Element -->
+                        <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center" style="max-height: 520px;">
+                            <img id="cbtCamVideoFeed" src="" alt="Live Video Feed" class="img-fluid rounded-3 shadow-lg" style="max-height: 480px; width: auto; object-fit: contain; display: none; border: 1px solid rgba(255,255,255,0.1);">
+                            
+                            <!-- Standby / Offline Placeholder -->
+                            <div id="cbtCamPlaceholder" class="text-center p-5">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h6 class="fw-bold text-light mb-1" id="cbtCamPlaceholderTitle">Menghubungkan ke Kamera Peserta...</h6>
+                                <p class="small text-muted mb-0" id="cbtCamPlaceholderText">
+                                    Menunggu transmisi frame video real-time dari browser siswa...
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- OSD: Bottom Live Clock & Hash -->
+                        <div class="position-absolute bottom-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(to top, rgba(2,6,23,0.95), transparent); z-index: 10;">
+                            <div class="font-monospace small fw-bold" id="cbtCamLiveTime" style="color: #34D399;">
+                                2026-11-16 00:00:00 WIB
+                            </div>
+                            <div class="text-muted small d-none d-sm-block font-monospace" style="font-size: 0.72rem;">
+                                STEALTH END-TO-END STREAM
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Candidate Dossier & Action Deck -->
+                    <div class="col-lg-4 p-4 d-flex flex-column justify-content-between border-start" style="background: #0F172A; border-color: rgba(255,255,255,0.08) !important;">
+                        <div>
+                            <!-- Student Info Card -->
+                            <div class="p-3 rounded-3 mb-3" style="background: #1E293B; border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 44px; height: 44px; background: #4338CA; font-size: 1.1rem;" id="cbtCamStudentAvatar">
+                                        S
+                                    </div>
+                                    <div style="min-width: 0;">
+                                        <div class="fw-bold text-white text-truncate" id="cbtCamStudentFullName">Nama Siswa</div>
+                                        <div class="text-muted small text-truncate" id="cbtCamStudentEmail">email@domain.com</div>
+                                    </div>
+                                </div>
+                                <div class="small pt-2 border-top border-secondary border-opacity-25 text-light">
+                                    <div class="text-truncate"><strong>Ujian:</strong> <span id="cbtCamActivityName">-</span></div>
+                                    <div class="text-truncate"><strong>Kelas:</strong> <span id="cbtCamCourseName">-</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Integrity Status & Strike Gauge -->
+                            <div class="p-3 rounded-3 mb-3" style="background: #1E293B; border: 1px solid rgba(255,255,255,0.08);">
+                                <div class="small text-muted mb-1 fw-bold text-uppercase tracking-wider">Status Integritas Siswa</div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-bold text-white" id="cbtCamStrikeText">0 / 3 Peringatan</span>
+                                    <span class="badge bg-success" id="cbtCamStatusBadge">✓ Sesi Aman</span>
+                                </div>
+                                <div class="progress" style="height: 6px; background: #334155;">
+                                    <div class="progress-bar bg-success" id="cbtCamProgressBar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Stealth Notice Alert -->
+                            <div class="p-3 rounded-3 mb-3 text-start small" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #A7F3D0;">
+                                <div class="fw-bold mb-1 d-flex align-items-center gap-1">
+                                    <span>🛡️</span>
+                                    <span>Pengawasan Senyap Aktif</span>
+                                </div>
+                                <span>Siswa tidak menerima notifikasi pop-up atau perubahan tampilan apa pun saat Anda memantau video ini.</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Proctor Action Buttons -->
+                        <div class="pt-3 border-top border-secondary border-opacity-25 d-grid gap-2">
+                            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold rounded-pill shadow-xs" onclick="cbtCaptureEvidenceCurrent()">
+                                <span>📸</span>
+                                <span>Ambil Bukti Foto (Snapshot)</span>
+                            </button>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-success flex-fill rounded-pill py-1.5 small fw-semibold" onclick="cbtCamResolve('reset')" title="Reset Peringatan 0/3">
+                                    🔓 Reset / Unlock
+                                </button>
+                                <button type="button" class="btn btn-outline-danger flex-fill rounded-pill py-1.5 small fw-semibold" onclick="cbtCamResolve('invalidated')" title="Diskualifikasi & Batalkan Nilai">
+                                    🚫 Batalkan Nilai
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -872,6 +1031,7 @@ function escapeHtml(str) {
 }
 
 function renderCandidatesTable(list) {
+    currentCandidatesList = list;
     var tbody = document.getElementById('cbt-candidates-body');
     document.getElementById('cbt-candidate-count').innerText = list.length + ' sesi';
 
@@ -913,8 +1073,20 @@ function renderCandidatesTable(list) {
             scoreHtml = '<div class="text-muted small mt-1"><em>Belum dinilai</em></div>';
         }
 
-        var actions = '<div class="btn-group btn-group-sm">' +
-                      '<button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(' + item.session_id + ', \'' + escapeHtml(item.student_name).replace(/'/g, "\\'") + '\')">Log</button>';
+        var safeName = escapeHtml(item.student_name).replace(/'/g, "\\'");
+        var safeEmail = escapeHtml(item.student_email).replace(/'/g, "\\'");
+        var safeAct = escapeHtml(item.activity_name).replace(/'/g, "\\'");
+        var safeCourse = escapeHtml(item.course_name).replace(/'/g, "\\'");
+
+        var camBtn = '<button type="button" class="btn btn-primary btn-sm rounded-pill px-2.5 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1" ' +
+                     'title="Pantau Kamera Siswa secara Senyap (Stealth Videocall)" ' +
+                     'onclick="cbtOpenLiveCam(' + item.session_id + ', \'' + safeName + '\', \'' + safeEmail + '\', \'' + safeAct + '\', \'' + safeCourse + '\', ' + wcount + ', \'' + item.status + '\')">' +
+                     '<span>📹</span><span>Pantau Kamera</span></button>';
+
+        var actions = '<div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">' +
+                      camBtn +
+                      '<div class="btn-group btn-group-sm">' +
+                      '<button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(' + item.session_id + ', \'' + safeName + '\')">Log</button>';
 
         if (item.status === 'invalidated') {
             actions += '<button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(' + item.session_id + ', \'restore\')">🔄 Pulihkan</button>';
@@ -925,11 +1097,15 @@ function renderCandidatesTable(list) {
             }
             actions += '<button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(' + item.session_id + ', \'invalidated\')">🚫 Batalkan Nilai</button>';
         }
-        actions += '</div>';
+        actions += '</div></div>';
 
         html += '<tr id="session-row-' + item.session_id + '">' +
                 '<td>' +
-                '<div class="fw-bold text-dark">' + escapeHtml(item.student_name) + '</div>' +
+                '<div class="d-flex align-items-center gap-1.5 flex-wrap">' +
+                '<span class="fw-bold text-dark">' + escapeHtml(item.student_name) + '</span>' +
+                '<span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-0.5 cbt-cam-badge" id="cbt-cam-badge-' + item.session_id + '" style="font-size: 0.68rem; display: none;">' +
+                '<span class="cbt-live-pulse" style="width: 5px; height: 5px; margin-right: 2px;"></span>LIVE CAM</span>' +
+                '</div>' +
                 '<div class="text-muted small">' + escapeHtml(item.student_email) + '</div>' +
                 '<span class="badge bg-light text-secondary border mt-1" style="font-size: 0.7rem;">' + escapeHtml(item.role_label) + '</span>' +
                 '</td>' +
@@ -951,6 +1127,7 @@ function renderCandidatesTable(list) {
 // Polling live feed and active candidates every 2.5 seconds
 setInterval(function() {
     fetchLiveData(false);
+    cbtSyncActiveCameras();
 }, 2500);
 
 // Resolve candidate session
@@ -1018,6 +1195,206 @@ function cbtViewAudit(sessionId, name) {
         }
     });
 }
+
+// -------------------------------------------------------------
+// Live Stealth Camera Proctoring Module
+// -------------------------------------------------------------
+var cbtCurrentCamSession = null;
+var cbtCamPollInterval = null;
+var cbtCamModalInstance = null;
+var currentCandidatesList = <?php echo json_encode(array_values($reviewlist)); ?>;
+
+function cbtOpenLiveCam(sessionId, name, email, activity, course, warnings, status) {
+    cbtCurrentCamSession = {
+        id: sessionId,
+        name: name,
+        email: email,
+        activity: activity,
+        course: course,
+        warnings: warnings,
+        status: status
+    };
+
+    document.getElementById('cbtCamModalStudentName').innerText = name;
+    document.getElementById('cbtCamStudentFullName').innerText = name;
+    document.getElementById('cbtCamStudentEmail').innerText = email;
+    document.getElementById('cbtCamActivityName').innerText = activity;
+    document.getElementById('cbtCamCourseName').innerText = course;
+    document.getElementById('cbtCamStudentAvatar').innerText = (name ? name.charAt(0).toUpperCase() : 'S');
+    document.getElementById('cbtCamOsdId').innerText = 'PROCTOR-CAM-' + sessionId;
+
+    // Status gauge
+    var strikeText = warnings + ' / 3 Peringatan';
+    document.getElementById('cbtCamStrikeText').innerText = strikeText;
+    var pbar = document.getElementById('cbtCamProgressBar');
+    var sbadge = document.getElementById('cbtCamStatusBadge');
+
+    if (warnings === 0) {
+        pbar.className = 'progress-bar bg-success';
+        pbar.style.width = '5%';
+        sbadge.className = 'badge bg-success';
+        sbadge.innerText = '✓ Sesi Bersih';
+    } else if (warnings === 1) {
+        pbar.className = 'progress-bar bg-warning';
+        pbar.style.width = '33%';
+        sbadge.className = 'badge bg-warning text-dark';
+        sbadge.innerText = '⚠️ Peringatan 1';
+    } else if (warnings === 2) {
+        pbar.className = 'progress-bar bg-warning';
+        pbar.style.width = '66%';
+        sbadge.className = 'badge bg-warning text-dark';
+        sbadge.innerText = '🚨 Peringatan 2';
+    } else {
+        pbar.className = 'progress-bar bg-danger';
+        pbar.style.width = '100%';
+        sbadge.className = 'badge bg-danger';
+        sbadge.innerText = '🔒 Ditangguhkan';
+    }
+
+    // Reset video screen
+    var vImg = document.getElementById('cbtCamVideoFeed');
+    var placeholder = document.getElementById('cbtCamPlaceholder');
+    vImg.style.display = 'none';
+    placeholder.style.display = 'block';
+    document.getElementById('cbtCamPlaceholderTitle').innerText = 'Menghubungkan ke Kamera Peserta...';
+    document.getElementById('cbtCamPlaceholderText').innerText = 'Menunggu transmisi frame video real-time dari browser siswa...';
+
+    if (!cbtCamModalInstance) {
+        cbtCamModalInstance = new bootstrap.Modal(document.getElementById('cbtLiveCamModal'));
+    }
+    cbtCamModalInstance.show();
+
+    // Start polling frames
+    if (cbtCamPollInterval) clearInterval(cbtCamPollInterval);
+    cbtFetchLiveCamFrame();
+    cbtCamPollInterval = setInterval(cbtFetchLiveCamFrame, 800);
+}
+
+function cbtFetchLiveCamFrame() {
+    if (!cbtCurrentCamSession) return;
+    var sid = cbtCurrentCamSession.id;
+
+    fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_camera.php?action=get_frame&session_id=' + sid + '&sesskey=<?php echo sesskey(); ?>')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        var vImg = document.getElementById('cbtCamVideoFeed');
+        var placeholder = document.getElementById('cbtCamPlaceholder');
+        var fpsEl = document.getElementById('cbtCamFps');
+        var liveTimeEl = document.getElementById('cbtCamLiveTime');
+        var liveBadge = document.getElementById('cbtCamLiveBadge');
+
+        if (data.success && data.has_frame && data.frame) {
+            vImg.src = data.frame;
+            vImg.style.display = 'block';
+            placeholder.style.display = 'none';
+
+            if (data.is_live) {
+                liveBadge.className = 'badge bg-danger rounded-pill px-2.5 py-1 fw-bold tracking-wider d-inline-flex align-items-center gap-1 shadow-sm';
+                liveBadge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: cbtPulse 1s infinite;"></span> LIVE STREAM';
+                fpsEl.innerText = '30 FPS • ' + (data.age_seconds || 1) + 's LATENCY';
+            } else {
+                liveBadge.className = 'badge bg-secondary rounded-pill px-2.5 py-1 fw-bold tracking-wider';
+                liveBadge.innerText = 'STANDBY (' + data.age_seconds + 's LALU)';
+                fpsEl.innerText = 'FRAME TERSIMPAN';
+            }
+
+            var now = new Date();
+            liveTimeEl.innerText = now.getFullYear() + '-' +
+                                  String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                                  String(now.getDate()).padStart(2, '0') + ' ' +
+                                  now.toTimeString().split(' ')[0] + '.' +
+                                  String(now.getMilliseconds()).padStart(3, '0') + ' WIB';
+        } else {
+            vImg.style.display = 'none';
+            placeholder.style.display = 'block';
+            document.getElementById('cbtCamPlaceholderTitle').innerText = 'Kamera Belum Aktif';
+            document.getElementById('cbtCamPlaceholderText').innerText = data.message || 'Siswa belum mengizinkan akses kamera atau sesi belum dimulai.';
+        }
+    })
+    .catch(function(){});
+}
+
+function cbtCloseLiveCam() {
+    if (cbtCamPollInterval) {
+        clearInterval(cbtCamPollInterval);
+        cbtCamPollInterval = null;
+    }
+    cbtCurrentCamSession = null;
+    var vImg = document.getElementById('cbtCamVideoFeed');
+    if (vImg) vImg.src = '';
+}
+
+function cbtCycleCandidate(delta) {
+    if (!currentCandidatesList || currentCandidatesList.length <= 1) return;
+    var currentIdx = -1;
+    for (var i = 0; i < currentCandidatesList.length; i++) {
+        if (cbtCurrentCamSession && currentCandidatesList[i].session_id === cbtCurrentCamSession.id) {
+            currentIdx = i;
+            break;
+        }
+    }
+    var nextIdx = currentIdx + delta;
+    if (nextIdx < 0) nextIdx = currentCandidatesList.length - 1;
+    if (nextIdx >= currentCandidatesList.length) nextIdx = 0;
+
+    var nextItem = currentCandidatesList[nextIdx];
+    cbtOpenLiveCam(
+        nextItem.session_id,
+        nextItem.student_name,
+        nextItem.student_email,
+        nextItem.activity_name,
+        nextItem.course_name,
+        parseInt(nextItem.warning_count, 10),
+        nextItem.status
+    );
+}
+
+function cbtCaptureEvidenceCurrent() {
+    if (!cbtCurrentCamSession) return;
+    var sid = cbtCurrentCamSession.id;
+
+    var form = new FormData();
+    form.append('action', 'save_evidence');
+    form.append('session_id', sid);
+    form.append('sesskey', '<?php echo sesskey(); ?>');
+
+    fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_camera.php', {
+        method: 'POST',
+        body: form
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            alert('📸 SUKSES: ' + (data.message || 'Foto bukti pengawas berhasil diabadikan ke dalam audit log.'));
+            fetchLiveData(true);
+        } else {
+            alert(data.error || 'Gagal menyimpan foto bukti.');
+        }
+    });
+}
+
+function cbtCamResolve(decision) {
+    if (!cbtCurrentCamSession) return;
+    var sid = cbtCurrentCamSession.id;
+    cbtResolve(sid, decision);
+}
+
+function cbtSyncActiveCameras() {
+    fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_camera.php?action=get_active_cameras&sesskey=<?php echo sesskey(); ?>')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (!data.success || !data.active) return;
+        document.querySelectorAll('.cbt-cam-badge').forEach(function(el){ el.style.display = 'none'; });
+        for (var sid in data.active) {
+            var el = document.getElementById('cbt-cam-badge-' + sid);
+            if (el) el.style.display = 'inline-flex';
+        }
+    })
+    .catch(function(){});
+}
+
+// Initial active camera sync
+setTimeout(cbtSyncActiveCameras, 800);
 </script>
 
 <?php

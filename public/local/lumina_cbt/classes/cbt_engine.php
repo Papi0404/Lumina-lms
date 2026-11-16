@@ -192,6 +192,9 @@ class cbt_engine {
             'exam_reset'                       => get_string('event_exam_reset', 'local_lumina_cbt'),
             'exam_approved'                    => get_string('event_exam_approved', 'local_lumina_cbt'),
             'simulation_reset'                 => 'Simulasi Pengajar Di-reset',
+            'camera_blocked'                   => 'Kamera Ditutup / Tidak Aktif',
+            'camera_permission_denied'         => 'Izin Kamera Ditolak Peserta',
+            'camera_snapshot'                  => 'Foto Bukti Pengawas Diambil',
         ];
         return $labels[$eventtype] ?? ('Pelanggaran (' . clean_text($eventtype) . ')');
     }
@@ -209,6 +212,9 @@ class cbt_engine {
             'three_finger_gesture_or_minimize' => 'badge bg-danger text-white',
             'fullscreen_exit'                  => 'badge bg-danger text-white',
             'devtools'                         => 'badge bg-danger text-white',
+            'camera_blocked'                   => 'badge bg-danger text-white',
+            'camera_permission_denied'         => 'badge bg-danger text-white',
+            'camera_snapshot'                  => 'badge bg-info text-white',
             'exam_invalidated'                 => 'badge bg-dark text-white',
             'clipboard_copy'                   => 'badge bg-danger text-white',
             'trackpad_gesture'                 => 'badge bg-warning text-dark',
@@ -243,6 +249,9 @@ class cbt_engine {
             'mouseleave'                       => 'mouse',
             'clipboard_copy'                   => 'content_copy',
             'devtools'                         => 'terminal',
+            'camera_blocked'                   => 'videocam_off',
+            'camera_permission_denied'         => 'no_photography',
+            'camera_snapshot'                  => 'photo_camera',
             'exam_invalidated'                 => 'gavel',
             'exam_reset'                       => 'restart_alt',
             'exam_approved'                    => 'verified',
@@ -304,8 +313,9 @@ class cbt_engine {
         $sessiontable = self::get_session_table();
         $eventstable  = self::get_events_table();
 
-        $params = ['exam_submitted'];
-        $where = ["ev.eventtype != ?"];
+        $params = [];
+        // Only show actual cheating attempts/infractions in live audit feed, exclude administrative life-cycle actions
+        $where = ["ev.eventtype NOT IN ('exam_submitted', 'exam_approved', 'exam_reset', 'simulation_reset', 'exam_invalidated')"];
 
         if ($courseid > 0) {
             $where[] = "s.courseid = ?";
@@ -486,13 +496,14 @@ class cbt_engine {
         $sessionWhereSql = !empty($sessionWhere) ? 'WHERE ' . implode(' AND ', $sessionWhere) : '';
         $eventWhereSql   = !empty($eventWhere) ? 'WHERE ' . implode(' AND ', $eventWhere) : '';
 
-        // Total infractions in range
-        $eventSql = "SELECT COUNT(ev.id)
-                       FROM {{$eventstable}} ev
-                       JOIN {{$sessiontable}} s ON s.id = ev.sessionid
-                       JOIN {user} u ON u.id = ev.userid
-                       $eventWhereSql";
-        $totalViolations = (int)$DB->count_records_sql($eventSql, $eventParams);
+        // Total infractions in range:
+        // ONLY count real infractions from candidates who currently have active warnings (s.warningcount > 0).
+        // If a candidate has 0/3 warnings (clean session or cleared/unlocked by proctor), it is NOT counted in total violations.
+        $violationsSql = "SELECT COALESCE(SUM(s.warningcount), 0)
+                            FROM {{$sessiontable}} s
+                            JOIN {user} u ON u.id = s.userid
+                            $sessionWhereSql";
+        $totalViolations = (int)$DB->get_field_sql($violationsSql, $sessionParams);
 
         // Locked sessions in range
         $lockedSql = "SELECT COUNT(s.id)

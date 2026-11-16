@@ -727,7 +727,8 @@ window.addEventListener('DOMContentLoaded', function() {
             maxWarnings: <?php echo (int)(get_config('local_lumina_cbt', 'max_warnings') ?: 3); ?>,
             strictFullscreen: true,
             blockKeyboard: true,
-            suppressAi: true
+            suppressAi: true,
+            enableCamera: true
         });
     });
 });

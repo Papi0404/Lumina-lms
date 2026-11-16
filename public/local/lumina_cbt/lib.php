@@ -370,6 +370,7 @@ function local_lumina_cbt_init_proctor_if_needed() {
         'strictFullscreen' => (bool)(get_config('local_lumina_cbt', 'enable_fullscreen') ?? true),
         'blockKeyboard'    => (bool)(get_config('local_lumina_cbt', 'block_keyboard') ?? false),
         'suppressAi'       => (bool)(get_config('local_lumina_cbt', 'suppress_ai') ?? true),
+        'enableCamera'     => true,
     ]]);
 }
 

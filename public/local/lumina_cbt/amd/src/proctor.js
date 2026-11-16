@@ -16,10 +16,13 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             courseUrl: '',
             sesskey: '',
             ajaxUrl: M.cfg.wwwroot + '/local/lumina_cbt/ajax_events.php',
+            cameraAjaxUrl: M.cfg.wwwroot + '/local/lumina_cbt/ajax_camera.php',
             maxWarnings: 3,
             strictFullscreen: true,
             blockKeyboard: true,
-            suppressAi: true
+            suppressAi: true,
+            enableCamera: true,
+            cameraInterval: 1200
         },
 
         state: {
@@ -29,7 +32,12 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             isFullscreen: false,
             audioCtx: null,
             lastBlurTime: 0,
-            heartbeatTimer: null
+            heartbeatTimer: null,
+            cameraStream: null,
+            cameraTimer: null,
+            cameraCanvas: null,
+            cameraVideo: null,
+            isCameraActive: false
         },
 
         init: function(opts) {
@@ -42,6 +50,10 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             this.bindSecurityEvents();
             this.createStrikeHud();
             this.startHeartbeat();
+
+            if (this.config.enableCamera !== false) {
+                this.initCamera();
+            }
 
             if (this.config.strictFullscreen) {
                 this.promptFullscreen();
@@ -451,6 +463,106 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             } else {
                 overlay.style.display = 'flex';
             }
+        },
+
+        initCamera: function() {
+            var self = this;
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.warn('[Lumina CBT] MediaDevices API not supported on this device/browser.');
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 480 },
+                    height: { ideal: 360 },
+                    facingMode: 'user'
+                },
+                audio: false
+            })
+            .then(function(stream) {
+                self.state.cameraStream = stream;
+                self.state.isCameraActive = true;
+                self.createCameraHud(stream);
+                self.startCameraStreamer();
+                console.log('[Lumina CBT] Live camera proctoring initialized.');
+            })
+            .catch(function(err) {
+                console.warn('[Lumina CBT] Camera permission denied or device not found:', err);
+                self.recordViolation('camera_blocked', 'Akses kamera tidak diizinkan atau kamera tidak terdeteksi: ' + (err.name || 'Error'));
+                self.showCameraAlert();
+            });
+        },
+
+        createCameraHud: function(stream) {
+            var box = document.getElementById('lumina-cbt-cam-box');
+            if (box) return;
+
+            box = document.createElement('div');
+            box.id = 'lumina-cbt-cam-box';
+            box.style.cssText = 'position:fixed;bottom:16px;right:16px;width:150px;height:112px;border-radius:12px;overflow:hidden;z-index:999997;border:2px solid #4338CA;box-shadow:0 8px 24px rgba(0,0,0,0.35);background:#0F172A;transition:all 0.2s ease;';
+
+            var video = document.createElement('video');
+            video.id = 'lumina-cbt-cam-video';
+            video.autoplay = true;
+            video.playsInline = true;
+            video.muted = true;
+            video.style.cssText = 'width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;';
+            video.srcObject = stream;
+
+            var badge = document.createElement('div');
+            badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(15,23,42,0.85);color:#10B981;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;display:flex;align-items:center;gap:5px;font-family:system-ui,sans-serif;letter-spacing:0.04em;pointer-events:none;';
+            badge.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#10B981;display:inline-block;"></span><span>Kamera Aktif</span>';
+
+            box.appendChild(video);
+            box.appendChild(badge);
+            document.body.appendChild(box);
+
+            this.state.cameraVideo = video;
+        },
+
+        startCameraStreamer: function() {
+            var self = this;
+            if (self.state.cameraTimer) clearInterval(self.state.cameraTimer);
+
+            var canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            var ctx = canvas.getContext('2d');
+            self.state.cameraCanvas = canvas;
+
+            self.state.cameraTimer = setInterval(function() {
+                if (!self.state.isCameraActive || self.state.isDisqualified) return;
+                var video = self.state.cameraVideo;
+                if (!video || video.readyState < 2) return;
+
+                try {
+                    ctx.drawImage(video, 0, 0, 320, 240);
+                    var frameData = canvas.toDataURL('image/jpeg', 0.55);
+
+                    var form = new FormData();
+                    form.append('action', 'push_frame');
+                    form.append('session_id', self.config.sessionId);
+                    form.append('cmid', self.config.cmid);
+                    form.append('frame', frameData);
+                    form.append('sesskey', self.config.sesskey || M.cfg.sesskey);
+
+                    fetch(self.config.cameraAjaxUrl, {
+                        method: 'POST',
+                        body: form
+                    }).catch(function(){});
+                } catch(e) {}
+            }, self.config.cameraInterval || 1200);
+        },
+
+        showCameraAlert: function() {
+            var toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FEF2F2;border:2px solid #EF4444;color:#991B1B;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.9rem;z-index:9999999;box-shadow:0 10px 25px rgba(0,0,0,0.25);font-family:system-ui,sans-serif;';
+            toast.innerHTML = '⚠️ <strong>Kamera Wajib Aktif:</strong> Ujian CBT ini mewajibkan kamera web menyala untuk pengawasan pengawas.';
+            document.body.appendChild(toast);
+            setTimeout(function() {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 8000);
         }
     };
 

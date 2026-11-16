@@ -137,3 +137,4 @@ $string['error_class_exists'] = 'A class with this code already exists.';
 $string['error_student_already_active'] = 'Student already has an active class membership for this academic year.';
 $string['error_invalid_batch'] = 'Invalid or non-existent promotion batch.';
 $string['error_no_permission'] = 'You do not have permission to perform this academic management action.';
+

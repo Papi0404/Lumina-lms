@@ -249,3 +249,4 @@ class course_engine {
         return $DB->get_records_sql($sql, $params, 0, 100);
     }
 }
+

@@ -189,3 +189,4 @@ echo $OUTPUT->header();
 
 <?php
 echo $OUTPUT->footer();
+

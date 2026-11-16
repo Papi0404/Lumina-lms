@@ -9,13 +9,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', context_system::instance())) {
-    // Top-Level Root Admin Category (independent, not under plugins or data sync)
+    // 1. Top-Level Root Admin Category
     $ADMIN->add('root', new admin_category(
         'lumina_academic_root',
         get_string('academic_management', 'local_lumina_academic')
     ));
 
-    // 1. Academic Overview
+    // 1.1 Academic Overview
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_overview',
         get_string('menu_overview', 'local_lumina_academic'),
@@ -23,7 +23,7 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'moodle/site:config'
     ));
 
-    // 2. Academic Years
+    // 1.2 Academic Years
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_years',
         get_string('menu_years', 'local_lumina_academic'),
@@ -31,7 +31,7 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'local/lumina_academic:manageyears'
     ));
 
-    // 3. Class Management (Rombel)
+    // 1.3 Class Management (Rombel)
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_classes',
         get_string('menu_classes', 'local_lumina_academic'),
@@ -39,7 +39,7 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'local/lumina_academic:manageclasses'
     ));
 
-    // 4. Flexible Groups
+    // 1.4 Flexible Groups
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_groups',
         get_string('menu_groups', 'local_lumina_academic'),
@@ -47,7 +47,7 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'local/lumina_academic:manageflexiblegroups'
     ));
 
-    // 5. Course Assignment
+    // 1.5 Course Assignment
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_assignments',
         get_string('menu_assignments', 'local_lumina_academic'),
@@ -55,7 +55,7 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'local/lumina_academic:assigncourses'
     ));
 
-    // 6. Student Promotion
+    // 1.6 Student Promotion
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_promotion',
         get_string('menu_promotion', 'local_lumina_academic'),
@@ -63,7 +63,7 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'local/lumina_academic:promotestudents'
     ));
 
-    // 7. Graduation Management
+    // 1.7 Graduation Management
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_graduation',
         get_string('menu_graduation', 'local_lumina_academic'),
@@ -71,11 +71,20 @@ if ($hassiteconfig || has_capability('local/lumina_academic:manageclasses', cont
         'local/lumina_academic:graduatestudents'
     ));
 
-    // 8. Alumni & Academic Records (Vault)
+    // 1.8 Alumni & Academic Records (Vault)
     $ADMIN->add('lumina_academic_root', new admin_externalpage(
         'local_lumina_academic_alumni',
         get_string('menu_alumni', 'local_lumina_academic'),
         new moodle_url('/local/lumina_academic/alumni.php'),
         'local/lumina_academic:managealumni'
     ));
+
+    // Also register under localplugins so standard search and plugin trees discover it easily
+    if ($hassiteconfig) {
+        $ADMIN->add('localplugins', new admin_externalpage(
+            'local_lumina_academic_plugin_hub',
+            get_string('academic_management', 'local_lumina_academic'),
+            new moodle_url('/local/lumina_academic/overview.php')
+        ));
+    }
 }

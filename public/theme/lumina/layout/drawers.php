@@ -1237,6 +1237,11 @@ $templatecontext = [
     'has_completed_activities'    => $luminadata['has_completed_activities'] ?? false,
     'lumina_nav' => [
         'is_dashboard' => (strpos($currentpagepath, '/my') !== false && strpos($currentpagepath, '/my/courses') === false),
+        'is_academic_overview' => (strpos($currentpagepath, '/local/lumina_academic/overview.php') !== false),
+        'is_academic_classes' => (strpos($currentpagepath, '/local/lumina_academic/classes.php') !== false),
+        'is_academic_assignments' => (strpos($currentpagepath, '/local/lumina_academic/assignments.php') !== false),
+        'is_academic_promotion' => (strpos($currentpagepath, '/local/lumina_academic/promotion.php') !== false),
+        'is_academic_alumni' => (strpos($currentpagepath, '/local/lumina_academic/alumni.php') !== false || strpos($currentpagepath, '/local/lumina_academic/transcript.php') !== false),
         'is_mycourses' => (strpos($currentpagepath, '/my/courses') !== false || strpos($currentpagepath, '/course/view.php') !== false),
         'is_manage_material' => (strpos($currentpagepath, '/local/lumina_core/create_material.php') !== false),
         'is_calendar' => (strpos($currentpagepath, '/calendar') !== false),

@@ -668,3 +668,4 @@ class manager {
         return $newprofile;
     }
 }
+

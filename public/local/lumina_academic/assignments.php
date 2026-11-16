@@ -314,3 +314,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <?php
 echo $OUTPUT->footer();
+

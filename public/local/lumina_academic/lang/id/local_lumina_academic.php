@@ -137,3 +137,4 @@ $string['error_class_exists'] = 'Kelas dengan kode ini sudah terdaftar.';
 $string['error_student_already_active'] = 'Siswa sudah memiliki keanggotaan kelas aktif pada tahun ajaran ini.';
 $string['error_invalid_batch'] = 'Batch promosi tidak valid atau tidak ditemukan.';
 $string['error_no_permission'] = 'Anda tidak memiliki wewenang untuk tindakan akademik ini.';
+

@@ -118,3 +118,4 @@ $verification = !empty($uuid) ? alumni_vault::verify_transcript_integrity($uuid)
 
 <?php
 echo $OUTPUT->footer();
+

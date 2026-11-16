@@ -92,3 +92,4 @@ class audit_logger {
         return $DB->get_records_sql($sql, $params, 0, $limit);
     }
 }
+

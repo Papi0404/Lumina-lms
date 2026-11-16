@@ -95,6 +95,52 @@
                 </li>
             </ul>
         </div>
+
+        <div class="sidebar-nav-section">
+            <div class="nav-section-title">MANAJEMEN AKADEMIK & SISWA</div>
+            <ul class="nav-list">
+                <li>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_academic/overview.php" class="nav-link-item {{#lumina_nav.is_academic_overview}}active{{/lumina_nav.is_academic_overview}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">school</span>
+                            <span>Pusat Akademik</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_academic/classes.php" class="nav-link-item {{#lumina_nav.is_academic_classes}}active{{/lumina_nav.is_academic_classes}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">groups</span>
+                            <span>Kelas & Rombel</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_academic/assignments.php" class="nav-link-item {{#lumina_nav.is_academic_assignments}}active{{/lumina_nav.is_academic_assignments}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">menu_book</span>
+                            <span>Penugasan Mapel</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_academic/promotion.php" class="nav-link-item {{#lumina_nav.is_academic_promotion}}active{{/lumina_nav.is_academic_promotion}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">upgrade</span>
+                            <span>Kenaikan Kelas</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{{ config.wwwroot }}}/local/lumina_academic/alumni.php" class="nav-link-item {{#lumina_nav.is_academic_alumni}}active{{/lumina_nav.is_academic_alumni}}">
+                        <div class="nav-item-content">
+                            <span class="material-symbols-outlined nav-icon">history_edu</span>
+                            <span>Buku Induk & Alumni</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
         {{/lumina_role.is_admin}}
 
         <!-- 2. GURU / INSTRUKTUR SIDEBAR -->

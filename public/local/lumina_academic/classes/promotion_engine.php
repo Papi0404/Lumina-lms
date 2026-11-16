@@ -344,3 +344,4 @@ class promotion_engine {
         $DB->insert_record('lumina_promotion_logs', $log);
     }
 }
+

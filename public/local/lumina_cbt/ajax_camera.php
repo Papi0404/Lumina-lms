@@ -271,5 +271,54 @@ if ($action === 'save_evidence') {
     exit;
 }
 
+// -------------------------------------------------------------
+// 5. VIEW / DOWNLOAD EVIDENCE PHOTO
+// -------------------------------------------------------------
+if ($action === 'view_evidence') {
+    $ts = optional_param('ts', 0, PARAM_INT);
+    if ($sessionid <= 0 || $ts <= 0) {
+        header('HTTP/1.0 400 Bad Request');
+        echo 'Parameter foto bukti tidak valid.';
+        exit;
+    }
+
+    $evidencedir = $CFG->dataroot . '/cbt_evidence';
+    $file = $evidencedir . '/evidence_' . $sessionid . '_' . $ts . '.jpg';
+
+    // If exact timestamp not found, find closest within +/- 5 seconds
+    if (!file_exists($file)) {
+        $candidates = @glob($evidencedir . '/evidence_' . $sessionid . '_*.jpg');
+        if ($candidates) {
+            foreach ($candidates as $c) {
+                if (preg_match('/evidence_\d+_(\d+)\.jpg$/', $c, $m)) {
+                    $candTs = (int)$m[1];
+                    if (abs($candTs - $ts) <= 5) {
+                        $file = $c;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!file_exists($file)) {
+        header('HTTP/1.0 404 Not Found');
+        echo 'Foto bukti tidak ditemukan atau sudah dibersihkan.';
+        exit;
+    }
+
+    $download = optional_param('download', 0, PARAM_INT);
+    header('Content-Type: image/jpeg');
+    header('Content-Length: ' . filesize($file));
+    header('Cache-Control: public, max-age=86400');
+    if ($download) {
+        header('Content-Disposition: attachment; filename="bukti_cbt_sesi_' . $sessionid . '_' . $ts . '.jpg"');
+    } else {
+        header('Content-Disposition: inline; filename="bukti_cbt_sesi_' . $sessionid . '_' . $ts . '.jpg"');
+    }
+    readfile($file);
+    exit;
+}
+
 echo json_encode(['success' => false, 'error' => 'Unknown action']);
 

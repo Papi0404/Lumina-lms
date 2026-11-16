@@ -127,6 +127,19 @@ class cbt_engine {
         $ev->metadata = clean_text($metadata);
         $DB->insert_record($eventstable, $ev);
 
+        // Auto-preserve evidence photo snapshot if student webcam frame exists
+        global $CFG;
+        $camdir = $CFG->dataroot . '/cbt_cam';
+        $jpgfile = $camdir . '/session_' . $sessionid . '.jpg';
+        if (file_exists($jpgfile) && ($now - filemtime($jpgfile)) <= 15) {
+            $evidencedir = $CFG->dataroot . '/cbt_evidence';
+            if (!is_dir($evidencedir)) {
+                @mkdir($evidencedir, 0777, true);
+            }
+            $destfile = $evidencedir . '/evidence_' . $sessionid . '_' . $now . '.jpg';
+            @copy($jpgfile, $destfile);
+        }
+
         // If already suspended/under_review or invalidated, keep locked
         if ($session->status === 'under_review' || $session->status === 'invalidated') {
             return [
@@ -274,7 +287,7 @@ class cbt_engine {
      * @return array
      */
     public static function get_session_events(int $sessionid): array {
-        global $DB;
+        global $DB, $CFG;
 
         $eventstable = self::get_events_table();
 
@@ -288,20 +301,122 @@ class cbt_engine {
             100
         );
 
+        $evidencedir = $CFG->dataroot . '/cbt_evidence';
+        $photofiles = is_dir($evidencedir) ? @glob($evidencedir . '/evidence_' . $sessionid . '_*.jpg') : [];
+        $phototimestamps = [];
+        if ($photofiles) {
+            foreach ($photofiles as $pf) {
+                if (preg_match('/evidence_\d+_(\d+)\.jpg$/', $pf, $m)) {
+                    $phototimestamps[(int)$m[1]] = basename($pf);
+                }
+            }
+        }
+
         $list = [];
         foreach ($events as $ev) {
+            $hasphoto = false;
+            $photourl = '';
+            $photodownload = '';
+            $photots = 0;
+
+            if (isset($phototimestamps[$ev->eventtime])) {
+                $hasphoto = true;
+                $photots = $ev->eventtime;
+            } else {
+                foreach ($phototimestamps as $pts => $pfn) {
+                    if (abs($pts - $ev->eventtime) <= 3) {
+                        $hasphoto = true;
+                        $photots = $pts;
+                        break;
+                    }
+                }
+            }
+
+            if ($hasphoto) {
+                $photourl = (new \moodle_url('/local/lumina_cbt/ajax_camera.php', [
+                    'action'     => 'view_evidence',
+                    'session_id' => $sessionid,
+                    'ts'         => $photots,
+                    'sesskey'    => sesskey(),
+                ]))->out(false);
+                $photodownload = (new \moodle_url('/local/lumina_cbt/ajax_camera.php', [
+                    'action'     => 'view_evidence',
+                    'session_id' => $sessionid,
+                    'ts'         => $photots,
+                    'download'   => 1,
+                    'sesskey'    => sesskey(),
+                ]))->out(false);
+            }
+
             $list[] = [
-                'id'          => (int)$ev->id,
-                'eventtype'   => $ev->eventtype,
-                'label'       => self::get_event_label($ev->eventtype),
-                'badge_class' => self::get_event_badge_class($ev->eventtype),
-                'icon'        => self::get_event_icon($ev->eventtype),
-                'time'        => userdate($ev->eventtime, '%H:%M:%S'),
-                'date'        => userdate($ev->eventtime, '%d %b %Y, %H:%M:%S'),
-                'metadata'    => format_string($ev->metadata ?: '-'),
+                'id'                 => (int)$ev->id,
+                'eventtype'          => $ev->eventtype,
+                'label'              => self::get_event_label($ev->eventtype),
+                'badge_class'        => self::get_event_badge_class($ev->eventtype),
+                'icon'               => self::get_event_icon($ev->eventtype),
+                'time'               => userdate($ev->eventtime, '%H:%M:%S'),
+                'date'               => userdate($ev->eventtime, '%d %b %Y, %H:%M:%S'),
+                'metadata'           => format_string($ev->metadata ?: '-'),
+                'has_photo'          => $hasphoto,
+                'photo_url'          => $photourl,
+                'photo_download_url' => $photodownload,
+                'photo_ts'           => $photots,
             ];
         }
         return $list;
+    }
+
+    /**
+     * Get all captured photo evidence snapshots for a session.
+     *
+     * @param int $sessionid
+     * @return array
+     */
+    public static function get_session_evidence_photos(int $sessionid): array {
+        global $CFG;
+
+        $evidencedir = $CFG->dataroot . '/cbt_evidence';
+        if (!is_dir($evidencedir)) {
+            return [];
+        }
+
+        $files = @glob($evidencedir . '/evidence_' . $sessionid . '_*.jpg');
+        if (!$files) {
+            return [];
+        }
+
+        // Sort latest first
+        rsort($files);
+
+        $photos = [];
+        foreach ($files as $file) {
+            if (preg_match('/evidence_' . $sessionid . '_(\d+)\.jpg$/', $file, $m)) {
+                $ts = (int)$m[1];
+                $size = filesize($file);
+                $photos[] = [
+                    'timestamp'      => $ts,
+                    'filename'       => basename($file),
+                    'filesize_kb'    => round($size / 1024, 1),
+                    'time_formatted' => userdate($ts, '%d %b %Y, %H:%M:%S WIB'),
+                    'time_short'     => userdate($ts, '%H:%M:%S'),
+                    'url'            => (new \moodle_url('/local/lumina_cbt/ajax_camera.php', [
+                        'action'     => 'view_evidence',
+                        'session_id' => $sessionid,
+                        'ts'         => $ts,
+                        'sesskey'    => sesskey(),
+                    ]))->out(false),
+                    'download_url'   => (new \moodle_url('/local/lumina_cbt/ajax_camera.php', [
+                        'action'     => 'view_evidence',
+                        'session_id' => $sessionid,
+                        'ts'         => $ts,
+                        'download'   => 1,
+                        'sesskey'    => sesskey(),
+                    ]))->out(false),
+                ];
+            }
+        }
+
+        return $photos;
     }
 
     /**

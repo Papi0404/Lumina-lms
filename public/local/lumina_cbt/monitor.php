@@ -604,8 +604,8 @@ echo $OUTPUT->header();
                                                     <span>Pantau Kamera</span>
                                                 </button>
                                                 <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
-                                                        Log
+                                                    <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
+                                                        <span>📋</span><span>Log &amp; Foto</span>
                                                     </button>
                                                     <?php if ($item['status'] === 'invalidated'): ?>
                                                         <button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'restore')">
@@ -638,16 +638,86 @@ echo $OUTPUT->header();
     </div>
 </div>
 
-<!-- Audit Trail Modal -->
+<!-- Audit Trail & Photo Evidence Modal -->
 <div class="modal fade" id="cbtAuditModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-dark text-white rounded-top-4">
-                <h5 class="modal-title fw-bold" id="cbtAuditModalTitle">Riwayat Audit Peserta</h5>
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white px-4 py-3 border-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 22px;">📋</span>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0 text-white" id="cbtAuditModalTitle">Riwayat Audit &amp; Foto Bukti</h5>
+                        <div class="small text-muted" id="cbtAuditModalSub">Catatan pelanggaran dan tangkapan foto kamera siswa</div>
+                    </div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="cbtHideModal('cbtAuditModal')"></button>
             </div>
-            <div class="modal-body p-4" id="cbtAuditModalBody">
-                <div class="text-center py-4 text-muted">Memuat data log audit...</div>
+
+            <!-- Tab Switcher Navigation -->
+            <div class="px-4 pt-3 border-bottom bg-light">
+                <ul class="nav nav-pills gap-2 mb-0 pb-3" id="cbtAuditTabNav">
+                    <li class="nav-item">
+                        <button class="nav-link active rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 small" id="cbtAuditTabBtnEvents" type="button" onclick="cbtSwitchAuditTab('events')">
+                            <span>📋</span>
+                            <span>Riwayat Pelanggaran &amp; Log</span>
+                            <span class="badge bg-secondary rounded-pill" id="cbtAuditEventsCount">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 small" id="cbtAuditTabBtnPhotos" type="button" onclick="cbtSwitchAuditTab('photos')">
+                            <span>📸</span>
+                            <span>Galeri Foto Bukti Kamera</span>
+                            <span class="badge bg-primary rounded-pill" id="cbtAuditPhotosCount">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="modal-body p-4" style="max-height: 72vh; overflow-y: auto;">
+                <!-- Tab Pane 1: Events Log List -->
+                <div id="cbtAuditEventsContainer">
+                    <div class="text-center py-4 text-muted">Memuat data log audit...</div>
+                </div>
+
+                <!-- Tab Pane 2: Photo Evidence Gallery -->
+                <div id="cbtAuditPhotosContainer" style="display: none;">
+                    <div class="text-center py-4 text-muted">Memuat galeri foto...</div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light px-4 py-2.5 border-top d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Semua foto bukti diabadikan secara otomatis dan manual dengan stempel waktu resmi.</span>
+                <button type="button" class="btn btn-secondary rounded-pill px-4 btn-sm" onclick="cbtHideModal('cbtAuditModal')">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Evidence Lightbox Modal (Zoom & Fullscreen Inspection) -->
+<div class="modal fade" id="cbtPhotoLightboxModal" tabindex="-1" aria-hidden="true" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-2xl rounded-4 overflow-hidden" style="background: #0B132B; color: #fff;">
+            <div class="modal-header border-0 px-4 py-3" style="background: #0F172A; border-bottom: 1px solid rgba(255,255,255,0.1) !important;">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 24px;">📸</span>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0 text-white" id="cbtLightboxTitle">Foto Bukti Pengawas</h5>
+                        <div class="small text-muted" id="cbtLightboxSubtitle">Waktu Pengambilan</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="cbtHideModal('cbtPhotoLightboxModal')"></button>
+            </div>
+            <div class="modal-body p-3 text-center" style="background: #020617;">
+                <img id="cbtLightboxImg" src="" alt="Foto Bukti" class="img-fluid rounded-3 shadow-lg" style="max-height: 65vh; width: auto; object-fit: contain;">
+            </div>
+            <div class="modal-footer border-0 px-4 py-3 d-flex justify-content-between align-items-center" style="background: #0F172A; border-top: 1px solid rgba(255,255,255,0.08) !important;">
+                <div class="small text-muted" id="cbtLightboxMeta">-</div>
+                <div class="d-flex gap-2">
+                    <a id="cbtLightboxDownload" href="#" class="btn btn-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1" target="_blank" download>
+                        <span>⬇️</span> Unduh Foto Bukti
+                    </a>
+                    <button type="button" class="btn btn-outline-light rounded-pill px-3 py-1.5" onclick="cbtHideModal('cbtPhotoLightboxModal')">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
@@ -781,6 +851,11 @@ echo $OUTPUT->header();
                             <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold rounded-pill shadow-xs" onclick="cbtCaptureEvidenceCurrent()">
                                 <span>📸</span>
                                 <span>Ambil Bukti Foto (Snapshot)</span>
+                            </button>
+
+                            <button type="button" class="btn btn-outline-info d-flex align-items-center justify-content-center gap-2 py-1.5 fw-semibold rounded-pill small" onclick="cbtViewCurrentAuditAndPhotos('photos')">
+                                <span>📂</span>
+                                <span>Buka Galeri Foto Bukti Sesi Ini</span>
                             </button>
 
                             <div class="d-flex gap-2">
@@ -1095,7 +1170,7 @@ function renderCandidatesTable(list) {
         var actions = '<div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">' +
                       camBtn +
                       '<div class="btn-group btn-group-sm">' +
-                      '<button type="button" class="btn btn-outline-primary btn-sm" onclick="cbtViewAudit(' + item.session_id + ', \'' + safeName + '\')">Log</button>';
+                      '<button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" onclick="cbtViewAudit(' + item.session_id + ', \'' + safeName + '\')"><span>📋</span><span>Log &amp; Foto</span></button>';
 
         if (item.status === 'invalidated') {
             actions += '<button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(' + item.session_id + ', \'restore\')">🔄 Pulihkan</button>';
@@ -1245,33 +1320,193 @@ function cbtHideModal(modalEl) {
     document.body.classList.remove('modal-open');
 }
 
-// View audit modal
-function cbtViewAudit(sessionId, name) {
-    document.getElementById('cbtAuditModalTitle').innerText = 'Riwayat Audit: ' + name;
-    var body = document.getElementById('cbtAuditModalBody');
-    body.innerHTML = '<div class="text-center py-4 text-muted">Memuat data log audit...</div>';
+// -------------------------------------------------------------
+// View audit modal & Photo Evidence Gallery
+// -------------------------------------------------------------
+var cbtActiveAuditSessionId = null;
+var cbtActiveAuditStudentName = '';
+var cbtActiveAuditTab = 'events';
 
+function cbtSwitchAuditTab(tab) {
+    cbtActiveAuditTab = tab;
+    var btnEvents = document.getElementById('cbtAuditTabBtnEvents');
+    var btnPhotos = document.getElementById('cbtAuditTabBtnPhotos');
+    var paneEvents = document.getElementById('cbtAuditEventsContainer');
+    var panePhotos = document.getElementById('cbtAuditPhotosContainer');
+
+    if (tab === 'photos') {
+        if (btnPhotos) btnPhotos.classList.add('active');
+        if (btnEvents) btnEvents.classList.remove('active');
+        if (panePhotos) panePhotos.style.display = 'block';
+        if (paneEvents) paneEvents.style.display = 'none';
+    } else {
+        if (btnEvents) btnEvents.classList.add('active');
+        if (btnPhotos) btnPhotos.classList.remove('active');
+        if (paneEvents) paneEvents.style.display = 'block';
+        if (panePhotos) panePhotos.style.display = 'none';
+    }
+}
+
+function cbtOpenPhotoLightbox(imgUrl, studentName, timeStr, label, downloadUrl) {
+    var imgEl = document.getElementById('cbtLightboxImg');
+    if (imgEl) imgEl.src = imgUrl;
+    var titleEl = document.getElementById('cbtLightboxTitle');
+    if (titleEl) titleEl.innerText = (label || 'Foto Bukti Siswa') + ' - ' + (studentName || 'Peserta');
+    var subEl = document.getElementById('cbtLightboxSubtitle');
+    if (subEl) subEl.innerText = 'Waktu Rekam: ' + (timeStr || '-');
+    var metaEl = document.getElementById('cbtLightboxMeta');
+    if (metaEl) metaEl.innerText = 'Format: JPEG • Terenkripsi di Server CBT Moodle';
+    var dlBtn = document.getElementById('cbtLightboxDownload');
+    if (dlBtn) dlBtn.href = downloadUrl || imgUrl;
+    cbtShowModal('cbtPhotoLightboxModal');
+}
+
+function cbtViewCurrentAuditAndPhotos(initialTab) {
+    if (!cbtCurrentCamSession) return;
+    cbtViewAudit(cbtCurrentCamSession.id, cbtCurrentCamSession.name, initialTab || 'photos');
+}
+
+function cbtViewAudit(sessionId, name, initialTab) {
+    cbtActiveAuditSessionId = sessionId;
+    cbtActiveAuditStudentName = name;
+
+    var titleEl = document.getElementById('cbtAuditModalTitle');
+    if (titleEl) titleEl.innerText = 'Riwayat Audit & Foto Bukti: ' + name;
+    var subEl = document.getElementById('cbtAuditModalSub');
+    if (subEl) subEl.innerText = 'Sesi #' + sessionId + ' • Data audit tersinkronisasi';
+
+    var eventsContainer = document.getElementById('cbtAuditEventsContainer');
+    var photosContainer = document.getElementById('cbtAuditPhotosContainer');
+    var badgeEvents = document.getElementById('cbtAuditEventsCount');
+    var badgePhotos = document.getElementById('cbtAuditPhotosCount');
+
+    if (eventsContainer) {
+        eventsContainer.innerHTML = '<div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data log audit...</div>';
+    }
+    if (photosContainer) {
+        photosContainer.innerHTML = '<div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat galeri foto bukti...</div>';
+    }
+    if (badgeEvents) badgeEvents.innerText = '0';
+    if (badgePhotos) badgePhotos.innerText = '0';
+
+    cbtSwitchAuditTab(initialTab || 'events');
     cbtShowModal('cbtAuditModal');
 
     fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_monitor.php?action=session_events&session_id=' + sessionId + '&sesskey=<?php echo sesskey(); ?>')
     .then(function(r){ return r.json(); })
     .then(function(data) {
-        if (data.success && data.events && data.events.length > 0) {
-            var html = '<div class="list-group list-group-flush">';
-            data.events.forEach(function(ev) {
-                html += '<div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">' +
-                        '<div>' +
-                        '<div class="fw-bold small">' + escapeHtml(ev.label) + '</div>' +
-                        '<div class="text-muted" style="font-size:0.75rem;">' + escapeHtml(ev.metadata) + '</div>' +
-                        '</div>' +
-                        '<span class="badge bg-light text-secondary border">' + escapeHtml(ev.time) + '</span>' +
-                        '</div>';
-            });
-            html += '</div>';
-            body.innerHTML = html;
-        } else {
-            body.innerHTML = '<div class="text-center py-4 text-success font-semibold">Tidak ada riwayat pelanggaran pada sesi ini.</div>';
+        if (!data.success) {
+            if (eventsContainer) eventsContainer.innerHTML = '<div class="alert alert-danger">Gagal memuat log audit.</div>';
+            if (photosContainer) photosContainer.innerHTML = '<div class="alert alert-danger">Gagal memuat foto bukti.</div>';
+            return;
         }
+
+        var events = data.events || [];
+        var photos = data.photos || [];
+
+        if (badgeEvents) badgeEvents.innerText = events.length;
+        if (badgePhotos) badgePhotos.innerText = photos.length;
+
+        // Render Events Tab
+        if (eventsContainer) {
+            if (events.length > 0) {
+                var evHtml = '<div class="list-group list-group-flush gap-2">';
+                events.forEach(function(ev) {
+                    var photoSnippet = '';
+                    if (ev.has_photo && ev.photo_url) {
+                        var safePhotoUrl = ev.photo_url.replace(/"/g, '&quot;');
+                        var safePhotoDl = (ev.photo_download_url || ev.photo_url).replace(/"/g, '&quot;');
+                        var safeName = escapeHtml(name).replace(/'/g, "\\'");
+                        var safeLabel = escapeHtml(ev.label).replace(/'/g, "\\'");
+                        var safeDate = escapeHtml(ev.date).replace(/'/g, "\\'");
+
+                        photoSnippet = '<div class="mt-2.5 p-2 rounded-3 bg-light border d-flex align-items-center gap-3" style="max-width: 440px;">' +
+                            '<img src="' + safePhotoUrl + '" alt="Bukti Foto" class="rounded shadow-xs border" style="width: 72px; height: 50px; object-fit: cover; cursor: pointer;" onclick="cbtOpenPhotoLightbox(\'' + safePhotoUrl + '\', \'' + safeName + '\', \'' + safeDate + '\', \'' + safeLabel + '\', \'' + safePhotoDl + '\')">' +
+                            '<div class="flex-grow-1 small">' +
+                                '<div class="fw-bold text-dark d-flex align-items-center gap-1"><span>📸</span><span>Tangkapan Kamera Bukti</span></div>' +
+                                '<div class="text-muted" style="font-size: 0.72rem;">Terekam pada saat kejadian</div>' +
+                                '<div class="mt-1 d-flex gap-2">' +
+                                    '<button type="button" class="btn btn-outline-primary btn-xs rounded-pill px-2 py-0.5 fw-semibold" style="font-size:0.75rem;" onclick="cbtOpenPhotoLightbox(\'' + safePhotoUrl + '\', \'' + safeName + '\', \'' + safeDate + '\', \'' + safeLabel + '\', \'' + safePhotoDl + '\')">🔍 Buka Foto</button>' +
+                                    '<a href="' + safePhotoDl + '" class="btn btn-outline-secondary btn-xs rounded-pill px-2 py-0.5" style="font-size:0.75rem;" target="_blank" download>⬇️ Unduh</a>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
+                    }
+
+                    evHtml += '<div class="list-group-item px-3 py-3 rounded-3 border mb-2 shadow-xs bg-white">' +
+                        '<div class="d-flex justify-content-between align-items-start gap-2">' +
+                            '<div>' +
+                                '<div class="d-flex align-items-center gap-2 mb-1">' +
+                                    '<span class="badge ' + (ev.badge_class || 'bg-secondary') + ' rounded-pill px-2.5 py-1 small">' +
+                                        (ev.icon || '⚠️') + ' ' + escapeHtml(ev.label) +
+                                    '</span>' +
+                                    '<span class="text-muted small">' + escapeHtml(ev.date) + '</span>' +
+                                '</div>' +
+                                '<div class="text-dark small mt-1">' + escapeHtml(ev.metadata) + '</div>' +
+                                photoSnippet +
+                            '</div>' +
+                            '<span class="badge bg-light text-secondary border font-monospace">' + escapeHtml(ev.time) + '</span>' +
+                        '</div>' +
+                    '</div>';
+                });
+                evHtml += '</div>';
+                eventsContainer.innerHTML = evHtml;
+            } else {
+                eventsContainer.innerHTML = '<div class="text-center py-5 text-success"><div style="font-size: 38px;">🎉</div><div class="fw-bold mt-2">Tidak ada riwayat pelanggaran pada sesi ini.</div><div class="text-muted small">Siswa mengerjakan ujian dengan tertib dan mematuhi seluruh protokol integritas.</div></div>';
+            }
+        }
+
+        // Render Photos Gallery Tab
+        if (photosContainer) {
+            if (photos.length > 0) {
+                var phHtml = '<div class="row g-3">';
+                photos.forEach(function(ph, idx) {
+                    var safeUrl = ph.url.replace(/"/g, '&quot;');
+                    var safeDl = ph.download_url.replace(/"/g, '&quot;');
+                    var safeName = escapeHtml(name).replace(/'/g, "\\'");
+                    var safeTime = escapeHtml(ph.time_formatted).replace(/'/g, "\\'");
+                    var photoLabel = 'Bukti Foto #' + (photos.length - idx);
+
+                    phHtml += '<div class="col-sm-6 col-md-4 col-lg-3">' +
+                        '<div class="card h-100 border rounded-3 shadow-xs overflow-hidden">' +
+                            '<div class="position-relative bg-dark" style="height: 150px; overflow: hidden; cursor: pointer;" onclick="cbtOpenPhotoLightbox(\'' + safeUrl + '\', \'' + safeName + '\', \'' + safeTime + '\', \'' + photoLabel + '\', \'' + safeDl + '\')">' +
+                                '<img src="' + safeUrl + '" alt="Bukti Foto" class="w-100 h-100" style="object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+                                '<span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 text-light rounded-pill px-2 py-0.5 font-monospace" style="font-size: 0.68rem;">' +
+                                    escapeHtml(ph.time_short) +
+                                '</span>' +
+                            '</div>' +
+                            '<div class="card-body p-2.5 d-flex flex-column justify-content-between">' +
+                                '<div class="mb-2">' +
+                                    '<div class="fw-bold text-dark small text-truncate" title="' + photoLabel + '">📸 ' + photoLabel + '</div>' +
+                                    '<div class="text-muted" style="font-size: 0.72rem;">' + escapeHtml(ph.time_formatted) + '</div>' +
+                                    '<div class="text-muted" style="font-size: 0.7rem;">Ukuran: ' + ph.filesize_kb + ' KB</div>' +
+                                '</div>' +
+                                '<div class="d-flex gap-1.5">' +
+                                    '<button type="button" class="btn btn-primary btn-sm flex-fill rounded-pill py-1 px-2 small fw-semibold" style="font-size:0.75rem;" onclick="cbtOpenPhotoLightbox(\'' + safeUrl + '\', \'' + safeName + '\', \'' + safeTime + '\', \'' + photoLabel + '\', \'' + safeDl + '\')">' +
+                                        '🔍 Perbesar' +
+                                    '</button>' +
+                                    '<a href="' + safeDl + '" class="btn btn-outline-secondary btn-sm rounded-pill py-1 px-2.5 small" title="Unduh Foto Bukti Asli" target="_blank" download>' +
+                                        '⬇️' +
+                                    '</a>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                });
+                phHtml += '</div>';
+                photosContainer.innerHTML = phHtml;
+            } else {
+                photosContainer.innerHTML = '<div class="text-center py-5 text-muted">' +
+                    '<div style="font-size: 42px;">📷</div>' +
+                    '<div class="fw-bold mt-2 text-dark">Belum Ada Foto Bukti Tersimpan</div>' +
+                    '<div class="small text-muted mt-1" style="max-width: 400px; margin: 0 auto;">Foto bukti akan otomatis disimpan ketika siswa melakukan pelanggaran, atau saat pengawas menekan tombol <strong>Ambil Bukti Foto (Snapshot)</strong> di jendela Pantau Kamera.</div>' +
+                '</div>';
+            }
+        }
+    })
+    .catch(function(err) {
+        if (eventsContainer) eventsContainer.innerHTML = '<div class="alert alert-danger">Koneksi terputus saat mengambil data audit.</div>';
+        if (photosContainer) photosContainer.innerHTML = '<div class="alert alert-danger">Koneksi terputus saat mengambil galeri foto bukti.</div>';
     });
 }
 

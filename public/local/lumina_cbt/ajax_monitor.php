@@ -162,11 +162,16 @@ if ($action === 'resolve') {
     exit;
 }
 
-// 3. Candidate Specific Audit Trail
+// 3. Candidate Specific Audit Trail & Evidence Photos
 if ($action === 'session_events') {
     $sessionid = required_param('session_id', PARAM_INT);
     $events = \local_lumina_cbt\cbt_engine::get_session_events($sessionid);
-    echo json_encode(['success' => true, 'events' => $events]);
+    $photos = \local_lumina_cbt\cbt_engine::get_session_evidence_photos($sessionid);
+    echo json_encode([
+        'success' => true,
+        'events'  => $events,
+        'photos'  => $photos,
+    ]);
     exit;
 }
 

@@ -41,8 +41,8 @@ if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
     define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
 }
 
-$plugin->version   = 2026111403;
+$plugin->version   = 2026111601;
 $plugin->requires  = 2022041900; // Universally compatible with Moodle 4.0 - 5.3+
 $plugin->component = 'local_lumina_cbt';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.3.3 (Auto-cleanup folder on uninstall & high-concurrency optimization)';
+$plugin->release   = 'v1.4.0 (Full Photo Evidence Gallery, Lightbox, Fast Camera Stream & Non-CBT Mode)';

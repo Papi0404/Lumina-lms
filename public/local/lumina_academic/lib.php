@@ -20,11 +20,47 @@ function local_lumina_academic_is_installed(): bool {
 }
 
 /**
- * Navigation extension hook if needed.
+ * Extend navigation hook: Adds top primary navigation menu in Moodle 4/5.
  *
  * @param global_navigation $navigation
  */
 function local_lumina_academic_extend_navigation(global_navigation $navigation) {
     global $USER, $PAGE;
-    // Student or alumni personal academic transcript view link if appropriate
+
+    if (!isloggedin() || isguestuser()) {
+        return;
+    }
+
+    $sysctx = context_system::instance();
+    $canmanage = is_siteadmin() ||
+                 has_capability('local/lumina_academic:manageclasses', $sysctx) ||
+                 has_capability('local/lumina_academic:manageyears', $sysctx) ||
+                 has_capability('local/lumina_academic:assigncourses', $sysctx) ||
+                 has_capability('local/lumina_academic:promotestudents', $sysctx) ||
+                 has_capability('local/lumina_academic:managealumni', $sysctx) ||
+                 has_capability('moodle/site:config', $sysctx);
+
+    if ($canmanage) {
+        $overviewurl = new \moodle_url('/local/lumina_academic/overview.php');
+
+        // Add to Primary Navigation bar (Top bar alongside Home, Dashboard, Site administration)
+        try {
+            if (isset($PAGE->primarynav) && method_exists($PAGE->primarynav, 'add')) {
+                if (!$PAGE->primarynav->find('lumina_academic_primary', \navigation_node::TYPE_CUSTOM)) {
+                    $node = $PAGE->primarynav->add(
+                        '🎓 Manajemen Akademik',
+                        $overviewurl,
+                        \navigation_node::TYPE_CUSTOM,
+                        null,
+                        'lumina_academic_primary'
+                    );
+                    if ($node) {
+                        $node->showinflatnavigation = true;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback gracefully
+        }
+    }
 }

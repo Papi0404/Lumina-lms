@@ -187,15 +187,9 @@ class cbt_engine {
 
         $issuspended = false;
         if ($newwarning >= $maxwarnings) {
-            if ($issimulation) {
-                // Teacher/Admin simulation: NEVER lock them out. Keep in_progress.
-                $session->status = 'in_progress';
-                $issuspended = false;
-            } else {
-                $session->status = 'under_review';
-                $session->timefinish = $now;
-                $issuspended = true;
-            }
+            $session->status = 'under_review';
+            $session->timefinish = $now;
+            $issuspended = true;
         }
 
         $DB->update_record($sessiontable, $session);
@@ -212,7 +206,7 @@ class cbt_engine {
             'is_suspended'  => $issuspended,
             'is_simulation' => $issimulation,
             'message'       => $issimulation
-                ? '[🛡️ Simulasi Pengajar] Pelanggaran ke-' . $newwarning . ': ' . $reasonlabel . '. Pada peserta didik asli, sesi ini akan dibekukan!'
+                ? '[🛡️ Simulasi Pengajar] Pelanggaran ke-' . $newwarning . ': ' . $reasonlabel . ($issuspended ? ' — Sesi Dibekukan (Simulasi)!' : '')
                 : ($messages[$newwarning] ?? $messages[3]),
         ];
     }
@@ -703,7 +697,8 @@ class cbt_engine {
             $dayend   = strtotime($dateto_clean . ' 23:59:59');
 
             if ($daystart !== false && $dayend !== false) {
-                $sessionWhere[] = "((s.status = 'in_progress') OR " .
+                $sessionWhere[] = "((s.status IN ('in_progress', 'under_review', 'invalidated')) OR " .
+                                  "(s.warningcount >= 3) OR " .
                                   "(s.timestart >= :sdaystart1 AND s.timestart <= :sdayend1) OR " .
                                   "(s.timefinish >= :sdaystart2 AND s.timefinish <= :sdayend2) OR " .
                                   "EXISTS (SELECT 1 FROM {{$eventstable}} ev_date WHERE ev_date.sessionid = s.id AND ev_date.eventtime >= :sdaystart3 AND ev_date.eventtime <= :sdayend3))";
@@ -745,21 +740,24 @@ class cbt_engine {
         $sessionWhereSql = !empty($sessionWhere) ? 'WHERE ' . implode(' AND ', $sessionWhere) : '';
         $eventWhereSql   = !empty($eventWhere) ? 'WHERE ' . implode(' AND ', $eventWhere) : '';
 
-        // Total infractions in range:
-        // ONLY count real infractions from candidates who currently have active warnings (s.warningcount > 0).
-        // If a candidate has 0/3 warnings (clean session or cleared/unlocked by proctor), it is NOT counted in total violations.
-        $violationsSql = "SELECT COALESCE(SUM(s.warningcount), 0)
-                            FROM {{$sessiontable}} s
+        // Total infractions in range: count logged infraction events
+        $violationsSql = "SELECT COUNT(ev.id)
+                            FROM {{$eventstable}} ev
+                            JOIN {{$sessiontable}} s ON s.id = ev.sessionid
                             JOIN {user} u ON u.id = s.userid
-                            $sessionWhereSql";
-        $totalViolations = (int)$DB->get_field_sql($violationsSql, $sessionParams);
+                            $eventWhereSql";
+        $totalViolations = (int)$DB->get_field_sql($violationsSql, $eventParams);
 
-        // Locked sessions in range
+        // Locked / Suspended sessions:
+        // Counts sessions under_review, invalidated, or where warnings reached max_warnings
+        $maxwarnings = (int)(get_config('local_lumina_cbt', 'max_warnings') ?: 3);
+        $lockedParams = $sessionParams;
+        $lockedParams['lmaxwarn'] = $maxwarnings;
         $lockedSql = "SELECT COUNT(s.id)
                         FROM {{$sessiontable}} s
                         JOIN {user} u ON u.id = s.userid
-                        $sessionWhereSql" . (!empty($sessionWhereSql) ? " AND " : " WHERE ") . "s.status = 'under_review'";
-        $lockedCount = (int)$DB->count_records_sql($lockedSql, $sessionParams);
+                        $sessionWhereSql" . (!empty($sessionWhereSql) ? " AND " : " WHERE ") . "(s.status IN ('under_review', 'invalidated') OR s.warningcount >= :lmaxwarn)";
+        $lockedCount = (int)$DB->count_records_sql($lockedSql, $lockedParams);
 
         // Clean passed sessions in range
         $cleanSql = "SELECT COUNT(s.id)
@@ -768,11 +766,11 @@ class cbt_engine {
                        $sessionWhereSql" . (!empty($sessionWhereSql) ? " AND " : " WHERE ") . "s.status IN ('completed', 'approved') AND s.warningcount = 0";
         $cleanCount = (int)$DB->count_records_sql($cleanSql, $sessionParams);
 
-        // Review list to accurately determine active candidates
+        // Review list to determine active candidates
         $candidates = self::get_sessions_for_review($date, $search, $courseid, $activityid, 'all', $dateto);
         $activeCount = 0;
         foreach ($candidates as $c) {
-            if ($c['status'] === 'in_progress') {
+            if ($c['status'] === 'in_progress' && (int)$c['warning_count'] < $maxwarnings) {
                 $activeCount++;
             }
         }
@@ -875,7 +873,8 @@ class cbt_engine {
             $daystart = strtotime($datefrom . ' 00:00:00');
             $dayend   = strtotime($dateto_clean . ' 23:59:59');
             if ($daystart !== false && $dayend !== false) {
-                $where[] = "((s.status = 'in_progress') OR " .
+                $where[] = "((s.status IN ('in_progress', 'under_review', 'invalidated')) OR " .
+                           "(s.warningcount >= 3) OR " .
                            "(s.timestart >= :daystart1 AND s.timestart <= :dayend1) OR " .
                            "(s.timefinish >= :daystart2 AND s.timefinish <= :dayend2) OR " .
                            "EXISTS (SELECT 1 FROM {{$eventstable}} ev_date WHERE ev_date.sessionid = s.id AND ev_date.eventtime >= :daystart3 AND ev_date.eventtime <= :dayend3))";
@@ -951,7 +950,7 @@ class cbt_engine {
             }
 
             $sessionstatus = $r->status;
-            if ($sessionstatus === 'in_progress' || $sessionstatus === 'not_started') {
+            if ($sessionstatus === 'in_progress') {
                 $cmrec = $DB->get_record_sql(
                     "SELECT cm.id, cm.instance, m.name AS modname
                        FROM {course_modules} cm
@@ -973,22 +972,6 @@ class cbt_engine {
                     ]);
                     if ($hasfinishedattempt && !$hasactiveattempt) {
                         $sessionstatus = 'completed';
-                    } else if (!$hasactiveattempt) {
-                        $sessionstatus = 'not_started';
-                    } else {
-                        $sessionstatus = 'in_progress';
-                    }
-                } else {
-                    $hasstudentactivity = false;
-                    if ($eventcount > 0) {
-                        $lastevent = $DB->get_record_sql("SELECT eventtype FROM {{$eventstable}} WHERE sessionid = ? ORDER BY id DESC LIMIT 1", [$r->id]);
-                        if ($lastevent && $lastevent->eventtype !== 'exam_reset') {
-                            $hasstudentactivity = true;
-                        }
-                    }
-
-                    if (!$hasstudentactivity && (int)$r->timefinish == 0) {
-                        $sessionstatus = 'not_started';
                     }
                 }
             }

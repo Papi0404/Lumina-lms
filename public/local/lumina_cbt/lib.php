@@ -360,10 +360,108 @@ function local_lumina_cbt_myprofile_navigation(\core_user\output\myprofile\tree 
 }
 
 /**
+ * Classic Moodle User Navigation Callback.
+ * Adds "CBT & Audit Ujian" directly into user navigation across all themes.
+ *
+ * @param \navigation_node $navigation
+ * @param stdClass $user
+ * @param \context_user $usercontext
+ * @param stdClass $course
+ * @param \context $coursecontext
+ */
+function local_lumina_cbt_extend_navigation_user(\navigation_node $navigation, stdClass $user, \context_user $usercontext, stdClass $course, \context $coursecontext) {
+    global $USER, $CFG;
+
+    if (!isloggedin() || isguestuser()) {
+        return;
+    }
+
+    $sysctx = \context_system::instance();
+    $canmonitor = has_capability('local/lumina_cbt:monitor', $sysctx) ||
+                  has_capability('moodle/grade:viewall', $sysctx) ||
+                  has_capability('moodle/course:manageactivities', $sysctx) ||
+                  is_siteadmin();
+
+    if ($canmonitor) {
+        $url = new \moodle_url('/local/lumina_cbt/monitor.php');
+        if (!$navigation->find('lumina_cbt_user_monitor', \navigation_node::TYPE_CUSTOM)) {
+            $navigation->add(
+                'CBT & Audit Ujian',
+                $url,
+                \navigation_node::TYPE_CUSTOM,
+                null,
+                'lumina_cbt_user_monitor',
+                new \pix_icon('i/shield', '')
+            );
+        }
+    }
+}
+
+/**
  * Legacy & PSR-14 before_footer callback.
  */
 function local_lumina_cbt_before_footer() {
+    global $PAGE, $USER, $CFG;
+
     local_lumina_cbt_init_proctor_if_needed();
+
+    // Universal User Menu DOM Resilience:
+    // Guarantees "CBT & Audit Ujian" appears inside user menu dropdown across ANY theme
+    // (including Learnova, Moon, Obin, RemUI, Boost child themes with custom user_menu.mustache).
+    if (isloggedin() && !isguestuser()) {
+        $sysctx = \context_system::instance();
+        $canmonitor = has_capability('local/lumina_cbt:monitor', $sysctx) ||
+                      has_capability('moodle/grade:viewall', $sysctx) ||
+                      has_capability('moodle/course:manageactivities', $sysctx) ||
+                      is_siteadmin();
+
+        if ($canmonitor) {
+            $cbturl = (new \moodle_url('/local/lumina_cbt/monitor.php'))->out(false);
+            $PAGE->requires->js_amd_inline("
+                (function() {
+                    function injectCbtMenuItem() {
+                        if (document.querySelector('.cbt-user-menu-item, a[href*=\"/local/lumina_cbt/monitor.php\"]')) {
+                            return;
+                        }
+                        var menu = document.getElementById('carousel-item-main') ||
+                                   document.getElementById('user-action-menu') ||
+                                   document.querySelector('.usermenu .dropdown-menu') ||
+                                   document.querySelector('.user-action-menu') ||
+                                   document.querySelector('#usernavigation .dropdown-menu');
+                        if (!menu) return;
+
+                        var link = document.createElement('a');
+                        link.href = '{$cbturl}';
+                        link.className = 'dropdown-item learnova-custom-item learnova-admin-link cbt-user-menu-item';
+                        link.setAttribute('role', 'menuitem');
+                        link.setAttribute('tabindex', '-1');
+                        link.style.cssText = 'display:flex !important;align-items:center;gap:0.5rem;font-weight:600;color:#0D9488;';
+                        link.innerHTML = '<i class=\"fa-solid fa-shield-halved fa-fw\" style=\"color:#0D9488;\" aria-hidden=\"true\"></i>' +
+                                         '<span style=\"margin-left:4px;\">CBT &amp; Audit Ujian</span>';
+
+                        var logout = menu.querySelector('a[href*=\"logout\"], .dropdown-item:last-child');
+                        if (logout && logout.parentNode) {
+                            logout.parentNode.insertBefore(link, logout);
+                        } else {
+                            menu.appendChild(link);
+                        }
+                    }
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', injectCbtMenuItem);
+                    } else {
+                        injectCbtMenuItem();
+                    }
+                    document.addEventListener('click', function(e) {
+                        if (e.target.closest('#user-menu-toggle, .userbutton, .userpicture, .usermenu')) {
+                            setTimeout(injectCbtMenuItem, 20);
+                            setTimeout(injectCbtMenuItem, 100);
+                        }
+                    });
+                })();
+            ");
+        }
+    }
 }
 
 /**

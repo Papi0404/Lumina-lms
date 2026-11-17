@@ -22,7 +22,8 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             blockKeyboard: true,
             suppressAi: true,
             enableCamera: true,
-            cameraInterval: 350
+            cameraInterval: 350,
+            isSimulation: false
         },
 
         state: {
@@ -246,6 +247,12 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             hud.style.cssText = 'position:fixed;top:12px;right:16px;z-index:999999;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:24px;font-family:system-ui,-apple-system,sans-serif;font-size:0.85rem;font-weight:600;background:rgba(15,23,42,0.88);color:#fff;backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.15);';
             hud.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10B981;" id="lumina-cbt-status-dot"></span>' +
                             '<span id="lumina-cbt-hud-text">🛡️ CBT Proctor Aktif (0/3)</span>';
+
+            if (this.config.isSimulation) {
+                hud.style.background = 'rgba(217,119,6,0.9)';
+                hud.innerHTML = '<span id="lumina-cbt-hud-text">🛡️ Simulasi Pengajar Aktif (0/3 — Aman)</span>';
+            }
+
             document.body.appendChild(hud);
         },
 
@@ -256,7 +263,10 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             if (!text || !dot) return;
 
             if (level === 0) {
-                text.innerText = '🛡️ CBT Proctor Aktif (0/' + this.config.maxWarnings + ')';
+                var hudLabel = this.config.isSimulation
+                    ? '🛡️ Simulasi Pengajar (' + level + '/' + this.config.maxWarnings + ' — Aman)'
+                    : '🛡️ CBT Proctor Aktif (' + level + '/' + this.config.maxWarnings + ')';
+                text.innerText = hudLabel;
                 dot.style.background = '#10B981';
             } else if (level === 1) {
                 text.innerText = '⚠️ Peringatan 1/' + this.config.maxWarnings;
@@ -291,7 +301,10 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             .then(function(data) {
                 if (data.success) {
                     self.updateStrikeHud(data.warning_level);
-                    if (data.status === 'invalidated') {
+                    if (self.config.isSimulation || data.is_simulation) {
+                        // Safe simulation mode: only show informational toast, never lockout
+                        self.showSimulationToast(data.message, data.warning_level);
+                    } else if (data.status === 'invalidated') {
                         self.showDisqualifiedLockdown(data.message);
                     } else if (data.is_suspended || data.warning_level >= self.config.maxWarnings) {
                         self.showLockoutScreen(data.message);
@@ -332,6 +345,25 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             }, 5000);
         },
 
+        showSimulationToast: function(msg, level) {
+            var toast = document.getElementById('lumina-cbt-sim-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'lumina-cbt-sim-toast';
+                toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999999;max-width:620px;width:92%;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:0.92rem;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,0.25);transition:all 0.3s ease;background:#FEF3C7;border:2px solid #F59E0B;color:#78350F;';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+                              '<span style="font-size:1.6rem;flex-shrink:0;">🛡️</span>' +
+                              '<div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;color:#B45309;font-weight:800;">MODE SIMULASI PENGAJAR &amp; ADMIN (SESI AMAN)</div>' +
+                              '<div>' + (msg || 'Pelanggaran simulasi terdeteksi. Pada peserta didik asli, sistem akan membekukan ujian.') + '</div>' +
+                              '</div></div>';
+            toast.style.display = 'block';
+            setTimeout(function() {
+                toast.style.display = 'none';
+            }, 6000);
+        },
+
         showLockoutScreen: function(msg) {
             this.state.isLocked = true;
             var overlay = document.getElementById('lumina-cbt-lockout-overlay');
@@ -351,7 +383,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                                 '<div style="background:#0F172A;padding:16px;border-radius:12px;font-size:0.88rem;color:#CBD5E1;margin-bottom:24px;border:1px solid #334155;">' +
                                 'Silakan hubungi Pengawas Ujian atau Administrator di ruangan Anda untuk melakukan verifikasi dan pembukaan kunci (Unlock).' +
                                 '</div>' +
-                                '<button onclick="window.location.reload();" style="background:#4338CA;color:#fff;border:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:0.95rem;cursor:pointer;">Periksa Status Buka Kunci</button>' +
+                                '<button onclick="window.location.reload();" style="background:var(--cbt-primary);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:0.95rem;cursor:pointer;">Periksa Status Buka Kunci</button>' +
                                 '</div>';
             overlay.style.display = 'flex';
         },
@@ -414,10 +446,10 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                 modal.id = 'lumina-cbt-fs-modal';
                 modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.92);z-index:9999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:system-ui,sans-serif;backdrop-filter:blur(10px);';
                 modal.innerHTML = '<div style="max-width:480px;width:90%;background:#1E293B;padding:32px;border-radius:16px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);">' +
-                                  '<div style="width:64px;height:64px;background:#EEF2FF;color:#4338CA;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;">🛡️</div>' +
+                                  '<div style="width:64px;height:64px;background:var(--cbt-primary-surface,#EEF2FF);color:var(--cbt-primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;">🛡️</div>' +
                                   '<h3 style="font-size:1.3rem;font-weight:700;margin-bottom:10px;">Masuk Mode Layar Penuh</h3>' +
                                   '<p style="color:#94A3B8;font-size:0.92rem;line-height:1.5;margin-bottom:24px;">Ujian ini diawasi dengan sistem proctoring anti-curang. Anda diwajibkan berada di mode layar penuh selama pengerjaan.</p>' +
-                                  '<button id="lumina-cbt-enter-fs-btn" style="background:#4338CA;color:#fff;border:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:0.95rem;cursor:pointer;box-shadow:0 4px 12px rgba(67,56,202,0.4);">Mulai Ujian & Masuk Layar Penuh</button>' +
+                                  '<button id="lumina-cbt-enter-fs-btn" style="background:var(--cbt-primary);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:0.95rem;cursor:pointer;box-shadow:0 4px 12px rgba(67,56,202,0.4);">Mulai Ujian & Masuk Layar Penuh</button>' +
                                   '</div>';
                 document.body.appendChild(modal);
 
@@ -500,7 +532,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
             box = document.createElement('div');
             box.id = 'lumina-cbt-cam-box';
-            box.style.cssText = 'position:fixed;bottom:16px;right:16px;width:150px;height:112px;border-radius:12px;overflow:hidden;z-index:999997;border:2px solid #4338CA;box-shadow:0 8px 24px rgba(0,0,0,0.35);background:#0F172A;transition:all 0.2s ease;';
+            box.style.cssText = 'position:fixed;bottom:16px;right:16px;width:150px;height:112px;border-radius:12px;overflow:hidden;z-index:999997;border:2px solid var(--cbt-primary);box-shadow:0 8px 24px rgba(0,0,0,0.35);background:#0F172A;transition:all 0.2s ease;';
 
             var video = document.createElement('video');
             video.id = 'lumina-cbt-cam-video';

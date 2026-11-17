@@ -175,13 +175,13 @@ if ($session->status === 'completed' || $session->status === 'approved') {
             </p>
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1.25rem; margin-bottom: 1.75rem;">
                 <div style="font-size: 0.85rem; color: #64748B; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Nilai Akhir Ujian</div>
-                <div style="font-size: 2.75rem; font-weight: 800; color: #4338CA; line-height: 1.2; margin: 0.25rem 0;">
+                <div style="font-size: 2.75rem; font-weight: 800; color: var(--cbt-primary); line-height: 1.2; margin: 0.25rem 0;">
                     <?php echo number_format((float)($session->score ?? 0), 2); ?>
                 </div>
                 <div style="font-size: 0.85rem; color: #10B981; font-weight: 600;">Status: Selesai &amp; Nilai Masuk Gradebook</div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #4338CA; color: #fff; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: var(--cbt-primary); color: #fff; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                     Kembali ke Kelas
                 </a>
                 <?php if ($ismanager): ?>
@@ -245,7 +245,7 @@ if ($session->status === 'under_review') {
                 Silakan hubungi Pengawas Ujian di ruangan Anda untuk memverifikasi dan membuka kunci (Unlock) ujian.
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <button onclick="window.location.reload();" style="background: #4338CA; color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                <button onclick="window.location.reload();" style="background: var(--cbt-primary); color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
                     Periksa Status Buka Kunci
                 </button>
                 <?php if ($ismanager): ?>
@@ -278,7 +278,7 @@ if (empty($clientquestions)) {
                 Perlindungan anti-curang (kunci layar, deteksi tab baru, larangan copy-paste) tetap aktif mengamankan sesi Anda.
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="<?php echo $nativeurl->out(false); ?>" style="background: #4F46E5; color: #fff; padding: 12px 28px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(79,70,229,0.4);">
+                <a href="<?php echo $nativeurl->out(false); ?>" style="background: var(--cbt-primary); color: #fff; padding: 12px 28px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(79,70,229,0.4);">
                     Buka Halaman Ujian Terpantau 🚀
                 </a>
                 <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #334155; color: #F1F5F9; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
@@ -293,8 +293,33 @@ if (empty($clientquestions)) {
 }
 
 // State C: Active In-Progress CBT Room
+$themebrand = '';
+if (!empty($PAGE->theme->settings->brandcolor)) {
+    $themebrand = $PAGE->theme->settings->brandcolor;
+} else if (!empty($PAGE->theme->settings->primary)) {
+    $themebrand = $PAGE->theme->settings->primary;
+} else if (!empty($PAGE->theme->settings->maincolor)) {
+    $themebrand = $PAGE->theme->settings->maincolor;
+}
 ?>
 <style>
+/* ===== LUMINA CBT: DYNAMIC MULTI-THEME COLOR ENGINE ===== */
+:root {
+    <?php if (!empty($themebrand)): ?>
+    --theme-brand: <?php echo $themebrand; ?>;
+    <?php endif; ?>
+    /* Pull primary from any Moodle theme: Lumina > Bootstrap > Core > Fallback */
+    --cbt-primary: var(--lumina-primary, var(--bs-primary, var(--primary, var(--theme-brand, #4338CA))));
+    --cbt-primary-dark: color-mix(in srgb, var(--cbt-primary) 80%, #000);
+    --cbt-primary-light: color-mix(in srgb, var(--cbt-primary) 10%, #fff);
+    --cbt-primary-surface: color-mix(in srgb, var(--cbt-primary) 6%, #fff);
+    --cbt-primary-text: color-mix(in srgb, var(--cbt-primary) 70%, #000);
+    --cbt-primary-border: color-mix(in srgb, var(--cbt-primary) 35%, #fff);
+    --cbt-primary-glow: color-mix(in srgb, var(--cbt-primary) 25%, transparent);
+    --cbt-exam-bg: #0B132B;
+    --cbt-exam-surface: #1E293B;
+}
+
 /* Reset & Modern Minimalist Exam Canvas */
 #page-header, .navbar, .drawer, #nav-drawer, footer, #page-footer {
     display: none !important;
@@ -336,7 +361,7 @@ html, body {
 .cbt-logo-badge {
     width: 36px;
     height: 36px;
-    background: #4338CA;
+    background: var(--cbt-primary);
     color: #fff;
     border-radius: 10px;
     display: flex;
@@ -398,8 +423,8 @@ html, body {
 .cbt-qnum-badge {
     display: inline-block;
     padding: 4px 12px;
-    background: #EEF2FF;
-    color: #4338CA;
+    background: var(--cbt-primary-surface);
+    color: var(--cbt-primary);
     border-radius: 8px;
     font-weight: 700;
     font-size: 0.85rem;
@@ -431,9 +456,9 @@ html, body {
     background: #F8FAFC;
 }
 .cbt-option.selected {
-    border-color: #4338CA;
-    background: #EEF2FF;
-    color: #312E81;
+    border-color: var(--cbt-primary);
+    background: var(--cbt-primary-surface);
+    color: var(--cbt-primary-text);
 }
 .cbt-opt-label {
     width: 32px;
@@ -449,7 +474,7 @@ html, body {
     flex-shrink: 0;
 }
 .cbt-option.selected .cbt-opt-label {
-    background: #4338CA;
+    background: var(--cbt-primary);
     color: #FFFFFF;
 }
 
@@ -503,10 +528,21 @@ html, body {
     border-color: #D97706;
 }
 .cbt-pal-btn.active {
-    outline: 2px solid #4338CA;
+    outline: 2px solid var(--cbt-primary);
     outline-offset: 2px;
 }
 </style>
+
+<?php if ($ismanager): ?>
+<div id="cbt-sim-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;font-size:0.85rem;font-weight:700;box-shadow:0 2px 12px rgba(217,119,6,0.4);">
+    <span>🛡️ MODE SIMULASI PENGAJAR / ADMIN — Pelanggaran anti-curang DICATAT namun tidak akan mengunci sesi Anda</span>
+    <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background:rgba(255,255,255,0.25);color:#fff;padding:4px 14px;border-radius:8px;text-decoration:none;font-size:0.82rem;font-weight:700;border:1px solid rgba(255,255,255,0.4);white-space:nowrap;margin-left:16px;">🔄 Reset Strike ke 0</a>
+</div>
+<style>
+/* Push exam content down when sim banner is shown */
+.cbt-container { padding-top: 42px !important; }
+</style>
+<?php endif; ?>
 
 <div class="cbt-container">
     <!-- Top Header -->
@@ -560,7 +596,7 @@ html, body {
                     &larr; Sebelumnya
                 </button>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" id="cbt-next-btn" style="background: #4338CA; color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                    <button type="button" id="cbt-next-btn" style="background: var(--cbt-primary); color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
                         Selanjutnya &rarr;
                     </button>
                     <button type="button" id="cbt-finish-btn" style="background: #10B981; color: #fff; border: none; padding: 10px 22px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
@@ -803,7 +839,8 @@ window.addEventListener('DOMContentLoaded', function() {
             blockKeyboard: true,
             suppressAi: true,
             enableCamera: true,
-            cameraInterval: 350
+            cameraInterval: 350,
+            isSimulation: <?php echo $ismanager ? 'true' : 'false'; ?>
         });
     });
 });

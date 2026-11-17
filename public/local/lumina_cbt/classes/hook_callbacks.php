@@ -226,4 +226,49 @@ class hook_callbacks {
             // Fail-safe: never crash course page
         }
     }
+
+    /**
+     * Inject "CBT & Audit Ujian" link into the native Moodle user dropdown menu
+     * across ALL themes (Boost, Classic, Lumina, Learnova, etc.) via PSR-14 hook.
+     *
+     * @param \core_user\hook\extend_user_menu $hook
+     */
+    public static function extend_user_menu(\core_user\hook\extend_user_menu $hook): void {
+        global $USER;
+
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
+
+        try {
+            $sysctx = \context_system::instance();
+            $canseemenu = has_capability('local/lumina_cbt:monitor', $sysctx) ||
+                          has_capability('moodle/grade:viewall', $sysctx) ||
+                          has_capability('moodle/course:manageactivities', $sysctx) ||
+                          is_siteadmin();
+
+            if (!$canseemenu) {
+                return;
+            }
+
+            $url = new \core\url('/local/lumina_cbt/monitor.php');
+            $title = 'CBT & Audit Ujian';
+
+            if (class_exists('\\core_user\\output\\user_action_menu\\link')) {
+                $icon = class_exists('\\core\\output\\pix_icon')
+                    ? new \core\output\pix_icon('i/shield', '')
+                    : null;
+                $item = new \core_user\output\user_action_menu\link(
+                    $url,
+                    $title,
+                    $title,
+                    $icon,
+                    null
+                );
+                $hook->add_menu_item($item);
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe: never crash user menu generation
+        }
+    }
 }

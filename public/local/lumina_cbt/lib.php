@@ -220,6 +220,52 @@ function local_lumina_cbt_extend_navigation(\global_navigation $navigation) {
                 setTimeout(injectCbtTaskbar, 1000);
             });
         ");
+
+        // 4. Universal User Dropdown Menu Resilience Injector (for 100% theme coverage)
+        $PAGE->requires->js_amd_inline("
+            require([], function() {
+                function injectCbtUserDropdown() {
+                    var userMenu = document.querySelector('.usermenu .dropdown-menu') ||
+                                   document.querySelector('[data-region=\"usermenu\"] .dropdown-menu') ||
+                                   document.querySelector('#usermenu-dropdown') ||
+                                   document.querySelector('.action-menu-panel .dropdown-menu') ||
+                                   document.querySelector('#user-action-menu .dropdown-menu');
+                    if (!userMenu) return;
+
+                    if (userMenu.querySelector('a[href*=\"/local/lumina_cbt/monitor.php\"]')) return;
+
+                    var item = document.createElement('a');
+                    item.className = 'dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-primary fw-semibold';
+                    item.href = " . json_encode($monUrl) . ";
+                    item.setAttribute('role', 'menuitem');
+                    item.innerHTML = '<span class=\"material-symbols-outlined text-[18px] me-2\" style=\"font-size:1.15rem;\">verified_user</span> <span>CBT &amp; Audit Ujian</span>';
+
+                    var li = document.createElement('li');
+                    li.appendChild(item);
+
+                    // Insert before the divider or logout link
+                    var logout = userMenu.querySelector('a[href*=\"/login/logout.php\"]');
+                    if (logout) {
+                        var targetNode = logout.closest('li') || logout;
+                        var prevDivider = targetNode.previousElementSibling;
+                        if (prevDivider && (prevDivider.classList.contains('dropdown-divider') || prevDivider.tagName === 'HR')) {
+                            userMenu.insertBefore(li, prevDivider);
+                        } else {
+                            userMenu.insertBefore(li, targetNode);
+                        }
+                    } else {
+                        userMenu.appendChild(li);
+                    }
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', injectCbtUserDropdown);
+                } else {
+                    injectCbtUserDropdown();
+                }
+                setTimeout(injectCbtUserDropdown, 400);
+                setTimeout(injectCbtUserDropdown, 1200);
+            });
+        ");
     }
 
     // Also verify proctor lockdown on assessment activities

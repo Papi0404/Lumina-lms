@@ -57,3 +57,11 @@ if (class_exists('core\hook\output\before_standard_footer_html_generation')) {
         'priority' => 500,
     ];
 }
+
+if (class_exists('core_user\hook\extend_user_menu')) {
+    $callbacks[] = [
+        'hook'     => \core_user\hook\extend_user_menu::class,
+        'callback' => \local_lumina_cbt\hook_callbacks::class . '::extend_user_menu',
+        'priority' => 500,
+    ];
+}

@@ -118,6 +118,26 @@ class cbt_engine {
         $session = $DB->get_record($sessiontable, ['id' => $sessionid], '*', MUST_EXIST);
         $now = time();
 
+        // === SIMULATION MODE: Safe testing for teachers & admins ===
+        $issimulation = false;
+        try {
+            if (!empty($session->activityid)) {
+                $simcm = get_coursemodule_from_id('', (int)$session->activityid, 0, false, IGNORE_MISSING);
+                if ($simcm) {
+                    $simctx = \context_module::instance($simcm->id);
+                    $issimulation = has_capability('moodle/course:manageactivities', $simctx, $userid) || is_siteadmin($userid);
+                }
+            } else if (!empty($session->courseid)) {
+                $simctx = \context_course::instance((int)$session->courseid);
+                $issimulation = has_capability('moodle/course:manageactivities', $simctx, $userid) || is_siteadmin($userid);
+            }
+            if (!$issimulation) {
+                $issimulation = is_siteadmin($userid);
+            }
+        } catch (\Throwable $e) {
+            $issimulation = false;
+        }
+
         // 1. Log event permanently with microsecond accuracy
         $ev = new stdClass();
         $ev->sessionid = $sessionid;
@@ -140,12 +160,13 @@ class cbt_engine {
             @copy($jpgfile, $destfile);
         }
 
-        // If already suspended/under_review or invalidated, keep locked
-        if ($session->status === 'under_review' || $session->status === 'invalidated') {
+        // If already suspended/under_review or invalidated, keep locked (unless teacher simulation)
+        if (($session->status === 'under_review' || $session->status === 'invalidated') && !$issimulation) {
             return [
                 'warning_level' => 3,
                 'status'        => $session->status,
                 'is_suspended'  => true,
+                'is_simulation' => false,
                 'message'       => get_string('warning_3', 'local_lumina_cbt', self::get_event_label($eventtype)),
             ];
         }
@@ -166,9 +187,15 @@ class cbt_engine {
 
         $issuspended = false;
         if ($newwarning >= $maxwarnings) {
-            $session->status = 'under_review';
-            $session->timefinish = $now;
-            $issuspended = true;
+            if ($issimulation) {
+                // Teacher/Admin simulation: NEVER lock them out. Keep in_progress.
+                $session->status = 'in_progress';
+                $issuspended = false;
+            } else {
+                $session->status = 'under_review';
+                $session->timefinish = $now;
+                $issuspended = true;
+            }
         }
 
         $DB->update_record($sessiontable, $session);
@@ -183,7 +210,10 @@ class cbt_engine {
             'warning_level' => $newwarning,
             'status'        => $session->status,
             'is_suspended'  => $issuspended,
-            'message'       => $messages[$newwarning] ?? $messages[3],
+            'is_simulation' => $issimulation,
+            'message'       => $issimulation
+                ? '[🛡️ Simulasi Pengajar] Pelanggaran ke-' . $newwarning . ': ' . $reasonlabel . '. Pada peserta didik asli, sesi ini akan dibekukan!'
+                : ($messages[$newwarning] ?? $messages[3]),
         ];
     }
 

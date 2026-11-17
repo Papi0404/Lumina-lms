@@ -256,16 +256,33 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
             hud = document.createElement('div');
             hud.id = 'lumina-cbt-strike-hud';
-            hud.style.cssText = 'position:fixed;top:12px;right:16px;z-index:999999;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:24px;font-family:system-ui,-apple-system,sans-serif;font-size:0.85rem;font-weight:600;background:rgba(15,23,42,0.88);color:#fff;backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.15);';
-            hud.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10B981;" id="lumina-cbt-status-dot"></span>' +
-                            '<span id="lumina-cbt-hud-text">🛡️ CBT Proctor Aktif (0/3)</span>';
 
-            if (this.config.isSimulation) {
-                hud.style.background = 'rgba(217,119,6,0.9)';
-                hud.innerHTML = '<span id="lumina-cbt-hud-text">🛡️ Simulasi Pengajar Aktif (0/3 — Aman)</span>';
+            var slot = document.getElementById('cbt-proctor-hud-slot');
+            if (slot) {
+                hud.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:10px;font-family:system-ui,-apple-system,sans-serif;font-size:0.82rem;font-weight:700;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.18);';
+                hud.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10B981;" id="lumina-cbt-status-dot"></span>' +
+                                '<span id="lumina-cbt-hud-text">🛡️ CBT Proctor Aktif (0/' + this.config.maxWarnings + ')</span>';
+
+                if (this.config.isSimulation) {
+                    hud.style.background = 'rgba(245,158,11,0.15)';
+                    hud.style.borderColor = 'rgba(245,158,11,0.4)';
+                    hud.style.color = '#FDE68A';
+                    hud.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10B981;" id="lumina-cbt-status-dot"></span>' +
+                                    '<span id="lumina-cbt-hud-text">🛡️ Simulasi Pengajar (0/' + this.config.maxWarnings + ' — Aman)</span>';
+                }
+                slot.appendChild(hud);
+            } else {
+                hud.style.cssText = 'position:fixed;top:10px;right:20px;z-index:999999;display:flex;align-items:center;gap:10px;padding:6px 14px;border-radius:24px;font-family:system-ui,-apple-system,sans-serif;font-size:0.82rem;font-weight:700;background:rgba(15,23,42,0.92);color:#fff;backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.18);';
+                hud.innerHTML = '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#10B981;" id="lumina-cbt-status-dot"></span>' +
+                                '<span id="lumina-cbt-hud-text">🛡️ CBT Proctor Aktif (0/' + this.config.maxWarnings + ')</span>';
+
+                if (this.config.isSimulation) {
+                    hud.style.border = '1px solid rgba(245,158,11,0.5)';
+                    hud.innerHTML = '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#10B981;" id="lumina-cbt-status-dot"></span>' +
+                                    '<span id="lumina-cbt-hud-text">🛡️ Simulasi Pengajar (0/' + this.config.maxWarnings + ' — Aman)</span>';
+                }
+                document.body.appendChild(hud);
             }
-
-            document.body.appendChild(hud);
         },
 
         updateStrikeHud: function(level) {
@@ -274,17 +291,20 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             var dot  = document.getElementById('lumina-cbt-status-dot');
             if (!text || !dot) return;
 
+            if (this.config.isSimulation) {
+                text.innerText = '🛡️ Simulasi Pengajar (' + level + '/' + this.config.maxWarnings + ' — Aman)';
+                dot.style.background = (level === 0) ? '#10B981' : '#F59E0B';
+                return;
+            }
+
             if (level === 0) {
-                var hudLabel = this.config.isSimulation
-                    ? '🛡️ Simulasi Pengajar (' + level + '/' + this.config.maxWarnings + ' — Aman)'
-                    : '🛡️ CBT Proctor Aktif (' + level + '/' + this.config.maxWarnings + ')';
-                text.innerText = hudLabel;
+                text.innerText = '🛡️ CBT Proctor Aktif (0/' + this.config.maxWarnings + ')';
                 dot.style.background = '#10B981';
             } else if (level === 1) {
                 text.innerText = '⚠️ Peringatan 1/' + this.config.maxWarnings;
                 dot.style.background = '#F59E0B';
             } else if (level === 2) {
-                text.innerText = '🚨 PERINGATAN 2/' + this.config.maxWarnings;
+                text.innerText = '🚨 Peringatan 2/' + this.config.maxWarnings;
                 dot.style.background = '#F97316';
             } else {
                 text.innerText = '🔒 Ujian Ditangguhkan (' + level + '/' + this.config.maxWarnings + ')';
@@ -335,21 +355,15 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'lumina-cbt-warning-toast';
-                toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999999;max-width:550px;width:90%;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:0.95rem;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,0.3);transition:all 0.3s ease;';
+                toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:99999999;max-width:560px;width:92%;padding:14px 22px;border-radius:14px;font-family:system-ui,sans-serif;font-size:0.92rem;font-weight:600;box-shadow:0 16px 40px rgba(0,0,0,0.35);transition:all 0.3s ease;backdrop-filter:blur(12px);background:rgba(15,23,42,0.96);color:#F8FAFC;border:1.5px solid #EF4444;';
                 document.body.appendChild(toast);
             }
 
-            var bgColor = (level === 1) ? '#FEF3C7' : '#FFEDD5';
-            var textColor = (level === 1) ? '#92400E' : '#9A3412';
-            var borderColor = (level === 1) ? '#F59E0B' : '#EA580C';
-
-            toast.style.background = bgColor;
-            toast.style.color = textColor;
-            toast.style.border = '2px solid ' + borderColor;
-            toast.innerHTML = '<div style="display:flex;align-items:center;gap:12px;">' +
-                              '<span style="font-size:1.5rem;">⚠️</span>' +
+            toast.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+                              '<span style="font-size:1.6rem;flex-shrink:0;">⚠️</span>' +
+                              '<div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;color:#EF4444;font-weight:800;">PERINGATAN PELANGGARAN UJIAN (' + (level || 1) + '/' + this.config.maxWarnings + ')</div>' +
                               '<div>' + (msg || 'Pelanggaran terdeteksi! Harap tetap berada di dalam jendela ujian.') + '</div>' +
-                              '</div>';
+                              '</div></div>';
             toast.style.display = 'block';
 
             setTimeout(function() {
@@ -362,12 +376,12 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'lumina-cbt-sim-toast';
-                toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999999;max-width:620px;width:92%;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:0.92rem;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,0.25);transition:all 0.3s ease;background:#FEF3C7;border:2px solid #F59E0B;color:#78350F;';
+                toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:99999999;max-width:580px;width:92%;padding:14px 22px;border-radius:14px;font-family:system-ui,sans-serif;font-size:0.92rem;font-weight:600;box-shadow:0 16px 40px rgba(0,0,0,0.35);transition:all 0.3s ease;backdrop-filter:blur(12px);background:rgba(15,23,42,0.96);color:#F8FAFC;border:1.5px solid #F59E0B;';
                 document.body.appendChild(toast);
             }
             toast.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px;">' +
                               '<span style="font-size:1.6rem;flex-shrink:0;">🛡️</span>' +
-                              '<div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;color:#B45309;font-weight:800;">MODE SIMULASI PENGAJAR &amp; ADMIN (SESI AMAN)</div>' +
+                              '<div><div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;color:#F59E0B;font-weight:800;">MODE SIMULASI PENGAJAR &amp; ADMIN (SESI AMAN)</div>' +
                               '<div>' + (msg || 'Pelanggaran simulasi terdeteksi. Pada peserta didik asli, sistem akan membekukan ujian.') + '</div>' +
                               '</div></div>';
             toast.style.display = 'block';

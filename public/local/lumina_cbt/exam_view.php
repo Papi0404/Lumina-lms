@@ -82,6 +82,9 @@ $PAGE->set_url('/local/lumina_cbt/exam_view.php', ['cmid' => $cmid]);
 $PAGE->set_context($context);
 $PAGE->set_title('CBT Ujian Terpantau: ' . format_string($cm->name));
 $PAGE->set_pagelayout('embedded');
+if (!empty($PAGE->activityheader) && method_exists($PAGE->activityheader, 'disable')) {
+    $PAGE->activityheader->disable();
+}
 
 $ismanager = has_capability('moodle/course:manageactivities', $context) || is_siteadmin();
 
@@ -125,11 +128,32 @@ footer,
 .lumina-ai-fab,
 #luminaAiChatWindow,
 .lumina-ai-chat-window,
-.lumina-chatbot-widget {
+.lumina-chatbot-widget,
+.activity-header,
+.activity-information,
+.automatic-completion-conditions,
+.header-maxwidth,
+.completion-info,
+.breadcrumb,
+.secondary-navigation,
+.activity-description,
+.embedded-blocks,
+.lumina-activity-hero,
+.lumina-completion-badge,
+[data-for="page-activity-header"],
+[data-region="activity-information"],
+.activitycompletion,
+#maincontent,
+.sr-only,
+.accesshide,
+.moodle-has-zindex,
+#goto-top-link {
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     pointer-events: none !important;
 }
 
@@ -140,23 +164,34 @@ html, body {
     max-width: 100vw !important;
     min-height: 100vh !important;
     overflow-x: hidden !important;
-    background: #0B132B !important;
+    background: #F8FAFC !important;
+    color: #0F172A !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
 }
 
-#page, #page-wrapper, .drawers, .drag-container {
+#page,
+#page-wrapper,
+.drawers,
+.drag-container,
+.embedded-main,
+#page-content,
+#region-main-box,
+#region-main,
+.container-fluid,
+.container {
     margin: 0 !important;
     padding: 0 !important;
     left: 0 !important;
     top: 0 !important;
     width: 100vw !important;
     max-width: 100vw !important;
-}
-
-#page-content, #region-main-box, #region-main {
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    min-height: 100vh !important;
+    background: #F8FAFC !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
 }
 </style>
 <?php
@@ -327,7 +362,7 @@ if (!empty($PAGE->theme->settings->brandcolor)) {
 html, body {
     margin: 0 !important;
     padding: 0 !important;
-    background: #0B132B !important;
+    background: #F8FAFC !important;
     color: #1E293B;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     user-select: none;
@@ -338,29 +373,37 @@ html, body {
 .cbt-container {
     display: flex;
     flex-direction: column;
+    width: 100vw;
     min-height: 100vh;
     background: #F8FAFC;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 /* CBT Top Bar */
 .cbt-header {
     background: #0F172A;
     color: #fff;
-    padding: 0.75rem 1.5rem;
+    padding: 0.85rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    position: sticky;
+    top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1000;
 }
 .cbt-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 .cbt-logo-badge {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     background: var(--cbt-primary);
     color: #fff;
     border-radius: 10px;
@@ -368,29 +411,32 @@ html, body {
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    box-shadow: 0 4px 12px var(--cbt-primary-glow);
 }
 .cbt-title {
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: #F8FAFC;
+    letter-spacing: -0.01em;
 }
 .cbt-course-sub {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: #94A3B8;
+    margin-top: 2px;
 }
 
 .cbt-timer-box {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #1E293B;
-    padding: 6px 14px;
-    border-radius: 12px;
-    border: 1px solid #334155;
+    background: rgba(30, 41, 59, 0.85);
+    padding: 6px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     color: #38BDF8;
 }
 
@@ -398,79 +444,90 @@ html, body {
 .cbt-body {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    width: 100%;
+    min-height: calc(100vh - 68px);
+    background: #F8FAFC;
+    box-sizing: border-box;
 }
 
 /* Question Area */
 .cbt-question-area {
     flex: 1;
-    padding: 2rem;
+    padding: 2.25rem 3.5rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 
 .cbt-card {
     background: #FFFFFF;
-    border-radius: 16px;
-    padding: 2rem;
+    border-radius: 20px;
+    padding: 2.25rem 2.5rem;
     border: 1px solid #E2E8F0;
-    box-shadow: 0 4px 12px rgba(15,23,42,0.03);
+    box-shadow: 0 10px 30px rgba(15,23,42,0.04);
     margin-bottom: 1.5rem;
 }
 
 .cbt-qnum-badge {
-    display: inline-block;
-    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
     background: var(--cbt-primary-surface);
     color: var(--cbt-primary);
-    border-radius: 8px;
+    border: 1px solid var(--cbt-primary-border);
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 0.85rem;
-    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1.25rem;
 }
 
 .cbt-qtext {
-    font-size: 1.125rem;
+    font-size: 1.18rem;
     font-weight: 600;
     color: #0F172A;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
+    line-height: 1.7;
+    margin-bottom: 1.75rem;
 }
 
 .cbt-option {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 18px;
+    gap: 16px;
+    padding: 14px 20px;
     border: 1.5px solid #E2E8F0;
-    border-radius: 12px;
-    margin-bottom: 10px;
+    border-radius: 14px;
+    margin-bottom: 12px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     background: #FFFFFF;
+    font-size: 0.98rem;
+    color: #1E293B;
 }
 .cbt-option:hover {
     border-color: #CBD5E1;
     background: #F8FAFC;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15,23,42,0.03);
 }
 .cbt-option.selected {
     border-color: var(--cbt-primary);
     background: var(--cbt-primary-surface);
     color: var(--cbt-primary-text);
+    box-shadow: 0 4px 14px var(--cbt-primary-glow);
 }
 .cbt-opt-label {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     background: #F1F5F9;
     color: #475569;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     flex-shrink: 0;
 }
 .cbt-option.selected .cbt-opt-label {
@@ -489,62 +546,71 @@ html, body {
 
 /* Palette Sidebar */
 .cbt-palette-sidebar {
-    width: 320px;
+    width: 340px;
+    min-width: 340px;
     background: #FFFFFF;
     border-left: 1px solid #E2E8F0;
-    padding: 1.5rem;
+    padding: 2rem 1.75rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
+    box-shadow: -4px 0 20px rgba(15, 23, 42, 0.02);
 }
 .cbt-palette-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    margin-top: 1rem;
+    gap: 10px;
+    margin-top: 1.25rem;
 }
 .cbt-pal-btn {
     aspect-ratio: 1;
-    border-radius: 10px;
-    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    border: 1.5px solid #E2E8F0;
     background: #F8FAFC;
     color: #475569;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.15s ease;
 }
+.cbt-pal-btn:hover {
+    border-color: #94A3B8;
+    background: #FFFFFF;
+    transform: translateY(-1px);
+}
 .cbt-pal-btn.answered {
     background: #10B981;
     color: #fff;
     border-color: #059669;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
 }
 .cbt-pal-btn.doubtful {
     background: #F59E0B;
     color: #fff;
     border-color: #D97706;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
 }
 .cbt-pal-btn.active {
-    outline: 2px solid var(--cbt-primary);
+    outline: 2.5px solid var(--cbt-primary);
     outline-offset: 2px;
 }
 </style>
 
-<?php if ($ismanager): ?>
-<div id="cbt-sim-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;font-size:0.85rem;font-weight:700;box-shadow:0 2px 12px rgba(217,119,6,0.4);">
-    <span>🛡️ MODE SIMULASI PENGAJAR / ADMIN — Pelanggaran anti-curang DICATAT namun tidak akan mengunci sesi Anda</span>
-    <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background:rgba(255,255,255,0.25);color:#fff;padding:4px 14px;border-radius:8px;text-decoration:none;font-size:0.82rem;font-weight:700;border:1px solid rgba(255,255,255,0.4);white-space:nowrap;margin-left:16px;">🔄 Reset Strike ke 0</a>
-</div>
-<style>
-/* Push exam content down when sim banner is shown */
-.cbt-container { padding-top: 42px !important; }
-</style>
-<?php endif; ?>
-
 <div class="cbt-container">
+    <?php if ($ismanager): ?>
+    <div id="cbt-sim-banner" style="width:100%;box-sizing:border-box;background:linear-gradient(135deg,#D97706,#B45309);color:#fff;padding:9px 24px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,-apple-system,sans-serif;font-size:0.84rem;font-weight:700;z-index:1001;border-bottom:1px solid rgba(255,255,255,0.2);">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.15rem;">🛡️</span>
+            <span>MODE SIMULASI PENGAJAR &bull; Pelanggaran dicatat untuk testing, sesi tidak akan terkunci.</span>
+        </div>
+        <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background:rgba(255,255,255,0.22);color:#fff;padding:5px 14px;border-radius:8px;text-decoration:none;font-size:0.82rem;font-weight:700;border:1px solid rgba(255,255,255,0.4);white-space:nowrap;margin-left:16px;">🔄 Reset Strike ke 0</a>
+    </div>
+    <?php endif; ?>
+
     <!-- Top Header -->
     <div class="cbt-header">
         <div class="cbt-brand">
@@ -555,7 +621,8 @@ html, body {
             </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div id="cbt-proctor-hud-slot"></div>
             <div class="cbt-timer-box">
                 <span>⏱️</span>
                 <span id="cbt-timer-text">45:00</span>

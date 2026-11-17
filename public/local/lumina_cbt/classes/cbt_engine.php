@@ -244,6 +244,9 @@ class cbt_engine {
             'camera_blocked'                   => 'Kamera Ditutup / Tidak Aktif',
             'camera_permission_denied'         => 'Izin Kamera Ditolak Peserta',
             'camera_snapshot'                  => 'Foto Bukti Pengawas Diambil',
+            'photo_start'                      => 'Foto Verifikasi Mulai Ujian',
+            'photo_5min'                       => 'Foto Verifikasi Menit ke-5',
+            'photo_submit'                     => 'Foto Verifikasi Pengumpulan Ujian',
         ];
         return $labels[$eventtype] ?? ('Pelanggaran (' . clean_text($eventtype) . ')');
     }
@@ -264,6 +267,9 @@ class cbt_engine {
             'camera_blocked'                   => 'badge bg-danger text-white',
             'camera_permission_denied'         => 'badge bg-danger text-white',
             'camera_snapshot'                  => 'badge bg-info text-white',
+            'photo_start'                      => 'badge bg-primary text-white',
+            'photo_5min'                       => 'badge bg-info text-white',
+            'photo_submit'                     => 'badge bg-success text-white',
             'exam_invalidated'                 => 'badge bg-dark text-white',
             'clipboard_copy'                   => 'badge bg-danger text-white',
             'trackpad_gesture'                 => 'badge bg-warning text-dark',
@@ -301,6 +307,9 @@ class cbt_engine {
             'camera_blocked'                   => 'videocam_off',
             'camera_permission_denied'         => 'no_photography',
             'camera_snapshot'                  => 'photo_camera',
+            'photo_start'                      => 'camera_front',
+            'photo_5min'                       => 'timer',
+            'photo_submit'                     => 'how_to_reg',
             'exam_invalidated'                 => 'gavel',
             'exam_reset'                       => 'restart_alt',
             'exam_approved'                    => 'verified',
@@ -447,6 +456,77 @@ class cbt_engine {
         }
 
         return $photos;
+    }
+
+    /**
+     * Automatically purge evidence photos and temporary webcam frames older than retention threshold (default 14 days / 2 weeks).
+     *
+     * @param int $days Retention period in days (default 14)
+     * @return array Summary of deleted files and freed disk space
+     */
+    public static function cleanup_expired_photos(int $days = 14): array {
+        global $CFG;
+
+        $retentiondays = (int)(get_config('local_lumina_cbt', 'photo_retention_days') ?: $days);
+        if ($retentiondays <= 0) {
+            $retentiondays = 14;
+        }
+
+        $cutoff = time() - ($retentiondays * 86400);
+        $deletedevidence = 0;
+        $deletedcam = 0;
+        $freedbytes = 0;
+
+        // 1. Clean evidence snapshots in $CFG->dataroot/cbt_evidence
+        $evidencedir = $CFG->dataroot . '/cbt_evidence';
+        if (is_dir($evidencedir)) {
+            $files = @glob($evidencedir . '/evidence_*_*.jpg');
+            if ($files) {
+                foreach ($files as $file) {
+                    $filets = @filemtime($file);
+                    if (preg_match('/evidence_\d+_(\d+)\.jpg$/', $file, $m)) {
+                        $filets = (int)$m[1];
+                    }
+                    if ($filets < $cutoff) {
+                        $size = @filesize($file);
+                        if (@unlink($file)) {
+                            $deletedevidence++;
+                            $freedbytes += (int)$size;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Clean stale streaming frames in $CFG->dataroot/cbt_cam older than 2 days (or cutoff)
+        $camdir = $CFG->dataroot . '/cbt_cam';
+        if (is_dir($camdir)) {
+            $camcutoff = min($cutoff, time() - (2 * 86400));
+            $camfiles = @glob($camdir . '/session_*.*');
+            if ($camfiles) {
+                foreach ($camfiles as $file) {
+                    if (@filemtime($file) < $camcutoff) {
+                        $size = @filesize($file);
+                        if (@unlink($file)) {
+                            $deletedcam++;
+                            $freedbytes += (int)$size;
+                        }
+                    }
+                }
+            }
+        }
+
+        set_config('last_photo_cleanup', time(), 'local_lumina_cbt');
+
+        return [
+            'success'          => true,
+            'deleted_evidence' => $deletedevidence,
+            'deleted_frames'   => $deletedcam,
+            'total_deleted'    => $deletedevidence + $deletedcam,
+            'freed_kb'         => round($freedbytes / 1024, 1),
+            'retention_days'   => $retentiondays,
+            'cutoff_date'      => userdate($cutoff, '%d %b %Y, %H:%M WIB'),
+        ];
     }
 
     /**

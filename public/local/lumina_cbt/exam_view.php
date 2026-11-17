@@ -800,6 +800,13 @@ window.addEventListener('DOMContentLoaded', function() {
     };
 
     function submitExam(isAuto) {
+        // Checkpoint 3: Auto-capture photo on exam submission
+        try {
+            if (window.LuminaCBTProctor && typeof window.LuminaCBTProctor.captureCheckpointPhoto === 'function') {
+                window.LuminaCBTProctor.captureCheckpointPhoto('submit');
+            }
+        } catch (e) {}
+
         var form = new FormData();
         form.append('action', 'submit_exam');
         form.append('session_id', sessionId);

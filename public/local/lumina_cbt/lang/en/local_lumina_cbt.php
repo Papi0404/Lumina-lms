@@ -98,3 +98,11 @@ $string['cbt_enable_help'] = 'If enabled (Yes), this exam automatically runs in 
 $string['status_not_started'] = 'Not Attempted';
 $string['status_in_progress'] = 'In Progress';
 
+// Verification Photos & Retention
+$string['task_cleanup_photos'] = 'Automated CBT Verification Photos Cleanup (> 2 Weeks)';
+$string['photo_retention_days'] = 'Verification Photo Retention Period (Days)';
+$string['photo_retention_days_desc'] = 'Number of days to preserve candidate verification and evidence photos before automated permanent purge (default: 14 days / 2 weeks).';
+$string['checkpoint_photos'] = 'Automated 3-Point Facial Verification Checkpoints';
+$string['checkpoint_photos_desc'] = 'When enabled, the system automatically captures candidate photos at 3 checkpoints: at exam start, 5 minutes into the exam, and upon final submission.';
+
+

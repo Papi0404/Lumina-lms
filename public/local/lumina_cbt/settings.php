@@ -96,5 +96,27 @@ if ($hassiteconfig) {
         1
     ));
 
+    // Automated 3-Point Checkpoint Photos (Start, 5 Min, Submit)
+    $settings->add(new admin_setting_configcheckbox(
+        'local_lumina_cbt/checkpoint_photos',
+        get_string('checkpoint_photos', 'local_lumina_cbt'),
+        get_string('checkpoint_photos_desc', 'local_lumina_cbt'),
+        1
+    ));
+
+    // Photo Retention Period (Purge photos older than 14 days / 2 weeks)
+    $settings->add(new admin_setting_configselect(
+        'local_lumina_cbt/photo_retention_days',
+        get_string('photo_retention_days', 'local_lumina_cbt'),
+        get_string('photo_retention_days_desc', 'local_lumina_cbt'),
+        14,
+        [
+            7  => '7 Hari (1 Minggu)',
+            14 => '14 Hari (2 Minggu - Rekomendasi)',
+            30 => '30 Hari (1 Bulan)',
+            60 => '60 Hari (2 Bulan)',
+        ]
+    ));
+
     $ADMIN->add('local_lumina_cbt_general_cat', $settings);
 }

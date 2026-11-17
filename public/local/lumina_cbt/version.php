@@ -41,8 +41,8 @@ if (!defined('ASSIGN_EVENT_TYPE_EXTENSION')) {
     define('ASSIGN_EVENT_TYPE_EXTENSION', 'extension');
 }
 
-$plugin->version   = 2026111701;
+$plugin->version   = 2026111702;
 $plugin->requires  = 2022041900; // Universally compatible with Moodle 4.0 - 5.3+
 $plugin->component = 'local_lumina_cbt';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v1.5.0 (Dynamic Theme Colors, Teacher Safe Simulation Mode, Universal User Menu Hook)';
+$plugin->release   = 'v1.6.0 (3-Point Auto Checkpoint Photos & 14-Day Auto Cleanup Task)';

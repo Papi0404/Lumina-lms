@@ -38,11 +38,18 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             cameraTimer: null,
             cameraCanvas: null,
             cameraVideo: null,
-            isCameraActive: false
+            isCameraActive: false,
+            checkpoints: {
+                start: false,
+                '5min': false,
+                submit: false
+            },
+            checkpointTimers: []
         },
 
         init: function(opts) {
             this.config = Object.assign(this.config, opts || {});
+            window.LuminaCBTProctor = this;
             if (!this.config.courseUrl) {
                 this.config.courseUrl = this.config.courseId ? (M.cfg.wwwroot + '/course/view.php?id=' + this.config.courseId) : (M.cfg.wwwroot + '/my/');
             }
@@ -517,7 +524,19 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                 self.state.isCameraActive = true;
                 self.createCameraHud(stream);
                 self.startCameraStreamer();
-                console.log('[Lumina CBT] Live camera proctoring initialized.');
+
+                // Checkpoint 1: Auto-capture photo at exam start (after 3.5s camera stabilization)
+                var startTimer = setTimeout(function() {
+                    self.captureCheckpointPhoto('start');
+                }, 3500);
+
+                // Checkpoint 2: Auto-capture photo after 5 minutes (300 seconds)
+                var midTimer = setTimeout(function() {
+                    self.captureCheckpointPhoto('5min');
+                }, 300000);
+
+                self.state.checkpointTimers.push(startTimer, midTimer);
+                console.log('[Lumina CBT] Live camera & 3-point automated checkpoints initialized.');
             })
             .catch(function(err) {
                 console.warn('[Lumina CBT] Camera permission denied or device not found:', err);
@@ -594,6 +613,50 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                     isPushing = false;
                 }
             }, self.config.cameraInterval || 350);
+        },
+
+        captureCheckpointPhoto: function(checkpoint) {
+            var self = this;
+            if (!self.state.isCameraActive) return;
+            if (self.state.checkpoints && self.state.checkpoints[checkpoint]) return;
+
+            var video = self.state.cameraVideo;
+            if (!video || video.readyState < 2) return;
+
+            try {
+                var snapCanvas = document.createElement('canvas');
+                snapCanvas.width = 480;
+                snapCanvas.height = 360;
+                var snapCtx = snapCanvas.getContext('2d');
+                snapCtx.drawImage(video, 0, 0, 480, 360);
+                var frameData = snapCanvas.toDataURL('image/jpeg', 0.70);
+
+                var form = new FormData();
+                form.append('action', 'checkpoint_photo');
+                form.append('checkpoint', checkpoint);
+                form.append('session_id', self.config.sessionId);
+                form.append('cmid', self.config.cmid);
+                form.append('frame', frameData);
+                form.append('sesskey', self.config.sesskey || M.cfg.sesskey);
+
+                fetch(self.config.cameraAjaxUrl, {
+                    method: 'POST',
+                    body: form
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res && res.success) {
+                        if (!self.state.checkpoints) self.state.checkpoints = {};
+                        self.state.checkpoints[checkpoint] = true;
+                        console.log('[Lumina CBT] Auto-checkpoint photo saved successfully:', checkpoint);
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('[Lumina CBT] Checkpoint photo dispatch error:', err);
+                });
+            } catch (e) {
+                console.warn('[Lumina CBT] Could not capture checkpoint photo:', e);
+            }
         },
 
         showCameraAlert: function() {

@@ -98,3 +98,11 @@ $string['cbt_enable_help'] = 'Jika diaktifkan (Ya), ujian ini otomatis berjalan 
 $string['status_not_started'] = 'Belum Mengerjakan';
 $string['status_in_progress'] = 'Sedang Mengerjakan';
 
+// Foto Verifikasi & Retensi
+$string['task_cleanup_photos'] = 'Pembersihan Otomatis Foto Verifikasi CBT Kadaluarsa (> 2 Minggu)';
+$string['photo_retention_days'] = 'Masa Retensi Foto Verifikasi (Hari)';
+$string['photo_retention_days_desc'] = 'Jumlah hari penyimpanan foto bukti dan verifikasi peserta sebelum dihapus permanen secara otomatis oleh sistem (default: 14 hari / 2 minggu).';
+$string['checkpoint_photos'] = 'Otomatis Ambil 3 Foto Verifikasi Ujian';
+$string['checkpoint_photos_desc'] = 'Jika diaktifkan, sistem secara otomatis mengambil foto wajah peserta pada 3 titik: saat mulai ujian, setelah 5 menit pengerjaan, dan saat pengumpulan jawaban.';
+
+

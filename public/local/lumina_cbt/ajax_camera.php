@@ -111,6 +111,94 @@ if ($action === 'push_frame') {
 }
 
 // -------------------------------------------------------------
+// 1b. CHECKPOINT PHOTO (Automated 3-Point Facial Verification)
+// Checkpoint 1: Exam Start ('start')
+// Checkpoint 2: 5 Minutes In ('5min')
+// Checkpoint 3: On Submit ('submit')
+// -------------------------------------------------------------
+if ($action === 'checkpoint_photo') {
+    if ($sessionid <= 0) {
+        $cmid = optional_param('cmid', 0, PARAM_INT);
+        if ($cmid > 0) {
+            $cm = get_coursemodule_from_id('', $cmid, 0, false, MUST_EXIST);
+            $sess = \local_lumina_cbt\cbt_engine::start_or_get_session((int)$cm->course, $cmid, (int)$USER->id);
+            $sessionid = (int)$sess->id;
+        }
+    }
+
+    if ($sessionid <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Invalid session']);
+        exit;
+    }
+
+    $checkpoint = optional_param('checkpoint', 'start', PARAM_ALPHAEXT);
+    $rawframe = optional_param('frame', '', PARAM_RAW);
+
+    // If frame is empty, check if we have a recent streaming frame in $camdir
+    $imgdata = null;
+    if (!empty($rawframe)) {
+        if (strpos($rawframe, 'base64,') !== false) {
+            $rawframe = explode('base64,', $rawframe)[1];
+        }
+        $imgdata = base64_decode($rawframe);
+    } else {
+        $existingframe = $camdir . '/session_' . $sessionid . '.jpg';
+        if (file_exists($existingframe)) {
+            $imgdata = @file_get_contents($existingframe);
+        }
+    }
+
+    if (!$imgdata) {
+        echo json_encode(['success' => false, 'error' => 'No image data available']);
+        exit;
+    }
+
+    $evidencedir = $CFG->dataroot . '/cbt_evidence';
+    if (!is_dir($evidencedir)) {
+        @mkdir($evidencedir, 0777, true);
+    }
+
+    $now = time();
+    $destfile = $evidencedir . '/evidence_' . $sessionid . '_' . $now . '.jpg';
+    file_put_contents($destfile, $imgdata, LOCK_EX);
+
+    // Also update current frame for live CCTV preview
+    $jpgfile = $camdir . '/session_' . $sessionid . '.jpg';
+    @file_put_contents($jpgfile, $imgdata, LOCK_EX);
+
+    // Record audit event
+    $eventstable = \local_lumina_cbt\cbt_engine::get_events_table();
+    $eventtype = 'photo_' . $checkpoint;
+    $checkpointlabels = [
+        'start'  => 'Foto Verifikasi Wajah: Mulai Masuk Ujian',
+        '5min'   => 'Foto Verifikasi Wajah: Menit ke-5 Pengerjaan Ujian',
+        'submit' => 'Foto Verifikasi Wajah: Saat Pengumpulan Ujian (Selesai)',
+    ];
+
+    $ev = new stdClass();
+    $ev->sessionid = $sessionid;
+    $ev->userid    = (int)$USER->id;
+    $ev->eventtype = $eventtype;
+    $ev->eventtime = $now;
+    $ev->metadata  = $checkpointlabels[$checkpoint] ?? ('Foto Verifikasi Otomatis (' . clean_text($checkpoint) . ')');
+    $DB->insert_record($eventstable, $ev);
+
+    // Opportunistic cleanup: Purge photos older than 14 days (2 weeks) if not cleaned in the last 6 hours
+    $lastcleanup = (int)get_config('local_lumina_cbt', 'last_photo_cleanup');
+    if (($now - $lastcleanup) >= 21600) { // 6 hours
+        \local_lumina_cbt\cbt_engine::cleanup_expired_photos(14);
+    }
+
+    echo json_encode([
+        'success'    => true,
+        'checkpoint' => $checkpoint,
+        'timestamp'  => $now,
+        'message'    => 'Foto checkpoint (' . $checkpoint . ') berhasil diabadikan.',
+    ]);
+    exit;
+}
+
+// -------------------------------------------------------------
 // Authorization Check for Proctor Endpoints (get_frame, etc.)
 // -------------------------------------------------------------
 $canmonitor = local_lumina_cbt_can_monitor_cached() ||
@@ -317,6 +405,16 @@ if ($action === 'view_evidence') {
         header('Content-Disposition: inline; filename="bukti_cbt_sesi_' . $sessionid . '_' . $ts . '.jpg"');
     }
     readfile($file);
+    exit;
+}
+
+// -------------------------------------------------------------
+// 6. PURGE EXPIRED PHOTOS (Older than 14 days / 2 weeks)
+// -------------------------------------------------------------
+if ($action === 'cleanup_photos') {
+    $days = optional_param('days', 14, PARAM_INT);
+    $result = \local_lumina_cbt\cbt_engine::cleanup_expired_photos($days);
+    echo json_encode($result);
     exit;
 }
 

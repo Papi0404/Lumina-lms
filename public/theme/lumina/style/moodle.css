@@ -1754,22 +1754,22 @@
   --fn: var(--lumina-font-display, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
 body.lumina-siteadmin-page, body.learnova-siteadmin-page {
-  --lsa-sidebar-w: 240px;
+  --lsa-sidebar-w: 220px;
 }
-body.lumina-siteadmin-page .lumina-sidebar, body.lumina-siteadmin-page .lumina-mobile-overlay, body.lumina-siteadmin-page #luminaMobileOverlay, body.lumina-siteadmin-page .secondary-navigation, body.lumina-siteadmin-page .breadcrumb, body.lumina-siteadmin-page #page-navbar, body.lumina-siteadmin-page .drawer-toggles, body.learnova-siteadmin-page .lumina-sidebar, body.learnova-siteadmin-page .lumina-mobile-overlay, body.learnova-siteadmin-page #luminaMobileOverlay, body.learnova-siteadmin-page .secondary-navigation, body.learnova-siteadmin-page .breadcrumb, body.learnova-siteadmin-page #page-navbar, body.learnova-siteadmin-page .drawer-toggles {
+body.lumina-siteadmin-page .secondary-navigation, body.lumina-siteadmin-page .breadcrumb, body.lumina-siteadmin-page #page-navbar, body.lumina-siteadmin-page .drawer-toggles, body.learnova-siteadmin-page .secondary-navigation, body.learnova-siteadmin-page .breadcrumb, body.learnova-siteadmin-page #page-navbar, body.learnova-siteadmin-page .drawer-toggles {
   display: none !important;
 }
-body.lumina-siteadmin-page .lumina-topbar, body.learnova-siteadmin-page .lumina-topbar {
-  left: 0 !important;
-  right: 0 !important;
-}
 body.lumina-siteadmin-page .lumina-main-viewport, body.lumina-siteadmin-page #page.drawers, body.learnova-siteadmin-page .lumina-main-viewport, body.learnova-siteadmin-page #page.drawers {
-  margin-left: 0 !important;
+  margin-left: var(--lumina-sidebar-width, 280px) !important;
   margin-top: 0 !important;
-  padding-top: var(--learnova-nav-height, 64px) !important;
-  padding-left: var(--lsa-sidebar-w) !important;
+  padding-top: var(--lumina-header-height, 64px) !important;
+  padding-left: var(--lsa-sidebar-w, 220px) !important;
   padding-right: 0 !important;
   background: var(--learnova-bg, #F8FAFC) !important;
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+body.lumina-rail-collapsed.lumina-siteadmin-page .lumina-main-viewport, body.lumina-rail-collapsed.lumina-siteadmin-page #page.drawers, body.lumina-rail-collapsed.learnova-siteadmin-page .lumina-main-viewport, body.lumina-rail-collapsed.learnova-siteadmin-page #page.drawers {
+  margin-left: var(--lumina-sidebar-collapsed-width, 72px) !important;
 }
 body.lumina-siteadmin-page .lumina-main-viewport .main-inner, body.lumina-siteadmin-page #page.drawers .main-inner, body.learnova-siteadmin-page .lumina-main-viewport .main-inner, body.learnova-siteadmin-page #page.drawers .main-inner {
   max-width: none !important;
@@ -1830,17 +1830,22 @@ body.lumina-siteadmin-page #page-header .simplesearchform button[type="submit"],
 }
 .learnova-siteadmin .lsa-sidebar, .lumina-siteadmin .lsa-sidebar {
   position: fixed;
-  top: var(--learnova-nav-height);
-  left: 0;
+  top: var(--lumina-header-height, 64px);
+  left: var(--lumina-sidebar-width, 280px);
   bottom: 0;
-  z-index: 1020;
-  width: var(--lsa-sidebar-w);
-  padding: 18px 12px;
+  z-index: 1010;
+  width: var(--lsa-sidebar-w, 220px);
+  padding: 20px 12px;
   background: #fff;
   border: 0;
-  border-right: 1px solid var(--learnova-border-solid);
+  border-right: 1px solid var(--learnova-border-solid, #E5E7EB);
   border-radius: 0;
   overflow-y: auto;
+  box-sizing: border-box;
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+body.lumina-rail-collapsed .learnova-siteadmin .lsa-sidebar, body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
+  left: var(--lumina-sidebar-collapsed-width, 72px) !important;
 }
 .learnova-siteadmin .lsa-sidebar__lbl, .lumina-siteadmin .lsa-sidebar__lbl {
   padding: 0 6px;
@@ -2841,7 +2846,8 @@ body.lumina-siteadmin-page #page-header .simplesearchform button[type="submit"],
   }
 }
 @media (max-width: 991.98px) {
-  body.lumina-siteadmin-page #page.drawers, body.learnova-siteadmin-page #page.drawers {
+  body.lumina-siteadmin-page #page.drawers, body.lumina-siteadmin-page .lumina-main-viewport, body.learnova-siteadmin-page #page.drawers, body.learnova-siteadmin-page .lumina-main-viewport {
+    margin-left: 0 !important;
     padding-left: 0 !important;
   }
   body.lumina-siteadmin-page #page.drawers .main-inner, body.learnova-siteadmin-page #page.drawers .main-inner {

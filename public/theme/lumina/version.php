@@ -24,11 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version      = 2026111701;
+$plugin->version      = 2026111702;
 $plugin->requires     = 2026100500;
 $plugin->component    = 'theme_lumina';
 $plugin->maturity     = MATURITY_STABLE;
-$plugin->release      = 'v1.3.0 (Build: 20261117)';
+$plugin->release      = 'v1.3.1 (Build: 20261117)';
 $plugin->dependencies = [
     'theme_boost' => 2026100500,
 ];

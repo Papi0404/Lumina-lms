@@ -175,12 +175,9 @@ $lsa-ico-card-glyph:    16px;
 // settings search with it.
 body.lumina-siteadmin-page,
 body.learnova-siteadmin-page {
-    --lsa-sidebar-w: 240px;
+    --lsa-sidebar-w: 220px;
 
-    // Hide LMS side rail, drawer toggles, secondary tabs and breadcrumbs
-    .lumina-sidebar,
-    .lumina-mobile-overlay,
-    #luminaMobileOverlay,
+    // Replaced by the sidebar, or unused here.
     .secondary-navigation,
     .breadcrumb,
     #page-navbar,
@@ -188,19 +185,17 @@ body.learnova-siteadmin-page {
         display: none !important;
     }
 
-    .lumina-topbar {
-        left: 0 !important;
-        right: 0 !important;
-    }
-
+    // Lumina LMS shell stays authentic: .lumina-sidebar and .lumina-topbar
+    // keep their global layout, while the content viewport insets for .lsa-sidebar.
     .lumina-main-viewport,
     #page.drawers {
-        margin-left: 0 !important;
+        margin-left: var(--lumina-sidebar-width, 280px) !important;
         margin-top: 0 !important;
-        padding-top: var(--learnova-nav-height, 64px) !important;
-        padding-left: var(--lsa-sidebar-w) !important;
+        padding-top: var(--lumina-header-height, 64px) !important;
+        padding-left: var(--lsa-sidebar-w, 220px) !important;
         padding-right: 0 !important;
         background: var(--learnova-bg, #F8FAFC) !important;
+        transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
         // Drop Boost's boxed white card — the section cards bring their own
         // surfaces, and the column behind them must read as page background.
@@ -217,6 +212,13 @@ body.learnova-siteadmin-page {
         div[role="main"] {
             padding-left: 0 !important;
             padding-right: 0 !important;
+        }
+    }
+
+    &.lumina-rail-collapsed {
+        .lumina-main-viewport,
+        #page.drawers {
+            margin-left: var(--lumina-sidebar-collapsed-width, 72px) !important;
         }
     }
 
@@ -284,18 +286,19 @@ body.learnova-siteadmin-page {
     // which would otherwise re-root the positioning.
     .lsa-sidebar {
         position: fixed;
-        top: var(--learnova-nav-height);
-        left: 0;
+        top: var(--lumina-header-height, 64px);
+        left: var(--lumina-sidebar-width, 280px);
         bottom: 0;
-        z-index: 1020; // Under Boost's fixed navbar ($zindex-fixed, 1030).
-        width: var(--lsa-sidebar-w);
-        padding: 18px 12px;
+        z-index: 1010;
+        width: var(--lsa-sidebar-w, 220px);
+        padding: 20px 12px;
         background: #fff;
         border: 0;
-        border-right: 1px solid var(--learnova-border-solid);
+        border-right: 1px solid var(--learnova-border-solid, #E5E7EB);
         border-radius: 0;
         overflow-y: auto;
-        // Thin scrollbar comes from the global rule in post.scss.
+        box-sizing: border-box;
+        transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .lsa-sidebar__lbl {
@@ -630,10 +633,19 @@ body.learnova-siteadmin-page {
     }
 }
 
+// Lumina Rail Collapsed state
+body.lumina-rail-collapsed .learnova-siteadmin .lsa-sidebar,
+body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
+    left: var(--lumina-sidebar-collapsed-width, 72px) !important;
+}
+
 // Release the frame inset once the sidebar rejoins the flow above.
 @media (max-width: 991.98px) {
     body.lumina-siteadmin-page #page.drawers,
-    body.learnova-siteadmin-page #page.drawers {
+    body.lumina-siteadmin-page .lumina-main-viewport,
+    body.learnova-siteadmin-page #page.drawers,
+    body.learnova-siteadmin-page .lumina-main-viewport {
+        margin-left: 0 !important;
         padding-left: 0 !important;
 
         .main-inner { padding: 16px !important; }

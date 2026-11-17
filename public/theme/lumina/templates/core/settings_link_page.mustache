@@ -22,7 +22,7 @@
     grouped category accordion cards with a 3-column items grid.
 }}
 <style id="lumina-siteadmin-core-styles">
-/* ── Force Hide Legacy Chrome on Site Admin ── */
+/* ── Force Hide Legacy Navigation & Drawer Toggles on Site Admin ── */
 #page-admin-search .secondary-navigation,
 #page-admin-search .breadcrumb,
 #page-admin-search #page-navbar,
@@ -34,27 +34,25 @@ body.lumina-siteadmin-page .drawer-toggles {
     display: none !important;
 }
 
-#page-admin-search .lumina-sidebar,
-body.lumina-siteadmin-page .lumina-sidebar {
-    display: none !important;
-}
-
-#page-admin-search .lumina-topbar,
-body.lumina-siteadmin-page .lumina-topbar {
-    left: 0 !important;
-    right: 0 !important;
-}
-
+/* ── Lumina LMS Shell Intact (Sidebar and Topbar remain authentic) ── */
 #page-admin-search #page.drawers,
 #page-admin-search .lumina-main-viewport,
 body.lumina-siteadmin-page #page.drawers,
 body.lumina-siteadmin-page .lumina-main-viewport {
-    margin-left: 0 !important;
+    margin-left: var(--lumina-sidebar-width, 280px) !important;
     margin-top: 0 !important;
-    padding-top: 64px !important;
-    padding-left: 240px !important;
+    padding-top: var(--lumina-header-height, 64px) !important;
+    padding-left: 220px !important;
     padding-right: 0 !important;
     background: #F8FAFC !important;
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.lumina-rail-collapsed#page-admin-search #page.drawers,
+body.lumina-rail-collapsed#page-admin-search .lumina-main-viewport,
+body.lumina-rail-collapsed.lumina-siteadmin-page #page.drawers,
+body.lumina-rail-collapsed.lumina-siteadmin-page .lumina-main-viewport {
+    margin-left: var(--lumina-sidebar-collapsed-width, 72px) !important;
 }
 
 #page-admin-search #page.drawers .main-inner,
@@ -153,11 +151,11 @@ body.lumina-siteadmin-page .simplesearchform button[type="submit"]:hover {
 .learnova-siteadmin .lsa-sidebar,
 .lumina-siteadmin .lsa-sidebar {
     position: fixed !important;
-    top: 64px !important;
-    left: 0 !important;
+    top: var(--lumina-header-height, 64px) !important;
+    left: var(--lumina-sidebar-width, 280px) !important;
     bottom: 0 !important;
-    z-index: 1020 !important;
-    width: 240px !important;
+    z-index: 1010 !important;
+    width: 220px !important;
     padding: 20px 12px !important;
     background: #FFFFFF !important;
     border: 0 !important;
@@ -165,6 +163,12 @@ body.lumina-siteadmin-page .simplesearchform button[type="submit"]:hover {
     border-radius: 0 !important;
     overflow-y: auto !important;
     box-sizing: border-box !important;
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.lumina-rail-collapsed .learnova-siteadmin .lsa-sidebar,
+body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
+    left: var(--lumina-sidebar-collapsed-width, 72px) !important;
 }
 
 .learnova-siteadmin .lsa-sidebar__lbl,
@@ -525,13 +529,21 @@ body.lumina-siteadmin-page .simplesearchform button[type="submit"]:hover {
 /* Responsive adjustments */
 @media (max-width: 991.98px) {
     #page-admin-search #page.drawers,
-    body.lumina-siteadmin-page #page.drawers {
+    #page-admin-search .lumina-main-viewport,
+    body.lumina-siteadmin-page #page.drawers,
+    body.lumina-siteadmin-page .lumina-main-viewport {
+        margin-left: 0 !important;
         padding-left: 0 !important;
     }
     .learnova-siteadmin .lsa-sidebar,
     .lumina-siteadmin .lsa-sidebar {
         position: static !important;
         width: 100% !important;
+        left: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid #E5E7EB !important;
         margin-bottom: 20px !important;
     }
     .learnova-siteadmin .lsa-sidebar__nav,

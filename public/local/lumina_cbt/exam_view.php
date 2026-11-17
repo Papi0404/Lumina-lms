@@ -633,6 +633,57 @@ html, body {
     </div>
 </div>
 
+<!-- In-DOM Submit Confirmation Modal (100% Fullscreen Safe, Zero Window Blur, Zero False Violations) -->
+<div id="cbt-submit-confirm-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.85);z-index:99999999;align-items:center;justify-content:center;backdrop-filter:blur(10px);font-family:system-ui,-apple-system,sans-serif;">
+    <div style="background:#FFFFFF;width:90%;max-width:500px;border-radius:20px;padding:32px;box-shadow:0 25px 60px rgba(0,0,0,0.4);border:1px solid #E2E8F0;text-align:center;">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,0.12);color:#10B981;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;">
+            <span class="material-symbols-outlined" style="font-size:36px;">task_alt</span>
+        </div>
+        <h3 style="font-size:1.35rem;font-weight:800;color:#0F172A;margin:0 0 8px 0;">Konfirmasi Pengumpulan Ujian</h3>
+        <p style="font-size:0.88rem;color:#64748B;line-height:1.5;margin:0 0 20px 0;">Pastikan seluruh lembar jawaban Anda telah terisi dengan benar sebelum menyelesaikan ujian ini.</p>
+
+        <!-- Stats Summary Grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;text-align:center;">
+            <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px 6px;">
+                <div style="font-size:1.5rem;font-weight:800;color:#16A34A;" id="cbt-stat-answered">0</div>
+                <div style="font-size:0.75rem;font-weight:700;color:#15803D;text-transform:uppercase;">Terjawab</div>
+            </div>
+            <div style="background:#FEFCE8;border:1px solid #FEF08A;border-radius:12px;padding:12px 6px;">
+                <div style="font-size:1.5rem;font-weight:800;color:#CA8A04;" id="cbt-stat-doubtful">0</div>
+                <div style="font-size:0.75rem;font-weight:700;color:#A16207;text-transform:uppercase;">Ragu-ragu</div>
+            </div>
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px 6px;">
+                <div style="font-size:1.5rem;font-weight:800;color:#64748B;" id="cbt-stat-unanswered">0</div>
+                <div style="font-size:0.75rem;font-weight:700;color:#475569;text-transform:uppercase;">Kosong</div>
+            </div>
+        </div>
+
+        <div style="background:#FEF2F2;border-left:4px solid #EF4444;border-radius:8px;padding:10px 14px;text-align:left;color:#991B1B;font-size:0.82rem;line-height:1.45;margin-bottom:24px;">
+            ⚠️ <strong>Perhatian:</strong> Setelah dikumpulkan, sesi ujian akan diselesaikan dan jawaban tidak dapat diubah kembali.
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:center;" id="cbt-modal-buttons">
+            <button type="button" id="cbt-modal-cancel-btn" style="background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.9rem;cursor:pointer;flex:1;">
+                Batal
+            </button>
+            <button type="button" id="cbt-modal-confirm-btn" style="background:#10B981;color:#FFFFFF;border:none;padding:12px 24px;border-radius:12px;font-weight:700;font-size:0.92rem;cursor:pointer;flex:1.4;box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+                Ya, Kumpulkan 🚀
+            </button>
+        </div>
+
+        <!-- Submission Loading / Success Feedback -->
+        <div id="cbt-modal-loading" style="display:none;padding:16px 0;">
+            <div style="width:40px;height:40px;border:3px solid #E2E8F0;border-top-color:#10B981;border-radius:50%;animation:cbtSpin 0.8s linear infinite;margin:0 auto 12px auto;"></div>
+            <div style="font-weight:700;color:#0F172A;font-size:0.95rem;" id="cbt-modal-loading-text">Menyimpan lembar jawaban & memfinalisasi ujian...</div>
+        </div>
+    </div>
+</div>
+<style>
+@keyframes cbtSpin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
 <script>
 window.addEventListener('DOMContentLoaded', function() {
     var questions = <?php echo json_encode($clientquestions); ?>;
@@ -786,26 +837,53 @@ window.addEventListener('DOMContentLoaded', function() {
         timerEl.innerText = (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
     }, 1000);
 
-    // Submit handler
+    // Modal elements
+    var submitModal = document.getElementById('cbt-submit-confirm-modal');
+    var modalButtons = document.getElementById('cbt-modal-buttons');
+    var modalLoading = document.getElementById('cbt-modal-loading');
+    var modalLoadingText = document.getElementById('cbt-modal-loading-text');
+
+    // Submit handler: Open in-DOM modal (never triggers window blur or fullscreen exit)
     document.getElementById('cbt-finish-btn').onclick = function() {
         var answeredCount = Object.keys(answers).length;
+        var doubtfulCount = Object.keys(doubtful).filter(function(k){ return doubtful[k]; }).length;
         var unans = questions.length - answeredCount;
-        var confirmMsg = 'Apakah Anda yakin ingin mengumpulkan ujian?\n\n' +
-                         '• Soal terjawab: ' + answeredCount + ' dari ' + questions.length + '\n' +
-                         '• Soal belum dijawab: ' + unans + '\n\n' +
-                         'Setelah dikumpulkan, jawaban tidak dapat diubah kembali.';
-        if (confirm(confirmMsg)) {
-            submitExam(false);
-        }
+
+        document.getElementById('cbt-stat-answered').innerText = answeredCount;
+        document.getElementById('cbt-stat-doubtful').innerText = doubtfulCount;
+        document.getElementById('cbt-stat-unanswered').innerText = unans;
+
+        modalButtons.style.display = 'flex';
+        modalLoading.style.display = 'none';
+        submitModal.style.display = 'flex';
+    };
+
+    document.getElementById('cbt-modal-cancel-btn').onclick = function() {
+        submitModal.style.display = 'none';
+    };
+
+    document.getElementById('cbt-modal-confirm-btn').onclick = function() {
+        submitExam(false);
     };
 
     function submitExam(isAuto) {
-        // Checkpoint 3: Auto-capture photo on exam submission
+        // 1. Immediately flag proctor to suppress any fullscreen/blur violation events during submission
+        if (window.LuminaCBTProctor && typeof window.LuminaCBTProctor.setSubmitting === 'function') {
+            window.LuminaCBTProctor.setSubmitting(true);
+        }
+
+        // 2. Checkpoint 3: Auto-capture photo on exam submission
         try {
             if (window.LuminaCBTProctor && typeof window.LuminaCBTProctor.captureCheckpointPhoto === 'function') {
                 window.LuminaCBTProctor.captureCheckpointPhoto('submit');
             }
         } catch (e) {}
+
+        // 3. Show smooth loading spinner in-modal (100% inside fullscreen DOM)
+        submitModal.style.display = 'flex';
+        modalButtons.style.display = 'none';
+        modalLoading.style.display = 'block';
+        modalLoadingText.innerText = 'Mengunggah lembar jawaban & memfinalisasi ujian...';
 
         var form = new FormData();
         form.append('action', 'submit_exam');
@@ -821,14 +899,37 @@ window.addEventListener('DOMContentLoaded', function() {
         .then(function(r){ return r.json(); })
         .then(function(data) {
             if (data.success) {
-                alert('Ujian berhasil dikumpulkan! Nilai Anda: ' + data.score);
-                window.location.reload();
+                modalLoading.innerHTML = '<div style="font-size:42px;margin-bottom:8px;">🎉</div>' +
+                                         '<div style="font-size:1.3rem;font-weight:800;color:#0F172A;margin-bottom:6px;">Ujian Berhasil Dikumpulkan!</div>' +
+                                         '<div style="font-size:1.1rem;color:#16A34A;font-weight:800;margin-bottom:12px;">Nilai: ' + (data.score !== undefined ? data.score : '-') + '</div>' +
+                                         '<div style="font-size:0.85rem;color:#64748B;">Mengarahkan ke ringkasan hasil...</div>';
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1200);
             } else {
-                alert(data.message || 'Gagal mengumpulkan ujian.');
+                modalLoading.innerHTML = '<div style="font-size:36px;color:#EF4444;margin-bottom:8px;">⚠️</div>' +
+                                         '<div style="font-size:1.05rem;font-weight:700;color:#991B1B;margin-bottom:14px;">' + (data.message || 'Gagal mengumpulkan ujian.') + '</div>' +
+                                         '<button type="button" id="cbt-modal-retry-btn" style="background:#4338CA;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:700;cursor:pointer;">Coba Lagi</button>';
+                document.getElementById('cbt-modal-retry-btn').onclick = function() {
+                    modalButtons.style.display = 'flex';
+                    modalLoading.style.display = 'none';
+                    if (window.LuminaCBTProctor && typeof window.LuminaCBTProctor.setSubmitting === 'function') {
+                        window.LuminaCBTProctor.setSubmitting(false);
+                    }
+                };
             }
         })
         .catch(function(err) {
-            alert('Terjadi kesalahan jaringan saat mengumpulkan ujian.');
+            modalLoading.innerHTML = '<div style="font-size:36px;color:#EF4444;margin-bottom:8px;">📡</div>' +
+                                     '<div style="font-size:1.05rem;font-weight:700;color:#991B1B;margin-bottom:14px;">Terjadi kendala jaringan saat mengumpulkan lembar jawaban.</div>' +
+                                     '<button type="button" id="cbt-modal-retry-btn" style="background:#4338CA;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:700;cursor:pointer;">Coba Lagi</button>';
+            document.getElementById('cbt-modal-retry-btn').onclick = function() {
+                modalButtons.style.display = 'flex';
+                modalLoading.style.display = 'none';
+                if (window.LuminaCBTProctor && typeof window.LuminaCBTProctor.setSubmitting === 'function') {
+                    window.LuminaCBTProctor.setSubmitting(false);
+                }
+            };
         });
     }
 

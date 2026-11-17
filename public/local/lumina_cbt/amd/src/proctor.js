@@ -44,7 +44,12 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
                 '5min': false,
                 submit: false
             },
-            checkpointTimers: []
+            checkpointTimers: [],
+            isSubmitting: false
+        },
+
+        setSubmitting: function(val) {
+            this.state.isSubmitting = !!val;
         },
 
         init: function(opts) {
@@ -177,7 +182,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
             // 3. Window Blur / Tab Switching
             window.addEventListener('blur', function() {
-                if (self.state.isDisqualified) return;
+                if (self.state.isDisqualified || self.state.isSubmitting) return;
                 var now = Date.now();
                 if (now - self.state.lastBlurTime > 1500 && !self.state.isLocked) {
                     self.state.lastBlurTime = now;
@@ -186,7 +191,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             });
 
             document.addEventListener('visibilitychange', function() {
-                if (self.state.isDisqualified) return;
+                if (self.state.isDisqualified || self.state.isSubmitting) return;
                 if (document.visibilityState === 'hidden' && !self.state.isLocked) {
                     self.recordViolation('visibility_hidden', 'Beralih tab browser');
                 }
@@ -195,10 +200,10 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             // 4. Fullscreen State Watcher
             ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function(evt) {
                 document.addEventListener(evt, function() {
-                    if (self.state.isDisqualified) return;
+                    if (self.state.isDisqualified || self.state.isSubmitting) return;
                     var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
                     self.state.isFullscreen = inFs;
-                    if (!inFs && self.config.strictFullscreen && !self.state.isLocked) {
+                    if (!inFs && self.config.strictFullscreen && !self.state.isLocked && !self.state.isSubmitting) {
                         self.recordViolation('fullscreen_exit', 'Keluar dari mode layar penuh (Fullscreen)');
                         self.showFullscreenOverlay();
                     }
@@ -289,7 +294,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
         recordViolation: function(eventType, metadata) {
             var self = this;
-            if (self.state.isDisqualified) return;
+            if (self.state.isDisqualified || self.state.isSubmitting) return;
             self.playWarningChime();
 
             var form = new FormData();

@@ -52,6 +52,36 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
             this.state.isSubmitting = !!val;
         },
 
+        deactivate: function() {
+            var self = this;
+            self.state.isSubmitting = true;
+            self.state.isCompleted = true;
+            if (self.state.heartbeatTimer) {
+                clearInterval(self.state.heartbeatTimer);
+                self.state.heartbeatTimer = null;
+            }
+            if (self.state.cameraTimer) {
+                clearInterval(self.state.cameraTimer);
+                self.state.cameraTimer = null;
+            }
+            if (self.state.checkpointTimers && self.state.checkpointTimers.length) {
+                self.state.checkpointTimers.forEach(function(t) { clearTimeout(t); });
+                self.state.checkpointTimers = [];
+            }
+            if (self.state.cameraStream) {
+                try {
+                    self.state.cameraStream.getTracks().forEach(function(tr){ tr.stop(); });
+                } catch(e) {}
+                self.state.cameraStream = null;
+            }
+            var overlay = document.getElementById('lumina-cbt-fullscreen-overlay');
+            if (overlay) overlay.remove();
+            var lockout = document.getElementById('lumina-cbt-lockout-screen');
+            if (lockout) lockout.remove();
+            var hud = document.getElementById('lumina-cbt-strike-hud');
+            if (hud) hud.remove();
+        },
+
         init: function(opts) {
             this.config = Object.assign(this.config, opts || {});
             window.LuminaCBTProctor = this;
@@ -314,7 +344,7 @@ define(['core/ajax', 'core/notification'], function(ajax, notification) {
 
         recordViolation: function(eventType, metadata) {
             var self = this;
-            if (self.state.isDisqualified || self.state.isSubmitting) return;
+            if (self.state.isDisqualified || self.state.isSubmitting || self.state.isCompleted) return;
             self.playWarningChime();
 
             var form = new FormData();

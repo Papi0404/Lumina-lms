@@ -104,10 +104,36 @@ if ($ismanager && optional_param('resetsim', 0, PARAM_INT)) {
     redirect(new moodle_url('/local/lumina_cbt/exam_view.php', ['cmid' => $cmid]));
 }
 
+$themebrand = '';
+if (!empty($PAGE->theme->settings->brandcolor)) {
+    $themebrand = $PAGE->theme->settings->brandcolor;
+} else if (!empty($PAGE->theme->settings->primary)) {
+    $themebrand = $PAGE->theme->settings->primary;
+} else if (!empty($PAGE->theme->settings->maincolor)) {
+    $themebrand = $PAGE->theme->settings->maincolor;
+}
+
 echo $OUTPUT->header();
 ?>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 <style>
+/* ===== LUMINA CBT: DYNAMIC MULTI-THEME COLOR ENGINE ===== */
+:root {
+    <?php if (!empty($themebrand)): ?>
+    --theme-brand: <?php echo $themebrand; ?>;
+    <?php endif; ?>
+    /* Pull primary from any Moodle theme: Lumina > Bootstrap > Core > Fallback */
+    --cbt-primary: var(--lumina-primary, var(--bs-primary, var(--primary, var(--theme-brand, #4338CA))));
+    --cbt-primary-dark: color-mix(in srgb, var(--cbt-primary) 80%, #000);
+    --cbt-primary-light: color-mix(in srgb, var(--cbt-primary) 10%, #fff);
+    --cbt-primary-surface: color-mix(in srgb, var(--cbt-primary) 6%, #fff);
+    --cbt-primary-text: color-mix(in srgb, var(--cbt-primary) 70%, #000);
+    --cbt-primary-border: color-mix(in srgb, var(--cbt-primary) 35%, #fff);
+    --cbt-primary-glow: color-mix(in srgb, var(--cbt-primary) 25%, transparent);
+    --cbt-exam-bg: #0B132B;
+    --cbt-exam-surface: #1E293B;
+}
+
 /* Universal distraction-free reset across all Moodle themes (Lumina, Moon, Boost) */
 .lumina-sidebar,
 .sidebar-wrapper,
@@ -147,13 +173,23 @@ footer,
 .sr-only,
 .accesshide,
 .moodle-has-zindex,
-#goto-top-link {
+#goto-top-link,
+.embedded-main > header,
+.embedded-main > [data-region="activity-information"],
+.embedded-main > .activity-header,
+header#page-header,
+.page-context-header,
+.activity-header-content,
+#intro,
+.mod_introbox,
+.activityinformation {
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
     pointer-events: none !important;
 }
 
@@ -199,29 +235,34 @@ html, body {
 // State A: Exam already submitted / completed
 if ($session->status === 'completed' || $session->status === 'approved') {
     ?>
-    <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; background: #F8FAFC; padding: 2rem;">
-        <div style="max-width: 580px; width: 100%; background: #fff; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 12px 32px rgba(15,23,42,0.08); border: 1px solid #E2E8F0;">
-            <div style="width: 68px; height: 68px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 1.25rem;">
+    <div style="min-height: 85vh; display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #F8FAFC; padding: 2rem;">
+        <div style="max-width: 600px; width: 100%; background: #ffffff; border-radius: 24px; padding: 2.75rem 2.25rem; text-align: center; box-shadow: 0 20px 45px -10px rgba(15,23,42,0.1), 0 0 1px 1px rgba(15,23,42,0.05); border: 1px solid #E2E8F0;">
+            <div style="width: 76px; height: 76px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: inline-flex; align-items: center; justify-content: center; font-size: 38px; margin-bottom: 1.5rem; box-shadow: 0 8px 20px -4px rgba(22,163,74,0.25);">
                 ✓
             </div>
-            <h2 style="font-weight: 700; color: #0F172A; margin-bottom: 0.5rem;">Ujian Telah Diselesaikan</h2>
-            <p style="color: #64748B; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem;">
-                Jawaban Anda telah berhasil dikumpulkan dan diproses oleh sistem CBT Terpantau.
+            <h2 style="font-weight: 800; color: #0F172A; margin-bottom: 0.5rem; font-size: 1.75rem; letter-spacing: -0.02em;">Ujian Telah Diselesaikan</h2>
+            <p style="color: #64748B; font-size: 0.98rem; line-height: 1.6; margin-bottom: 1.75rem; max-width: 480px; margin-left: auto; margin-right: auto;">
+                Jawaban Anda telah berhasil dikumpulkan dan diproses oleh sistem CBT Terpantau. Mode proteksi ujian telah dinonaktifkan.
             </p>
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1.25rem; margin-bottom: 1.75rem;">
-                <div style="font-size: 0.85rem; color: #64748B; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Nilai Akhir Ujian</div>
-                <div style="font-size: 2.75rem; font-weight: 800; color: var(--cbt-primary); line-height: 1.2; margin: 0.25rem 0;">
+            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem;">
+                <div style="font-size: 0.82rem; color: #64748B; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 0.35rem;">Nilai Akhir Ujian</div>
+                <div style="font-size: 3rem; font-weight: 900; color: var(--cbt-primary, #4338CA); line-height: 1.1; margin: 0.25rem 0;">
                     <?php echo number_format((float)($session->score ?? 0), 2); ?>
                 </div>
-                <div style="font-size: 0.85rem; color: #10B981; font-weight: 600;">Status: Selesai &amp; Nilai Masuk Gradebook</div>
+                <div style="font-size: 0.88rem; color: #16A34A; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-top: 0.25rem;">
+                    <span>✓</span><span>Status: Selesai &amp; Nilai Masuk Gradebook</span>
+                </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: var(--cbt-primary); color: #fff; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-                    Kembali ke Kelas
+                <a href="<?php echo $CFG->wwwroot; ?>/my/" style="background: var(--cbt-primary, #4338CA); color: #ffffff !important; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px var(--cbt-primary-glow, rgba(67,56,202,0.3));">
+                    <span>🏠</span><span>Kembali ke Dashboard</span>
+                </a>
+                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #ffffff; color: #1E293B !important; border: 1.5px solid #CBD5E1; padding: 12px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+                    <span>📚</span><span>Kembali ke Kelas</span>
                 </a>
                 <?php if ($ismanager): ?>
-                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #F1F5F9; color: #334155; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid #CBD5E1;">
-                    🔄 Reset Simulasi (Pengajar)
+                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #F1F5F9; color: #475569 !important; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.92rem; border: 1.5px solid #E2E8F0; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>🔄</span><span>Reset Simulasi (Pengajar)</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -248,12 +289,15 @@ if ($session->status === 'invalidated') {
                 Sesi ujian Anda telah dibatalkan secara permanen oleh pengawas dan nilai didiskualifikasi (0.00).
             </p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #EF4444; color: #fff; padding: 12px 28px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(239,68,68,0.4);">
-                    Kembali ke Beranda Kelas
+                <a href="<?php echo $CFG->wwwroot; ?>/my/" style="background: #EF4444; color: #ffffff !important; padding: 12px 26px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(239,68,68,0.4);">
+                    <span>🏠</span><span>Kembali ke Dashboard</span>
+                </a>
+                <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" style="background: #1E293B; color: #F1F5F9 !important; border: 1.5px solid #475569; padding: 12px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+                    <span>📚</span><span>Kembali ke Kelas</span>
                 </a>
                 <?php if ($ismanager): ?>
-                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #334155; color: #F1F5F9; padding: 12px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-                    🔄 Reset Simulasi (Pengajar)
+                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #334155; color: #F1F5F9 !important; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.92rem; border: 1px solid #475569; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>🔄</span><span>Reset Simulasi (Pengajar)</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -280,12 +324,15 @@ if ($session->status === 'under_review') {
                 Silakan hubungi Pengawas Ujian di ruangan Anda untuk memverifikasi dan membuka kunci (Unlock) ujian.
             </div>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <button onclick="window.location.reload();" style="background: var(--cbt-primary); color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
-                    Periksa Status Buka Kunci
+                <button onclick="window.location.reload();" style="background: var(--cbt-primary, #4338CA); color: #ffffff !important; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+                    <span>🔄</span><span>Periksa Status Buka Kunci</span>
                 </button>
+                <a href="<?php echo $CFG->wwwroot; ?>/my/" style="background: #1E293B; color: #F1F5F9 !important; border: 1.5px solid #475569; padding: 12px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+                    <span>🏠</span><span>Kembali ke Dashboard</span>
+                </a>
                 <?php if ($ismanager): ?>
-                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #334155; color: #F1F5F9; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-                    🔄 Reset Simulasi (Pengajar)
+                <a href="<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/exam_view.php?cmid=<?php echo $cmid; ?>&resetsim=1" style="background: #334155; color: #F1F5F9 !important; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.92rem; border: 1px solid #475569; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>🔄</span><span>Reset Simulasi (Pengajar)</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -328,33 +375,8 @@ if (empty($clientquestions)) {
 }
 
 // State C: Active In-Progress CBT Room
-$themebrand = '';
-if (!empty($PAGE->theme->settings->brandcolor)) {
-    $themebrand = $PAGE->theme->settings->brandcolor;
-} else if (!empty($PAGE->theme->settings->primary)) {
-    $themebrand = $PAGE->theme->settings->primary;
-} else if (!empty($PAGE->theme->settings->maincolor)) {
-    $themebrand = $PAGE->theme->settings->maincolor;
-}
 ?>
 <style>
-/* ===== LUMINA CBT: DYNAMIC MULTI-THEME COLOR ENGINE ===== */
-:root {
-    <?php if (!empty($themebrand)): ?>
-    --theme-brand: <?php echo $themebrand; ?>;
-    <?php endif; ?>
-    /* Pull primary from any Moodle theme: Lumina > Bootstrap > Core > Fallback */
-    --cbt-primary: var(--lumina-primary, var(--bs-primary, var(--primary, var(--theme-brand, #4338CA))));
-    --cbt-primary-dark: color-mix(in srgb, var(--cbt-primary) 80%, #000);
-    --cbt-primary-light: color-mix(in srgb, var(--cbt-primary) 10%, #fff);
-    --cbt-primary-surface: color-mix(in srgb, var(--cbt-primary) 6%, #fff);
-    --cbt-primary-text: color-mix(in srgb, var(--cbt-primary) 70%, #000);
-    --cbt-primary-border: color-mix(in srgb, var(--cbt-primary) 35%, #fff);
-    --cbt-primary-glow: color-mix(in srgb, var(--cbt-primary) 25%, transparent);
-    --cbt-exam-bg: #0B132B;
-    --cbt-exam-surface: #1E293B;
-}
-
 /* Reset & Modern Minimalist Exam Canvas */
 #page-header, .navbar, .drawer, #nav-drawer, footer, #page-footer {
     display: none !important;
@@ -966,13 +988,26 @@ window.addEventListener('DOMContentLoaded', function() {
         .then(function(r){ return r.json(); })
         .then(function(data) {
             if (data.success) {
+                // Deactivate proctoring engine completely
+                if (window.LuminaCBTProctor && typeof window.LuminaCBTProctor.deactivate === 'function') {
+                    window.LuminaCBTProctor.deactivate();
+                }
+                // Exit fullscreen cleanly without triggering any false violation warnings
+                try {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    }
+                } catch(e) {}
+
                 modalLoading.innerHTML = '<div style="font-size:42px;margin-bottom:8px;">🎉</div>' +
                                          '<div style="font-size:1.3rem;font-weight:800;color:#0F172A;margin-bottom:6px;">Ujian Berhasil Dikumpulkan!</div>' +
                                          '<div style="font-size:1.1rem;color:#16A34A;font-weight:800;margin-bottom:12px;">Nilai: ' + (data.score !== undefined ? data.score : '-') + '</div>' +
                                          '<div style="font-size:0.85rem;color:#64748B;">Mengarahkan ke ringkasan hasil...</div>';
                 setTimeout(function() {
                     window.location.reload();
-                }, 1200);
+                }, 1000);
             } else {
                 modalLoading.innerHTML = '<div style="font-size:36px;color:#EF4444;margin-bottom:8px;">⚠️</div>' +
                                          '<div style="font-size:1.05rem;font-weight:700;color:#991B1B;margin-bottom:14px;">' + (data.message || 'Gagal mengumpulkan ujian.') + '</div>' +

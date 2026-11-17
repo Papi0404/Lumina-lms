@@ -520,6 +520,11 @@ function local_lumina_cbt_init_proctor_if_needed() {
     // Start/retrieve candidate proctoring session
     $session = \local_lumina_cbt\cbt_engine::start_or_get_session((int)$cm->course, (int)$cm->id, (int)$USER->id);
 
+    // If session is already completed, approved, or invalidated, NEVER initialize proctoring lockdown
+    if ($session->status === 'completed' || $session->status === 'approved' || $session->status === 'invalidated') {
+        return;
+    }
+
     // Course URL for fallback redirect
     $courseurl = (new \moodle_url('/course/view.php', ['id' => $cm->course]))->out(false);
 

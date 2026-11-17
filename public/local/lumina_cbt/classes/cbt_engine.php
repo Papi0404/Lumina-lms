@@ -160,6 +160,17 @@ class cbt_engine {
             @copy($jpgfile, $destfile);
         }
 
+        // If already completed or approved, never record new violations or strikes
+        if ($session->status === 'completed' || $session->status === 'approved') {
+            return [
+                'warning_level' => 0,
+                'status'        => $session->status,
+                'is_suspended'  => false,
+                'is_simulation' => $issimulation,
+                'message'       => 'Ujian telah selesai.',
+            ];
+        }
+
         // If already suspended/under_review or invalidated, keep locked (unless teacher simulation)
         if (($session->status === 'under_review' || $session->status === 'invalidated') && !$issimulation) {
             return [

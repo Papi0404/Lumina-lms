@@ -181,6 +181,12 @@ if (!$courseindex) {
     $courseindexopen = false;
 }
 
+$is_admin_search_page = ($PAGE->pagetype === 'admin-search' || strpos($PAGE->url ? $PAGE->url->get_path() : '', '/admin/search.php') !== false);
+if ($is_admin_search_page) {
+    $extraclasses[] = 'lumina-siteadmin-page';
+    $extraclasses[] = 'learnova-siteadmin-page';
+}
+
 $bodyattributes = $OUTPUT->body_attributes($extraclasses);
 $forceblockdraweropen = $OUTPUT->firstview_fakeblocks();
 
@@ -1186,7 +1192,7 @@ $templatecontext = [
     'blockdraweropen' => $blockdraweropen,
     'courseindex' => $courseindex,
     'primarymoremenu' => $primarymenu['moremenu'] ?? null,
-    'secondarymoremenu' => $secondarynavigation ?: false,
+    'secondarymoremenu' => $is_admin_search_page ? false : ($secondarynavigation ?: false),
     'mobileprimarynav' => $primarymenu['mobileprimarynav'] ?? null,
     'usermenu' => $primarymenu['user'] ?? null,
     'langmenu' => $primarymenu['lang'] ?? null,

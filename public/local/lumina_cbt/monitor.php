@@ -613,32 +613,45 @@ echo $OUTPUT->header();
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end">
-                                            <div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">
+                                            <div class="d-inline-flex align-items-center gap-1.5 flex-wrap justify-content-end">
                                                 <button type="button" class="btn btn-primary btn-sm rounded-pill px-2.5 py-1 fw-semibold shadow-xs d-inline-flex align-items-center gap-1"
                                                         title="Pantau Kamera Siswa secara Senyap (Stealth Videocall)"
                                                         onclick="cbtOpenLiveCam(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>', '<?php echo addslashes(s($item['student_email'])); ?>', '<?php echo addslashes(s($item['activity_name'])); ?>', '<?php echo addslashes(s($item['course_name'])); ?>', <?php echo (int)$item['warning_count']; ?>, '<?php echo $item['status']; ?>')">
                                                     <span>📹</span>
                                                     <span>Pantau Kamera</span>
                                                 </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1"
+                                                        title="Buka Rekam Jejak Pelanggaran &amp; Galeri Foto Kamera"
+                                                        onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
+                                                    <span>📋</span><span>Log &amp; Foto</span>
+                                                </button>
                                                 <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" onclick="cbtViewAudit(<?php echo $item['session_id']; ?>, '<?php echo addslashes(s($item['student_name'])); ?>')">
-                                                        <span>📋</span><span>Log &amp; Foto</span>
-                                                    </button>
                                                     <?php if ($item['status'] === 'invalidated'): ?>
-                                                        <button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'restore')">
-                                                            🔄 Pulihkan
+                                                        <button type="button" class="btn btn-warning btn-sm fw-semibold" title="Pulihkan Nilai yang Dibatalkan ke Gradebook" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'restore')">
+                                                            🔄 Pulihkan Nilai
                                                         </button>
-                                                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
-                                                            🔓 Reset
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian 0/3" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                            🔓 Reset Ujian
                                                         </button>
-                                                    <?php else: ?>
-                                                        <?php if ($item['status'] === 'under_review' || $item['warning_count'] > 0): ?>
-                                                            <button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
-                                                                🔓 Unlock
-                                                            </button>
-                                                        <?php endif; ?>
+                                                    <?php elseif ($item['status'] === 'approved'): ?>
+                                                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1 me-1" style="font-size: 0.75rem;">
+                                                            <span>✓</span><span>Sudah Diloloskan</span>
+                                                        </span>
                                                         <button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
                                                             🚫 Batalkan Nilai
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Reset Ujian &amp; Buka Kunci (0/3)" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                            🔄 Reset
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <button type="button" class="btn btn-success btn-sm fw-semibold" title="Loloskan &amp; ACC Nilai ke Gradebook" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'approved')">
+                                                            ✓ Loloskan
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger btn-sm fw-semibold" title="Batalkan Nilai / Diskualifikasi Peserta (0.00)" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'invalidated')">
+                                                            🚫 Batalkan Nilai
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Buka Kunci &amp; Beri Kesempatan Ulang (Reset Strike 0/3)" onclick="cbtResolve(<?php echo $item['session_id']; ?>, 'reset')">
+                                                            🔄 Reset
                                                         </button>
                                                     <?php endif; ?>
                                                 </div>
@@ -702,9 +715,45 @@ echo $OUTPUT->header();
                 </div>
             </div>
 
-            <div class="modal-footer bg-light px-4 py-2.5 border-top d-flex justify-content-between align-items-center">
-                <span class="text-muted small">Semua foto bukti diabadikan secara otomatis dan manual dengan stempel waktu resmi.</span>
-                <button type="button" class="btn btn-secondary rounded-pill px-4 btn-sm" onclick="cbtHideModal('cbtAuditModal')">Tutup</button>
+            <div class="modal-footer bg-light px-4 py-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap" id="cbtAuditDecisionToolbar">
+                    <span class="fw-bold small text-dark d-flex align-items-center gap-1">
+                        <span>⚖️</span>
+                        <span>Keputusan Pengawas:</span>
+                    </span>
+                    <button type="button" class="btn btn-success btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1"
+                            id="cbtAuditBtnApprove"
+                            title="Loloskan lembar ujian &amp; masukkan nilai resmi ke Gradebook"
+                            onclick="cbtAuditResolve('approved')">
+                        <span>✓</span>
+                        <span>Loloskan Ujian</span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1"
+                            id="cbtAuditBtnInvalidate"
+                            title="Batalkan nilai menjadi 0.00 (Diskualifikasi)"
+                            onclick="cbtAuditResolve('invalidated')">
+                        <span>🚫</span>
+                        <span>Batalkan Nilai</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1"
+                            id="cbtAuditBtnReset"
+                            title="Buka kunci &amp; beri kesempatan ujian ulang (reset 0/3)"
+                            onclick="cbtAuditResolve('reset')">
+                        <span>🔄</span>
+                        <span>Reset Ujian</span>
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1"
+                            id="cbtAuditBtnRestore"
+                            style="display: none;"
+                            title="Pulihkan nilai ujian resmi yang dibatalkan"
+                            onclick="cbtAuditResolve('restore')">
+                        <span>🔄</span>
+                        <span>Pulihkan Nilai</span>
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 btn-sm fw-semibold" onclick="cbtHideModal('cbtAuditModal')">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
@@ -875,12 +924,17 @@ echo $OUTPUT->header();
                                 <span>Buka Galeri Foto Bukti Sesi Ini</span>
                             </button>
 
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-success flex-fill rounded-pill py-1.5 small fw-semibold" onclick="cbtCamResolve('reset')" title="Reset Peringatan 0/3">
-                                    🔓 Reset / Unlock
-                                </button>
-                                <button type="button" class="btn btn-outline-danger flex-fill rounded-pill py-1.5 small fw-semibold" onclick="cbtCamResolve('invalidated')" title="Diskualifikasi & Batalkan Nilai">
-                                    🚫 Batalkan Nilai
+                            <div class="d-grid gap-2">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-success flex-fill rounded-pill py-1.5 small fw-semibold shadow-xs" onclick="cbtCamResolve('approved')" title="Loloskan &amp; ACC Nilai Resmi ke Gradebook">
+                                        ✓ Loloskan
+                                    </button>
+                                    <button type="button" class="btn btn-danger flex-fill rounded-pill py-1.5 small fw-semibold shadow-xs" onclick="cbtCamResolve('invalidated')" title="Diskualifikasi &amp; Batalkan Nilai (0.00)">
+                                        🚫 Batalkan Nilai
+                                    </button>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill py-1.5 small fw-semibold" onclick="cbtCamResolve('reset')" title="Buka Kunci &amp; Beri Kesempatan Ujian Ulang (Reset 0/3)">
+                                    🔄 Reset / Ujian Ulang
                                 </button>
                             </div>
                         </div>
@@ -1184,19 +1238,22 @@ function renderCandidatesTable(list) {
                      'onclick="cbtOpenLiveCam(' + item.session_id + ', \'' + safeName + '\', \'' + safeEmail + '\', \'' + safeAct + '\', \'' + safeCourse + '\', ' + wcount + ', \'' + item.status + '\')">' +
                      '<span>📹</span><span>Pantau Kamera</span></button>';
 
-        var actions = '<div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">' +
+        var actions = '<div class="d-inline-flex align-items-center gap-1.5 flex-wrap justify-content-end">' +
                       camBtn +
-                      '<div class="btn-group btn-group-sm">' +
-                      '<button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" onclick="cbtViewAudit(' + item.session_id + ', \'' + safeName + '\')"><span>📋</span><span>Log &amp; Foto</span></button>';
+                      '<button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1" title="Buka Rekam Jejak Pelanggaran &amp; Galeri Foto Kamera" onclick="cbtViewAudit(' + item.session_id + ', \'' + safeName + '\')"><span>📋</span><span>Log &amp; Foto</span></button>' +
+                      '<div class="btn-group btn-group-sm">';
 
         if (item.status === 'invalidated') {
-            actions += '<button type="button" class="btn btn-warning btn-sm" title="Pulihkan Nilai yang Dibatalkan" onclick="cbtResolve(' + item.session_id + ', \'restore\')">🔄 Pulihkan</button>';
-            actions += '<button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Reset</button>';
-        } else {
-            if (item.status === 'under_review' || wcount > 0) {
-                actions += '<button type="button" class="btn btn-success btn-sm" title="Buka Kunci & Reset 0/3" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Unlock</button>';
-            }
+            actions += '<button type="button" class="btn btn-warning btn-sm fw-semibold" title="Pulihkan Nilai yang Dibatalkan ke Gradebook" onclick="cbtResolve(' + item.session_id + ', \'restore\')">🔄 Pulihkan Nilai</button>';
+            actions += '<button type="button" class="btn btn-outline-secondary btn-sm" title="Beri Kesempatan Ulang / Reset Ujian 0/3" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔓 Reset Ujian</button>';
+        } else if (item.status === 'approved') {
+            actions += '<span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1 me-1" style="font-size: 0.75rem;"><span>✓</span><span>Sudah Diloloskan</span></span>';
             actions += '<button type="button" class="btn btn-danger btn-sm" title="Batalkan Nilai / Diskualifikasi Peserta" onclick="cbtResolve(' + item.session_id + ', \'invalidated\')">🚫 Batalkan Nilai</button>';
+            actions += '<button type="button" class="btn btn-outline-secondary btn-sm" title="Reset Ujian &amp; Buka Kunci (0/3)" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔄 Reset</button>';
+        } else {
+            actions += '<button type="button" class="btn btn-success btn-sm fw-semibold" title="Loloskan &amp; ACC Nilai ke Gradebook" onclick="cbtResolve(' + item.session_id + ', \'approved\')">✓ Loloskan</button>';
+            actions += '<button type="button" class="btn btn-danger btn-sm fw-semibold" title="Batalkan Nilai / Diskualifikasi Peserta (0.00)" onclick="cbtResolve(' + item.session_id + ', \'invalidated\')">🚫 Batalkan Nilai</button>';
+            actions += '<button type="button" class="btn btn-outline-secondary btn-sm" title="Buka Kunci &amp; Beri Kesempatan Ulang (Reset Strike 0/3)" onclick="cbtResolve(' + item.session_id + ', \'reset\')">🔄 Reset</button>';
         }
         actions += '</div></div>';
 
@@ -1233,22 +1290,37 @@ setInterval(function() {
 // Resolve candidate session
 function cbtResolve(sessionId, decision) {
     var promptMsg = '';
-    if (decision === 'reset') {
-        promptMsg = 'Beri kesempatan ulang & buka kunci (reset peringatan 0/3 dan hapus nilai sementara)?';
+    var defaultReason = '';
+    if (decision === 'approved') {
+        promptMsg = '✓ LOLOSKAN UJIAN:\n\nApakah Anda yakin ingin MELOLOSKAN sesi ujian peserta ini?\n\n• Sesi dinyatakan sah dan bersih dari kecurangan.\n• Nilai resmi peserta akan dikonfirmasi dan disinkronkan ke Buku Nilai (Gradebook) Moodle.\n\nLanjutkan loloskan ujian?';
+        defaultReason = 'Disetujui & lolos verifikasi pengawas';
     } else if (decision === 'invalidated') {
-        promptMsg = 'PERINGATAN: BATALKAN NILAI peserta ini?\n\nNilai akan dianulir menjadi 0.00 (didiskualifikasi) di Gradebook, dan akses ujian siswa akan dibekukan seketika.';
+        promptMsg = '🚫 BATALKAN NILAI (DISKUALIFIKASI):\n\n• Nilai ujian peserta akan dianulir menjadi 0.00 di Buku Nilai (Gradebook).\n• Akses ujian siswa akan dibekukan seketika.\n\nLanjutkan pembatalan nilai?';
+        defaultReason = 'Didiskualifikasi karena terbukti melanggar protokol ujian anti-contek';
+    } else if (decision === 'reset') {
+        promptMsg = '🔄 BERI KESEMPATAN UJIAN ULANG:\n\n• Buka kunci sesi yang tertahan/terkunci.\n• Reset peringatan pelanggaran kembali ke 0/3.\n• Hapus lembar jawaban sementara agar siswa dapat mengulang ujian dari awal.\n\nLanjutkan reset ujian?';
+        defaultReason = 'Reset sesi dan diberikan kesempatan ujian ulang';
     } else if (decision === 'restore') {
-        promptMsg = 'PULIHKAN NILAI:\n\nBatalkan status diskualifikasi dan pulihkan kembali nilai ujian peserta ini ke Gradebook?';
+        promptMsg = '🔄 PULIHKAN NILAI:\n\nBatalkan diskualifikasi dan pulihkan kembali nilai ujian asli peserta ke Buku Nilai (Gradebook)?\n\nLanjutkan pemulihan nilai?';
+        defaultReason = 'Nilai ujian dipulihkan kembali oleh pengawas';
     } else {
-        promptMsg = 'Setujui dan proses nilai sesi ini?';
+        promptMsg = 'Setujui dan proses keputusan untuk sesi ini?';
     }
 
-    if (!confirm(promptMsg)) return;
+    var notes = '';
+    if (decision === 'invalidated') {
+        notes = prompt(promptMsg + '\n\nMasukkan catatan alasan pembatalan nilai (opsional):', defaultReason);
+        if (notes === null) return; // Dibatalkan oleh pengawas
+    } else {
+        if (!confirm(promptMsg)) return;
+        notes = defaultReason;
+    }
 
     var form = new FormData();
     form.append('action', 'resolve');
     form.append('session_id', sessionId);
     form.append('decision', decision);
+    form.append('notes', notes);
     form.append('sesskey', '<?php echo sesskey(); ?>');
 
     fetch('<?php echo $CFG->wwwroot; ?>/local/lumina_cbt/ajax_monitor.php', {
@@ -1259,10 +1331,21 @@ function cbtResolve(sessionId, decision) {
     .then(function(data) {
         if (data.success) {
             fetchLiveData(true);
+            if (cbtActiveAuditSessionId === sessionId) {
+                cbtViewAudit(sessionId, cbtActiveAuditStudentName);
+            }
         } else {
             alert(data.error || 'Gagal memproses tindakan.');
         }
+    })
+    .catch(function() {
+        alert('Terjadi kesalahan koneksi saat memproses keputusan.');
     });
+}
+
+function cbtAuditResolve(decision) {
+    if (!cbtActiveAuditSessionId) return;
+    cbtResolve(cbtActiveAuditSessionId, decision);
 }
 
 // Universal Modal Utility (Works with Bootstrap 5, jQuery, or Vanilla Fallback)
@@ -1423,6 +1506,64 @@ function cbtViewAudit(sessionId, name, initialTab) {
 
         if (badgeEvents) badgeEvents.innerText = events.length;
         if (badgePhotos) badgePhotos.innerText = photos.length;
+
+        var st = data.status || '';
+        var statusBadge = '';
+        if (st === 'under_review') {
+            statusBadge = '<span class="badge bg-danger text-white rounded-pill px-2.5 py-0.5">🔒 Terkunci / Perlu Peninjauan</span>';
+        } else if (st === 'approved') {
+            statusBadge = '<span class="badge bg-success text-white rounded-pill px-2.5 py-0.5">✓ Sudah Diloloskan</span>';
+        } else if (st === 'invalidated') {
+            statusBadge = '<span class="badge bg-dark text-white rounded-pill px-2.5 py-0.5">✕ Nilai Dibatalkan (0.00)</span>';
+        } else if (st === 'completed') {
+            statusBadge = '<span class="badge bg-success text-white rounded-pill px-2.5 py-0.5">✓ Ujian Selesai</span>';
+        } else if (st === 'not_started') {
+            statusBadge = '<span class="badge bg-secondary text-white rounded-pill px-2.5 py-0.5">Belum Mengerjakan</span>';
+        } else {
+            statusBadge = '<span class="badge bg-primary text-white rounded-pill px-2.5 py-0.5">Sedang Mengerjakan</span>';
+        }
+
+        var scoreTxt = (data.score !== null && data.score !== undefined) ? ' • Nilai: <strong>' + parseFloat(data.score).toFixed(2) + '</strong>' : '';
+        var warnTxt = ' • ' + (data.warning_count || 0) + ' / 3 Peringatan';
+        if (subEl) {
+            subEl.innerHTML = 'Sesi #' + sessionId + ' • ' + statusBadge + scoreTxt + warnTxt;
+        }
+
+        var btnApprove = document.getElementById('cbtAuditBtnApprove');
+        var btnInvalidate = document.getElementById('cbtAuditBtnInvalidate');
+        var btnReset = document.getElementById('cbtAuditBtnReset');
+        var btnRestore = document.getElementById('cbtAuditBtnRestore');
+
+        if (st === 'invalidated') {
+            if (btnApprove) btnApprove.style.display = 'none';
+            if (btnInvalidate) btnInvalidate.style.display = 'none';
+            if (btnRestore) btnRestore.style.display = 'inline-flex';
+            if (btnReset) btnReset.style.display = 'inline-flex';
+        } else if (st === 'approved') {
+            if (btnApprove) {
+                btnApprove.style.display = 'inline-flex';
+                btnApprove.innerHTML = '<span>✓</span><span>Sudah Diloloskan (ACC)</span>';
+                btnApprove.className = 'btn btn-outline-success btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1 disabled';
+            }
+            if (btnRestore) btnRestore.style.display = 'none';
+            if (btnInvalidate) {
+                btnInvalidate.style.display = 'inline-flex';
+                btnInvalidate.className = 'btn btn-danger btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1';
+            }
+            if (btnReset) btnReset.style.display = 'inline-flex';
+        } else {
+            if (btnApprove) {
+                btnApprove.style.display = 'inline-flex';
+                btnApprove.innerHTML = '<span>✓</span><span>Loloskan Ujian</span>';
+                btnApprove.className = 'btn btn-success btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1';
+            }
+            if (btnRestore) btnRestore.style.display = 'none';
+            if (btnInvalidate) {
+                btnInvalidate.style.display = 'inline-flex';
+                btnInvalidate.className = 'btn btn-danger btn-sm rounded-pill px-3 fw-semibold shadow-xs d-inline-flex align-items-center gap-1';
+            }
+            if (btnReset) btnReset.style.display = 'inline-flex';
+        }
 
         // Render Events Tab
         if (eventsContainer) {

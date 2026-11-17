@@ -167,10 +167,17 @@ if ($action === 'session_events') {
     $sessionid = required_param('session_id', PARAM_INT);
     $events = \local_lumina_cbt\cbt_engine::get_session_events($sessionid);
     $photos = \local_lumina_cbt\cbt_engine::get_session_evidence_photos($sessionid);
+
+    $sessiontable = \local_lumina_cbt\cbt_engine::get_session_table();
+    $sessionrec = $DB->get_record($sessiontable, ['id' => $sessionid], 'id, status, warningcount, score, activityid, userid');
+
     echo json_encode([
-        'success' => true,
-        'events'  => $events,
-        'photos'  => $photos,
+        'success'      => true,
+        'status'       => $sessionrec ? $sessionrec->status : '',
+        'warning_count'=> $sessionrec ? (int)$sessionrec->warningcount : 0,
+        'score'        => $sessionrec && $sessionrec->score !== null ? (float)$sessionrec->score : null,
+        'events'       => $events,
+        'photos'       => $photos,
     ]);
     exit;
 }

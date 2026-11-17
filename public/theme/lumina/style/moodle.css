@@ -1754,16 +1754,66 @@
   --fn: var(--lumina-font-display, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
 body.lumina-siteadmin-page, body.learnova-siteadmin-page {
-  --lsa-sidebar-w: 220px;
+  --lsa-sidebar-w: 0px;
 }
-body.lumina-siteadmin-page .secondary-navigation, body.lumina-siteadmin-page .breadcrumb, body.lumina-siteadmin-page #page-navbar, body.lumina-siteadmin-page .drawer-toggles, body.learnova-siteadmin-page .secondary-navigation, body.learnova-siteadmin-page .breadcrumb, body.learnova-siteadmin-page #page-navbar, body.learnova-siteadmin-page .drawer-toggles {
+body.lumina-siteadmin-page .breadcrumb, body.lumina-siteadmin-page #page-navbar, body.lumina-siteadmin-page .drawer-toggles, body.lumina-siteadmin-page .lsa-sidebar, body.learnova-siteadmin-page .breadcrumb, body.learnova-siteadmin-page #page-navbar, body.learnova-siteadmin-page .drawer-toggles, body.learnova-siteadmin-page .lsa-sidebar {
   display: none !important;
+}
+body.lumina-siteadmin-page .secondary-navigation, body.learnova-siteadmin-page .secondary-navigation {
+  display: block !important;
+  margin-bottom: 24px !important;
+}
+body.lumina-siteadmin-page .secondary-navigation .navigation, body.lumina-siteadmin-page .secondary-navigation .moremenu, body.learnova-siteadmin-page .secondary-navigation .navigation, body.learnova-siteadmin-page .secondary-navigation .moremenu {
+  border: none !important;
+  background: transparent !important;
+}
+body.lumina-siteadmin-page .secondary-navigation .nav-tabs, body.learnova-siteadmin-page .secondary-navigation .nav-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+body.lumina-siteadmin-page .secondary-navigation .nav-link, body.learnova-siteadmin-page .secondary-navigation .nav-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 8px 20px !important;
+  border-radius: 50px !important;
+  background: #FFFFFF !important;
+  border: 1px solid var(--learnova-border, #E2E8F0) !important;
+  color: var(--learnova-stone, #475569) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  text-decoration: none !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.15s ease !important;
+}
+body.lumina-siteadmin-page .secondary-navigation .nav-link:hover, body.learnova-siteadmin-page .secondary-navigation .nav-link:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+body.lumina-siteadmin-page .secondary-navigation .nav-link.active, body.learnova-siteadmin-page .secondary-navigation .nav-link.active {
+  background: var(--learnova-mist, #E6F4F1) !important;
+  border-color: #A7F3D0 !important;
+  color: var(--learnova-teal-deep, #00695C) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 105, 92, 0.12) !important;
+}
+body.lumina-siteadmin-page .secondary-navigation .nav-link.active::before, body.learnova-siteadmin-page .secondary-navigation .nav-link.active::before {
+  content: "•" !important;
+  color: var(--learnova-teal-deep, #00695C) !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  margin-right: 4px !important;
 }
 body.lumina-siteadmin-page .lumina-main-viewport, body.lumina-siteadmin-page #page.drawers, body.learnova-siteadmin-page .lumina-main-viewport, body.learnova-siteadmin-page #page.drawers {
   margin-left: var(--lumina-sidebar-width, 280px) !important;
   margin-top: 0 !important;
   padding-top: var(--lumina-header-height, 64px) !important;
-  padding-left: var(--lsa-sidebar-w, 220px) !important;
+  padding-left: 0 !important;
   padding-right: 0 !important;
   background: var(--learnova-bg, #F8FAFC) !important;
   transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -1772,8 +1822,8 @@ body.lumina-rail-collapsed.lumina-siteadmin-page .lumina-main-viewport, body.lum
   margin-left: var(--lumina-sidebar-collapsed-width, 72px) !important;
 }
 body.lumina-siteadmin-page .lumina-main-viewport .main-inner, body.lumina-siteadmin-page #page.drawers .main-inner, body.learnova-siteadmin-page .lumina-main-viewport .main-inner, body.learnova-siteadmin-page #page.drawers .main-inner {
-  max-width: none !important;
-  margin: 0 !important;
+  max-width: 1400px !important;
+  margin: 0 auto !important;
   padding: 24px 32px !important;
   background: transparent !important;
   border: none !important;
@@ -1829,23 +1879,13 @@ body.lumina-siteadmin-page #page-header .simplesearchform button[type="submit"],
   display: block;
 }
 .learnova-siteadmin .lsa-sidebar, .lumina-siteadmin .lsa-sidebar {
-  position: fixed;
-  top: var(--lumina-header-height, 64px);
-  left: var(--lumina-sidebar-width, 280px);
-  bottom: 0;
-  z-index: 1010;
-  width: var(--lsa-sidebar-w, 220px);
-  padding: 20px 12px;
-  background: #fff;
-  border: 0;
-  border-right: 1px solid var(--learnova-border-solid, #E5E7EB);
-  border-radius: 0;
-  overflow-y: auto;
-  box-sizing: border-box;
-  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none !important;
 }
-body.lumina-rail-collapsed .learnova-siteadmin .lsa-sidebar, body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
-  left: var(--lumina-sidebar-collapsed-width, 72px) !important;
+.learnova-siteadmin .lsa-main, .lumina-siteadmin .lsa-main {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 .learnova-siteadmin .lsa-sidebar__lbl, .lumina-siteadmin .lsa-sidebar__lbl {
   padding: 0 6px;

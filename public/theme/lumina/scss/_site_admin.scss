@@ -175,33 +175,90 @@ $lsa-ico-card-glyph:    16px;
 // settings search with it.
 body.lumina-siteadmin-page,
 body.learnova-siteadmin-page {
-    --lsa-sidebar-w: 220px;
+    --lsa-sidebar-w: 0px;
 
-    // Replaced by the sidebar, or unused here.
-    .secondary-navigation,
+    // Hide unused breadcrumb, page-navbar, and drawer-toggles
     .breadcrumb,
     #page-navbar,
-    .drawer-toggles {
+    .drawer-toggles,
+    .lsa-sidebar {
         display: none !important;
     }
 
+    // Modern horizontal secondary navigation pills
+    .secondary-navigation {
+        display: block !important;
+        margin-bottom: 24px !important;
+
+        .navigation,
+        .moremenu {
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .nav-tabs {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .nav-link {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 8px 20px !important;
+            border-radius: 50px !important;
+            background: #FFFFFF !important;
+            border: 1px solid var(--learnova-border, #E2E8F0) !important;
+            color: var(--learnova-stone, #475569) !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            line-height: 1.4 !important;
+            text-decoration: none !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+            transition: all 0.15s ease !important;
+
+            &:hover {
+                background: #F8FAFC !important;
+                border-color: #CBD5E1 !important;
+                color: #0F172A !important;
+            }
+
+            &.active {
+                background: var(--learnova-mist, #E6F4F1) !important;
+                border-color: #A7F3D0 !important;
+                color: var(--learnova-teal-deep, #00695C) !important;
+                font-weight: 700 !important;
+                box-shadow: 0 1px 3px rgba(0, 105, 92, 0.12) !important;
+
+                &::before {
+                    content: "•" !important;
+                    color: var(--learnova-teal-deep, #00695C) !important;
+                    font-size: 16px !important;
+                    line-height: 1 !important;
+                    margin-right: 4px !important;
+                }
+            }
+        }
+    }
+
     // Lumina LMS shell stays authentic: .lumina-sidebar and .lumina-topbar
-    // keep their global layout, while the content viewport insets for .lsa-sidebar.
+    // keep their global layout, while the content viewport uses full width.
     .lumina-main-viewport,
     #page.drawers {
         margin-left: var(--lumina-sidebar-width, 280px) !important;
         margin-top: 0 !important;
         padding-top: var(--lumina-header-height, 64px) !important;
-        padding-left: var(--lsa-sidebar-w, 220px) !important;
+        padding-left: 0 !important;
         padding-right: 0 !important;
         background: var(--learnova-bg, #F8FAFC) !important;
         transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
-        // Drop Boost's boxed white card — the section cards bring their own
-        // surfaces, and the column behind them must read as page background.
         .main-inner {
-            max-width: none !important;
-            margin: 0 !important;
+            max-width: 1400px !important;
+            margin: 0 auto !important;
             padding: 24px 32px !important;
             background: transparent !important;
             border: none !important;
@@ -277,28 +334,17 @@ body.learnova-siteadmin-page {
 .learnova-siteadmin,
 .lumina-siteadmin {
     display: block;
+    width: 100%;
 
-    // ── Sidebar ──────────────────────────────────────────────────────────────
-    // Out of flow so it can reach the viewport edge and run full height from a
-    // template rendered deep inside #region-main. body.learnova-siteadmin-page
-    // insets the page frame by --lsa-sidebar-w to make room; the two must stay
-    // in step. Safe as fixed because nothing above #page carries a transform,
-    // which would otherwise re-root the positioning.
     .lsa-sidebar {
-        position: fixed;
-        top: var(--lumina-header-height, 64px);
-        left: var(--lumina-sidebar-width, 280px);
-        bottom: 0;
-        z-index: 1010;
-        width: var(--lsa-sidebar-w, 220px);
-        padding: 20px 12px;
-        background: #fff;
-        border: 0;
-        border-right: 1px solid var(--learnova-border-solid, #E5E7EB);
-        border-radius: 0;
-        overflow-y: auto;
-        box-sizing: border-box;
-        transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: none !important;
+    }
+
+    .lsa-main {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .lsa-sidebar__lbl {
@@ -633,11 +679,7 @@ body.learnova-siteadmin-page {
     }
 }
 
-// Lumina Rail Collapsed state
-body.lumina-rail-collapsed .learnova-siteadmin .lsa-sidebar,
-body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
-    left: var(--lumina-sidebar-collapsed-width, 72px) !important;
-}
+
 
 // Release the frame inset once the sidebar rejoins the flow above.
 @media (max-width: 991.98px) {

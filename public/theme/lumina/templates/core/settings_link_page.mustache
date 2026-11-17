@@ -22,19 +22,88 @@
     grouped category accordion cards with a 3-column items grid.
 }}
 <style id="lumina-siteadmin-core-styles">
-/* ── Force Hide Legacy Navigation & Drawer Toggles on Site Admin ── */
-#page-admin-search .secondary-navigation,
+/* ── Force Hide Unused Breadcrumb & Drawer Toggles on Site Admin ── */
 #page-admin-search .breadcrumb,
 #page-admin-search #page-navbar,
 #page-admin-search .drawer-toggles,
-body.lumina-siteadmin-page .secondary-navigation,
 body.lumina-siteadmin-page .breadcrumb,
 body.lumina-siteadmin-page #page-navbar,
-body.lumina-siteadmin-page .drawer-toggles {
+body.lumina-siteadmin-page .drawer-toggles,
+.learnova-siteadmin .lsa-sidebar,
+.lumina-siteadmin .lsa-sidebar {
     display: none !important;
 }
 
-/* ── Lumina LMS Shell Intact (Sidebar and Topbar remain authentic) ── */
+/* ── Modern Horizontal Submenu Buttons (Above Site Unregistered Alert) ── */
+#page-admin-search .secondary-navigation,
+body.lumina-siteadmin-page .secondary-navigation {
+    display: block !important;
+    margin-bottom: 24px !important;
+}
+
+#page-admin-search .secondary-navigation .navigation,
+#page-admin-search .secondary-navigation .moremenu,
+body.lumina-siteadmin-page .secondary-navigation .navigation,
+body.lumina-siteadmin-page .secondary-navigation .moremenu {
+    border: none !important;
+    background: transparent !important;
+}
+
+#page-admin-search .secondary-navigation .nav-tabs,
+body.lumina-siteadmin-page .secondary-navigation .nav-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#page-admin-search .secondary-navigation .nav-link,
+body.lumina-siteadmin-page .secondary-navigation .nav-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 8px 20px !important;
+    border-radius: 50px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #475569 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    text-decoration: none !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    transition: all 0.15s ease !important;
+}
+
+#page-admin-search .secondary-navigation .nav-link:hover,
+body.lumina-siteadmin-page .secondary-navigation .nav-link:hover {
+    background: #F8FAFC !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+#page-admin-search .secondary-navigation .nav-link.active,
+#page-admin-search .secondary-navigation .nav-item.active .nav-link,
+body.lumina-siteadmin-page .secondary-navigation .nav-link.active,
+body.lumina-siteadmin-page .secondary-navigation .nav-item.active .nav-link {
+    background: #E6F4F1 !important;
+    border-color: #A7F3D0 !important;
+    color: #00695C !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(0, 105, 92, 0.12) !important;
+}
+
+#page-admin-search .secondary-navigation .nav-link.active::before,
+body.lumina-siteadmin-page .secondary-navigation .nav-link.active::before {
+    content: "•" !important;
+    color: #00695C !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    margin-right: 4px !important;
+}
+
+/* ── Lumina LMS Shell Intact (Full content width, no extra sidebar offset) ── */
 #page-admin-search #page.drawers,
 #page-admin-search .lumina-main-viewport,
 body.lumina-siteadmin-page #page.drawers,
@@ -42,7 +111,7 @@ body.lumina-siteadmin-page .lumina-main-viewport {
     margin-left: var(--lumina-sidebar-width, 280px) !important;
     margin-top: 0 !important;
     padding-top: var(--lumina-header-height, 64px) !important;
-    padding-left: 220px !important;
+    padding-left: 0 !important;
     padding-right: 0 !important;
     background: #F8FAFC !important;
     transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -57,7 +126,14 @@ body.lumina-rail-collapsed.lumina-siteadmin-page .lumina-main-viewport {
 
 #page-admin-search #page.drawers .main-inner,
 body.lumina-siteadmin-page #page.drawers .main-inner {
-    max-width: none !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    padding: 24px 32px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
     margin: 0 !important;
     padding: 24px 32px !important;
     background: transparent !important;
@@ -142,86 +218,25 @@ body.lumina-siteadmin-page .simplesearchform button[type="submit"]:hover {
     background: #0F766E !important;
 }
 
-/* ── Left Sidebar Navigation ── */
+/* ── Main Site Admin Layout (Full Width, No Vertical Sidebar) ── */
 .learnova-siteadmin,
 .lumina-siteadmin {
-    display: block;
+    display: block !important;
+    width: 100% !important;
 }
 
 .learnova-siteadmin .lsa-sidebar,
 .lumina-siteadmin .lsa-sidebar {
-    position: fixed !important;
-    top: var(--lumina-header-height, 64px) !important;
-    left: var(--lumina-sidebar-width, 280px) !important;
-    bottom: 0 !important;
-    z-index: 1010 !important;
-    width: 220px !important;
-    padding: 20px 12px !important;
-    background: #FFFFFF !important;
-    border: 0 !important;
-    border-right: 1px solid #E5E7EB !important;
-    border-radius: 0 !important;
-    overflow-y: auto !important;
-    box-sizing: border-box !important;
-    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: none !important;
 }
 
-body.lumina-rail-collapsed .learnova-siteadmin .lsa-sidebar,
-body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
-    left: var(--lumina-sidebar-collapsed-width, 72px) !important;
+.learnova-siteadmin .lsa-main,
+.lumina-siteadmin .lsa-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
-
-.learnova-siteadmin .lsa-sidebar__lbl,
-.lumina-siteadmin .lsa-sidebar__lbl {
-    padding: 0 10px !important;
-    margin-bottom: 8px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 1.2px !important;
-    text-transform: uppercase !important;
-    color: #64748B !important;
-}
-
-.learnova-siteadmin .lsa-sidebar__nav,
-.lumina-siteadmin .lsa-sidebar__nav {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 2px !important;
-}
-
-.learnova-siteadmin .lsa-sbi,
-.lumina-siteadmin .lsa-sbi {
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    padding: 8.5px 12px !important;
-    border-radius: 8px !important;
-    font-size: 13.5px !important;
-    font-weight: 500 !important;
-    color: #334155 !important;
-    text-decoration: none !important;
-    transition: all 0.12s ease !important;
-    cursor: pointer !important;
-}
-
-.learnova-siteadmin .lsa-sbi:hover,
-.lumina-siteadmin .lsa-sbi:hover {
-    background: #F8FAFC !important;
-    color: #0F172A !important;
-    text-decoration: none !important;
-}
-
-.learnova-siteadmin .lsa-sbi.is-on,
-.lumina-siteadmin .lsa-sbi.is-on {
-    background: #E6F4F1 !important;
-    color: #00695C !important;
-    font-weight: 600 !important;
-}
-
-.learnova-siteadmin .lsa-sbi__ico,
-.lumina-siteadmin .lsa-sbi__ico {
-    flex-shrink: 0 !important;
-    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 18px !important;
@@ -566,31 +581,6 @@ body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
 
 <div class="learnova-siteadmin lumina-siteadmin">
 
-{{! ── Sidebar ─────────────────────────────────────────────────────────── }}
-<aside class="lsa-sidebar">
-    <div class="lsa-sidebar__lbl">{{#str}}administrationsite, core{{/str}}</div>
-    <nav class="lsa-sidebar__nav" role="tablist" aria-orientation="vertical">
-        <a class="lsa-sbi is-on" id="lsa-tab-{{node.key}}" data-key="{{node.key}}"
-           href="#link{{node.key}}" role="tab" aria-selected="true" tabindex="0">
-            <span class="lsa-sbi__ico" aria-hidden="true"></span>
-            <span class="lsa-sbi__lbl">{{#str}}general, core{{/str}}</span>
-        </a>
-        {{#node.children}}
-            {{#display}}
-                {{#children.count}}
-                    {{^is_short_branch}}
-                        <a class="lsa-sbi" id="lsa-tab-{{key}}" data-key="{{key}}"
-                           href="#link{{key}}" role="tab" aria-selected="false" tabindex="-1">
-                            <span class="lsa-sbi__ico" aria-hidden="true"></span>
-                            <span class="lsa-sbi__lbl">{{text}}</span>
-                        </a>
-                    {{/is_short_branch}}
-                {{/children.count}}
-            {{/display}}
-        {{/node.children}}
-    </nav>
-</aside>
-
 <div class="lsa-main">
     {{! ── Bookmark bar ────────────────────────────────────────────────── }}
     <div class="lsa-bookmarks" data-region="lsa-bookmarks" hidden>
@@ -683,16 +673,19 @@ body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
         document.body.classList.add('lumina-siteadmin-page', 'learnova-siteadmin-page');
 
         var COLLAPSED = 'is-collapsed';
-        var ACTIVE = 'is-on';
 
         function syncFromPanes() {
             var pane = root.querySelector('.tab-content > .tab-pane.active');
             var id = pane ? pane.id : null;
-            root.querySelectorAll('.lsa-sbi').forEach(function(item) {
-                var on = id !== null && item.getAttribute('href') === '#' + id;
-                item.classList.toggle(ACTIVE, on);
+            document.querySelectorAll('.secondary-navigation .nav-link, .secondary-navigation a, [data-bs-toggle="tab"]').forEach(function(item) {
+                var href = item.getAttribute('href') || item.dataset.target || '';
+                var on = id !== null && (href === '#' + id || href.indexOf('#' + id) !== -1);
+                item.classList.toggle('active', on);
                 item.setAttribute('aria-selected', on ? 'true' : 'false');
-                item.setAttribute('tabindex', on ? '0' : '-1');
+                var navItem = item.closest('.nav-item');
+                if (navItem) {
+                    navItem.classList.toggle('active', on);
+                }
             });
         }
 
@@ -714,14 +707,19 @@ body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
             return true;
         }
 
-        root.addEventListener('click', function(e) {
-            var item = e.target.closest('.lsa-sbi');
-            if (item && root.contains(item)) {
-                e.preventDefault();
-                var href = item.getAttribute('href') || '';
-                var targetId = href.replace(/^#/, '');
-                if (activate(targetId) && window.history.replaceState) {
-                    window.history.replaceState(null, '', href);
+        document.addEventListener('click', function(e) {
+            var tabLink = e.target.closest('.secondary-navigation a, .secondary-navigation button, [data-bs-toggle="tab"]');
+            if (tabLink) {
+                var href = tabLink.getAttribute('href') || tabLink.dataset.target || '';
+                var hashIndex = href.indexOf('#');
+                if (hashIndex !== -1) {
+                    var targetId = href.substring(hashIndex + 1);
+                    if (activate(targetId)) {
+                        e.preventDefault();
+                        if (window.history.replaceState) {
+                            window.history.replaceState(null, '', '#' + targetId);
+                        }
+                    }
                 }
                 return;
             }
@@ -737,8 +735,21 @@ body.lumina-rail-collapsed .lumina-siteadmin .lsa-sidebar {
             }
         });
 
-        document.addEventListener('shown.bs.tab', function() {
-            syncFromPanes();
+        document.addEventListener('shown.bs.tab', function(e) {
+            if (e.target) {
+                var href = e.target.getAttribute('href') || e.target.dataset.target || '';
+                var hashIndex = href.indexOf('#');
+                if (hashIndex !== -1) {
+                    activate(href.substring(hashIndex + 1));
+                }
+            }
+        });
+
+        window.addEventListener('hashchange', function() {
+            var hash = window.location.hash;
+            if (hash) {
+                activate(hash.replace(/^#/, ''));
+            }
         });
 
         var hash = window.location.hash;

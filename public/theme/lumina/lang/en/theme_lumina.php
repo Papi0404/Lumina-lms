@@ -77,3 +77,8 @@ $string['gemini_api_key_setting'] = 'Lumina AI Gemini API Key';
 $string['gemini_api_key_setting_desc'] = 'Kunci API Google Gemini untuk mengaktifkan asisten AI tutor Lumina.';
 $string['brandcolor_setting'] = 'Warna Utama Tema';
 $string['brandcolor_setting_desc'] = 'Warna aksen utama Lumina LMS (default: #4338CA).';
+
+// Site Administration strings.
+$string['sa_section_general'] = 'General Setting';
+$string['sa_section_suffix']  = 'Setting';
+$string['sa_bookmarks']       = 'Bookmarks';

@@ -1731,3 +1731,1120 @@
     box-shadow: 2px 0 6px rgba(15, 23, 42, 0.04) !important;
 }
 
+
+
+/* --- Lumina Site Administration UI --- */
+@charset "UTF-8";
+:root, body.lumina-siteadmin-page, body.learnova-siteadmin-page {
+  --learnova-bg: #F8FAFC;
+  --learnova-dark: #0F172A;
+  --learnova-border: #E2E8F0;
+  --learnova-border-solid: #E5E7EB;
+  --learnova-charcoal: #0F172A;
+  --learnova-iron: #334155;
+  --learnova-stone: #64748B;
+  --learnova-teal: #0D9488;
+  --learnova-teal-deep: #00695C;
+  --learnova-teal-mid: #0F766E;
+  --learnova-mist: #E6F4F1;
+  --learnova-radius: 8px;
+  --learnova-radius-lg: 14px;
+  --learnova-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --learnova-nav-height: 64px;
+  --fn: var(--lumina-font-display, "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+body.lumina-siteadmin-page, body.learnova-siteadmin-page {
+  --lsa-sidebar-w: 240px;
+}
+body.lumina-siteadmin-page .lumina-sidebar, body.lumina-siteadmin-page .lumina-mobile-overlay, body.lumina-siteadmin-page #luminaMobileOverlay, body.lumina-siteadmin-page .secondary-navigation, body.lumina-siteadmin-page .breadcrumb, body.lumina-siteadmin-page #page-navbar, body.lumina-siteadmin-page .drawer-toggles, body.learnova-siteadmin-page .lumina-sidebar, body.learnova-siteadmin-page .lumina-mobile-overlay, body.learnova-siteadmin-page #luminaMobileOverlay, body.learnova-siteadmin-page .secondary-navigation, body.learnova-siteadmin-page .breadcrumb, body.learnova-siteadmin-page #page-navbar, body.learnova-siteadmin-page .drawer-toggles {
+  display: none !important;
+}
+body.lumina-siteadmin-page .lumina-topbar, body.learnova-siteadmin-page .lumina-topbar {
+  left: 0 !important;
+  right: 0 !important;
+}
+body.lumina-siteadmin-page .lumina-main-viewport, body.lumina-siteadmin-page #page.drawers, body.learnova-siteadmin-page .lumina-main-viewport, body.learnova-siteadmin-page #page.drawers {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  padding-top: var(--learnova-nav-height, 64px) !important;
+  padding-left: var(--lsa-sidebar-w) !important;
+  padding-right: 0 !important;
+  background: var(--learnova-bg, #F8FAFC) !important;
+}
+body.lumina-siteadmin-page .lumina-main-viewport .main-inner, body.lumina-siteadmin-page #page.drawers .main-inner, body.learnova-siteadmin-page .lumina-main-viewport .main-inner, body.learnova-siteadmin-page #page.drawers .main-inner {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 24px 32px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+body.lumina-siteadmin-page .lumina-main-viewport div[role="main"], body.lumina-siteadmin-page #page.drawers div[role="main"], body.learnova-siteadmin-page .lumina-main-viewport div[role="main"], body.learnova-siteadmin-page #page.drawers div[role="main"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+body.lumina-siteadmin-page #page-content, body.learnova-siteadmin-page #page-content {
+  padding-bottom: 0 !important;
+}
+body.lumina-siteadmin-page #region-main, body.learnova-siteadmin-page #region-main {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+body.lumina-siteadmin-page #page-header, body.learnova-siteadmin-page #page-header {
+  max-width: none !important;
+  margin-bottom: 20px !important;
+}
+body.lumina-siteadmin-page #page-header .page-context-header, body.learnova-siteadmin-page #page-header .page-context-header {
+  padding: 0 !important;
+}
+body.lumina-siteadmin-page #page-header .page-header-headings, body.lumina-siteadmin-page #page-header h1, body.learnova-siteadmin-page #page-header .page-header-headings, body.learnova-siteadmin-page #page-header h1 {
+  margin: 0 !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  color: var(--learnova-dark, #0F172A) !important;
+}
+body.lumina-siteadmin-page #page-header .header-actions-container, body.learnova-siteadmin-page #page-header .header-actions-container {
+  align-items: center !important;
+  margin: 0 !important;
+}
+body.lumina-siteadmin-page #page-header .simplesearchform .input-group, body.learnova-siteadmin-page #page-header .simplesearchform .input-group {
+  border-radius: 50px !important;
+  overflow: hidden !important;
+}
+body.lumina-siteadmin-page #page-header .simplesearchform input[type="text"], body.learnova-siteadmin-page #page-header .simplesearchform input[type="text"] {
+  border-color: var(--learnova-border-solid, #E5E7EB) !important;
+  border-right: 0 !important;
+  padding-left: 16px !important;
+  min-width: 220px !important;
+}
+body.lumina-siteadmin-page #page-header .simplesearchform button[type="submit"], body.learnova-siteadmin-page #page-header .simplesearchform button[type="submit"] {
+  background: var(--learnova-teal-deep, #00695C) !important;
+  border-color: var(--learnova-teal-deep, #00695C) !important;
+  color: #FFFFFF !important;
+}
+.learnova-siteadmin, .lumina-siteadmin {
+  display: block;
+}
+.learnova-siteadmin .lsa-sidebar, .lumina-siteadmin .lsa-sidebar {
+  position: fixed;
+  top: var(--learnova-nav-height);
+  left: 0;
+  bottom: 0;
+  z-index: 1020;
+  width: var(--lsa-sidebar-w);
+  padding: 18px 12px;
+  background: #fff;
+  border: 0;
+  border-right: 1px solid var(--learnova-border-solid);
+  border-radius: 0;
+  overflow-y: auto;
+}
+.learnova-siteadmin .lsa-sidebar__lbl, .lumina-siteadmin .lsa-sidebar__lbl {
+  padding: 0 6px;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--learnova-stone);
+}
+.learnova-siteadmin .lsa-sidebar__nav, .lumina-siteadmin .lsa-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.learnova-siteadmin .lsa-sbi, .lumina-siteadmin .lsa-sbi {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--learnova-radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--learnova-iron);
+  text-decoration: none;
+  transition: background 0.1s ease;
+}
+.learnova-siteadmin .lsa-sbi:hover, .lumina-siteadmin .lsa-sbi:hover {
+  background: var(--learnova-bg);
+  color: var(--learnova-charcoal);
+  text-decoration: none;
+}
+.learnova-siteadmin .lsa-sbi:focus-visible, .lumina-siteadmin .lsa-sbi:focus-visible {
+  outline: 2px solid var(--learnova-teal);
+  outline-offset: -2px;
+}
+.learnova-siteadmin .lsa-sbi.is-on, .lumina-siteadmin .lsa-sbi.is-on {
+  background: var(--learnova-mist);
+  color: var(--learnova-teal-deep);
+  font-weight: 600;
+}
+.learnova-siteadmin .lsa-sbi__ico, .lumina-siteadmin .lsa-sbi__ico {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  font-size: 14px;
+  opacity: 0.55;
+}
+.learnova-siteadmin .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi__ico::before {
+  font-family: var(--fa-style-family, "Font Awesome 6 Free");
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi.is-on .lsa-sbi__ico, .lumina-siteadmin .lsa-sbi.is-on .lsa-sbi__ico {
+  opacity: 1;
+}
+.learnova-siteadmin .lsa-sbi__lbl, .lumina-siteadmin .lsa-sbi__lbl {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.35;
+}
+.learnova-siteadmin .lsa-main, .lumina-siteadmin .lsa-main {
+  display: block;
+  min-width: 0;
+}
+.learnova-siteadmin .lsa-bookmarks, .lumina-siteadmin .lsa-bookmarks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid var(--learnova-border-solid);
+  border-radius: 14px;
+}
+.learnova-siteadmin .lsa-bookmarks[hidden], .lumina-siteadmin .lsa-bookmarks[hidden] {
+  display: none;
+}
+.learnova-siteadmin .lsa-bookmarks__lbl, .lumina-siteadmin .lsa-bookmarks__lbl {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--learnova-stone);
+}
+.learnova-siteadmin .lsa-bookmarks__list, .lumina-siteadmin .lsa-bookmarks__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.learnova-siteadmin .lsa-bookmark, .lumina-siteadmin .lsa-bookmark {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 13px;
+  border-radius: 50px;
+  background: var(--learnova-mist);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--learnova-teal-deep);
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+.learnova-siteadmin .lsa-bookmark:hover, .learnova-siteadmin .lsa-bookmark:focus-visible, .lumina-siteadmin .lsa-bookmark:hover, .lumina-siteadmin .lsa-bookmark:focus-visible {
+  background: #d0f0ee;
+  color: var(--learnova-teal-deep);
+  text-decoration: none;
+}
+.learnova-siteadmin .lsa-sections, .lumina-siteadmin .lsa-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.learnova-siteadmin .lsa-section, .lumina-siteadmin .lsa-section {
+  background: #fff;
+  border: 1px solid var(--learnova-border-solid);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+}
+.learnova-siteadmin .lsa-section:hover, .lumina-siteadmin .lsa-section:hover {
+  box-shadow: var(--learnova-shadow-sm);
+}
+.learnova-siteadmin .lsa-section:not(:has(.lsa-item)), .lumina-siteadmin .lsa-section:not(:has(.lsa-item)) {
+  display: none;
+}
+.learnova-siteadmin .lsa-section__hd, .lumina-siteadmin .lsa-section__hd {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
+  border: 0;
+  border-bottom: 1px solid var(--learnova-border-solid);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.learnova-siteadmin .lsa-section__hd:focus-visible, .lumina-siteadmin .lsa-section__hd:focus-visible {
+  outline: 2px solid var(--learnova-teal);
+  outline-offset: -2px;
+}
+.learnova-siteadmin .lsa-section__ico, .lumina-siteadmin .lsa-section__ico {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 16px;
+  color: #0D9488;
+  background: #E8F8F7;
+}
+.learnova-siteadmin .lsa-section__ico::before, .lumina-siteadmin .lsa-section__ico::before {
+  font-family: var(--fa-style-family, "Font Awesome 6 Free");
+  font-weight: 900;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-style: normal;
+  line-height: 1;
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="root"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="root"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="root"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="root"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="root"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="root"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="users"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="users"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="users"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="users"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="users"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="users"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="courses"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="courses"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="courses"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="courses"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="courses"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="courses"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="grades"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="grades"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="grades"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="grades"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="grades"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="grades"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="modules"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="modules"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="modules"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="modules"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="modules"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="modules"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="appearance"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="appearance"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="appearance"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="appearance"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="appearance"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="appearance"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="server"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="server"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="server"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="server"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="server"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="server"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="reports"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="reports"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="reports"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="reports"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="reports"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="reports"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="development"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="development"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="development"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="development"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="development"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="development"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="accounts"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="accounts"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="accounts"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="accounts"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="accounts"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="accounts"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="roles"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="roles"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="roles"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="roles"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="roles"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="roles"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="privacy"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="privacy"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="privacy"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="privacy"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="privacy"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="privacy"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="coursedefaultsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="coursedefaultsettings"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="coursedefaultsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="coursedefaultsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="coursedefaultsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="coursedefaultsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="groups"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="groups"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="groups"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="groups"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="groups"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="groups"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="activitychooser"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="activitychooser"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="activitychooser"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="activitychooser"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="activitychooser"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="activitychooser"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="backups"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="backups"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="backups"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="backups"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="backups"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="backups"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="gradereports"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="gradereports"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="gradereports"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="gradereports"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="gradereports"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="gradereports"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="gradeimports"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="gradeimports"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="gradeimports"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="gradeimports"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="gradeimports"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="gradeimports"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="gradeexports"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="gradeexports"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="gradeexports"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="gradeexports"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="gradeexports"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="gradeexports"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="gradepenalty"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="gradepenalty"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="gradepenalty"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="gradepenalty"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="gradepenalty"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="gradepenalty"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="ai"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="ai"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="ai"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="ai"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="ai"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="ai"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="analytics"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="analytics"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="analytics"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="analytics"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="analytics"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="analytics"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="competencies"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="competencies"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="competencies"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="competencies"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="competencies"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="competencies"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="badges"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="badges"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="badges"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="badges"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="badges"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="badges"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="h5p"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="h5p"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="h5p"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="h5p"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="h5p"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="h5p"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="license"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="license"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="license"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="license"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="license"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="license"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="location"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="location"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="location"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="location"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="location"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="location"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="login"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="login"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="login"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="login"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="login"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="login"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="language"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="language"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="language"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="language"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="language"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="language"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="messaging"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="messaging"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="messaging"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="messaging"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="messaging"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="messaging"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="payment"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="payment"] .lsa-section__ico {
+  color: #16A34A;
+  background: #F0FDF4;
+}
+.learnova-siteadmin .lsa-section[data-key="payment"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="payment"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="payment"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="payment"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="security"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="security"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="security"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="security"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="security"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="security"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="frontpage"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="frontpage"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="frontpage"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="frontpage"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="frontpage"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="frontpage"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="mnet"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="mnet"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="mnet"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="mnet"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="mnet"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="mnet"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="mobileapp"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="mobileapp"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="mobileapp"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="mobileapp"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="mobileapp"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="mobileapp"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="unsupported"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="unsupported"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="unsupported"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="unsupported"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="unsupported"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="unsupported"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="customfield"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="customfield"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="customfield"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="customfield"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="customfield"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="customfield"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="modsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="modsettings"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="modsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="modsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="modsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="modsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="formatsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="formatsettings"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="formatsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="formatsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="formatsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="formatsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="customfieldsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="customfieldsettings"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="customfieldsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="customfieldsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="customfieldsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="customfieldsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="blocksettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="blocksettings"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="blocksettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="blocksettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="blocksettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="blocksettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="authsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="authsettings"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="authsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="authsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="authsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="authsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="enrolments"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="enrolments"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="enrolments"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="enrolments"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="enrolments"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="enrolments"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="editorsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="editorsettings"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="editorsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="editorsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="editorsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="editorsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="antivirussettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="antivirussettings"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="antivirussettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="antivirussettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="antivirussettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="antivirussettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="mlbackendsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="mlbackendsettings"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="mlbackendsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="mlbackendsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="mlbackendsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="mlbackendsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="filtersettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="filtersettings"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="filtersettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="filtersettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="filtersettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="filtersettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="mediaplayers"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="mediaplayers"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="mediaplayers"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="mediaplayers"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="mediaplayers"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="mediaplayers"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="fileconverterplugins"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="fileconverterplugins"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="fileconverterplugins"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="fileconverterplugins"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="fileconverterplugins"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="fileconverterplugins"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="paymentgateways"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="paymentgateways"] .lsa-section__ico {
+  color: #16A34A;
+  background: #F0FDF4;
+}
+.learnova-siteadmin .lsa-section[data-key="paymentgateways"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="paymentgateways"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="paymentgateways"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="paymentgateways"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="dataformatsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="dataformatsettings"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="dataformatsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="dataformatsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="dataformatsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="dataformatsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="portfoliosettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="portfoliosettings"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="portfoliosettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="portfoliosettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="portfoliosettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="portfoliosettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="repositorysettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="repositorysettings"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="repositorysettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="repositorysettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="repositorysettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="repositorysettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="qbanksettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="qbanksettings"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="qbanksettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="qbanksettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="qbanksettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="qbanksettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="qbehavioursettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="qbehavioursettings"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="qbehavioursettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="qbehavioursettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="qbehavioursettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="qbehavioursettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="qtypesettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="qtypesettings"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="qtypesettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="qtypesettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="qtypesettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="qtypesettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="plagiarism"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="plagiarism"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="plagiarism"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="plagiarism"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="plagiarism"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="plagiarism"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="coursereports"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="coursereports"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="coursereports"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="coursereports"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="coursereports"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="coursereports"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="reportplugins"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="reportplugins"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="reportplugins"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="reportplugins"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="reportplugins"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="reportplugins"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="searchplugins"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="searchplugins"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="searchplugins"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="searchplugins"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="searchplugins"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="searchplugins"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="tools"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="tools"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="tools"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="tools"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="tools"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="tools"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="cache"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="cache"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="cache"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="cache"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="cache"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="cache"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="cachestores"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="cachestores"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="cachestores"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="cachestores"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="cachestores"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="cachestores"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="calendartype"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="calendartype"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="calendartype"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="calendartype"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="calendartype"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="calendartype"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="communicationsettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="communicationsettings"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="communicationsettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="communicationsettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="communicationsettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="communicationsettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="sms"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="sms"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="sms"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="sms"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="sms"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="sms"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="contentbanksettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="contentbanksettings"] .lsa-section__ico {
+  color: #9A3412;
+  background: #FFF7ED;
+}
+.learnova-siteadmin .lsa-section[data-key="contentbanksettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="contentbanksettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="contentbanksettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="contentbanksettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="localplugins"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="localplugins"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="localplugins"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="localplugins"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="localplugins"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="localplugins"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="file_redactor"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="file_redactor"] .lsa-section__ico {
+  color: #9D174D;
+  background: #FDF2F8;
+}
+.learnova-siteadmin .lsa-section[data-key="file_redactor"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="file_redactor"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="file_redactor"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="file_redactor"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="taskconfig"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="taskconfig"] .lsa-section__ico {
+  color: #374151;
+  background: #F3F4F6;
+}
+.learnova-siteadmin .lsa-section[data-key="taskconfig"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="taskconfig"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="taskconfig"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="taskconfig"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="email"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="email"] .lsa-section__ico {
+  color: #2563EB;
+  background: #EEF4FF;
+}
+.learnova-siteadmin .lsa-section[data-key="email"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="email"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="email"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="email"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="webservicesettings"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="webservicesettings"] .lsa-section__ico {
+  color: #3730A3;
+  background: #EEF2FF;
+}
+.learnova-siteadmin .lsa-section[data-key="webservicesettings"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="webservicesettings"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="webservicesettings"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="webservicesettings"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="aireports"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="aireports"] .lsa-section__ico {
+  color: #6B21A8;
+  background: #F3E8FF;
+}
+.learnova-siteadmin .lsa-section[data-key="aireports"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="aireports"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="aireports"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="aireports"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="reportbuilder"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="reportbuilder"] .lsa-section__ico {
+  color: #115E59;
+  background: #F0FDFA;
+}
+.learnova-siteadmin .lsa-section[data-key="reportbuilder"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="reportbuilder"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="reportbuilder"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="reportbuilder"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section[data-key="experimental"] .lsa-section__ico, .lumina-siteadmin .lsa-section[data-key="experimental"] .lsa-section__ico {
+  color: #92400E;
+  background: #FFFBEB;
+}
+.learnova-siteadmin .lsa-section[data-key="experimental"] .lsa-section__ico::before, .lumina-siteadmin .lsa-section[data-key="experimental"] .lsa-section__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-sbi[data-key="experimental"] .lsa-sbi__ico::before, .lumina-siteadmin .lsa-sbi[data-key="experimental"] .lsa-sbi__ico::before {
+  content: "";
+}
+.learnova-siteadmin .lsa-section__name, .lumina-siteadmin .lsa-section__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--fn);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--learnova-charcoal);
+}
+.learnova-siteadmin .lsa-section__chevron, .lumina-siteadmin .lsa-section__chevron {
+  flex-shrink: 0;
+  color: var(--learnova-stone);
+  transition: transform 0.2s ease;
+}
+.learnova-siteadmin .lsa-section__chevron::before, .lumina-siteadmin .lsa-section__chevron::before {
+  font-family: var(--fa-style-family, "Font Awesome 6 Free");
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
+  font-size: 13px;
+  content: "";
+}
+.learnova-siteadmin .lsa-section__items, .lumina-siteadmin .lsa-section__items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.learnova-siteadmin .lsa-item, .lumina-siteadmin .lsa-item {
+  display: block;
+  padding: 13px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--learnova-teal-deep);
+  text-decoration: none;
+  box-shadow: 1px 0 0 var(--learnova-border-solid), 0 1px 0 var(--learnova-border-solid);
+  transition: background 0.1s ease;
+}
+.learnova-siteadmin .lsa-item:hover, .learnova-siteadmin .lsa-item:focus-visible, .lumina-siteadmin .lsa-item:hover, .lumina-siteadmin .lsa-item:focus-visible {
+  background: var(--learnova-mist);
+  color: var(--learnova-teal-deep);
+  text-decoration: none;
+}
+.learnova-siteadmin .lsa-section.is-collapsed .lsa-section__hd, .lumina-siteadmin .lsa-section.is-collapsed .lsa-section__hd {
+  border-bottom-color: transparent;
+}
+.learnova-siteadmin .lsa-section.is-collapsed .lsa-section__chevron, .lumina-siteadmin .lsa-section.is-collapsed .lsa-section__chevron {
+  transform: rotate(-90deg);
+}
+.learnova-siteadmin .lsa-section.is-collapsed .lsa-section__items, .lumina-siteadmin .lsa-section.is-collapsed .lsa-section__items {
+  display: none;
+}
+@media (max-width: 991.98px) {
+  .learnova-siteadmin .lsa-section__items, .lumina-siteadmin .lsa-section__items {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .learnova-siteadmin .lsa-sidebar, .lumina-siteadmin .lsa-sidebar {
+    position: static;
+    width: auto;
+    margin-bottom: 16px;
+    padding: 14px 12px;
+    border: 1px solid var(--learnova-border-solid);
+    border-right-width: 1px;
+    border-radius: 14px;
+    overflow: visible;
+  }
+  .learnova-siteadmin .lsa-sidebar__nav, .lumina-siteadmin .lsa-sidebar__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .learnova-siteadmin .lsa-sbi, .lumina-siteadmin .lsa-sbi {
+    border: 1px solid var(--learnova-border-solid);
+    border-radius: 50px;
+  }
+}
+@media (max-width: 575.98px) {
+  .learnova-siteadmin .lsa-section__items, .lumina-siteadmin .lsa-section__items {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 991.98px) {
+  body.lumina-siteadmin-page #page.drawers, body.learnova-siteadmin-page #page.drawers {
+    padding-left: 0 !important;
+  }
+  body.lumina-siteadmin-page #page.drawers .main-inner, body.learnova-siteadmin-page #page.drawers .main-inner {
+    padding: 16px !important;
+  }
+}

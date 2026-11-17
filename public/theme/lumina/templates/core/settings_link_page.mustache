@@ -1,0 +1,212 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core/settings_link_page
+
+    Lumina LMS override of the Site administration outline (/admin/search.php).
+    Renders a left sidebar navigation plus grouped accordion cards with a 3-column
+    item grid.
+}}
+<div class="learnova-siteadmin lumina-siteadmin">
+
+{{! ── Sidebar ─────────────────────────────────────────────────────────── }}
+<aside class="lsa-sidebar">
+    <div class="lsa-sidebar__lbl">{{#str}}administrationsite, core{{/str}}</div>
+    <nav class="lsa-sidebar__nav" role="tablist" aria-orientation="vertical">
+        <a class="lsa-sbi is-on" id="lsa-tab-{{node.key}}" data-key="{{node.key}}"
+           href="#link{{node.key}}" role="tab" aria-selected="true" tabindex="0">
+            <span class="lsa-sbi__ico" aria-hidden="true"></span>
+            <span class="lsa-sbi__lbl">{{#str}}general, core{{/str}}</span>
+        </a>
+        {{#node.children}}
+            {{#display}}
+                {{#children.count}}
+                    {{^is_short_branch}}
+                        <a class="lsa-sbi" id="lsa-tab-{{key}}" data-key="{{key}}"
+                           href="#link{{key}}" role="tab" aria-selected="false" tabindex="-1">
+                            <span class="lsa-sbi__ico" aria-hidden="true"></span>
+                            <span class="lsa-sbi__lbl">{{text}}</span>
+                        </a>
+                    {{/is_short_branch}}
+                {{/children.count}}
+            {{/display}}
+        {{/node.children}}
+    </nav>
+</aside>
+
+<div class="lsa-main">
+    {{! ── Bookmark bar ────────────────────────────────────────────────── }}
+    <div class="lsa-bookmarks" data-region="lsa-bookmarks" hidden>
+        <span class="lsa-bookmarks__lbl">{{#str}}sa_bookmarks, theme_lumina{{/str}}</span>
+        <div class="lsa-bookmarks__list" data-region="lsa-bookmarks-list"></div>
+    </div>
+
+    <div class="tab-content">
+    {{! ── General pane ─────────────────────────────────────────────────── }}
+    <div class="tab-pane active show" id="link{{node.key}}" role="tabpanel" aria-labelledby="lsa-tab-{{node.key}}">
+        <div class="lsa-sections">
+            <section class="lsa-section" data-key="{{node.key}}">
+                <button type="button" class="lsa-section__hd" aria-expanded="true">
+                    <span class="lsa-section__ico" aria-hidden="true"></span>
+                    <span class="lsa-section__name">{{#str}}sa_section_general, theme_lumina{{/str}}</span>
+                    <span class="lsa-section__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="lsa-section__items">
+                    {{#node.children}}
+                        {{^children.count}}
+                            {{#display}}
+                                {{#action}}<a class="lsa-item" href="{{{action}}}">{{text}}</a>{{/action}}
+                            {{/display}}
+                        {{/children.count}}
+                    {{/node.children}}
+                </div>
+            </section>
+
+            {{#node.children}}
+                {{#display}}
+                    {{#children.count}}
+                        {{#is_short_branch}}
+                            {{> theme_lumina/site_admin_section }}
+                        {{/is_short_branch}}
+                    {{/children.count}}
+                {{/display}}
+            {{/node.children}}
+        </div>
+    </div>
+
+    {{! ── One pane per remaining tab ───────────────────────────────────── }}
+    {{#node.children}}
+        {{#display}}
+            {{#children.count}}
+                {{^is_short_branch}}
+                    <div class="tab-pane" id="link{{key}}" role="tabpanel" aria-labelledby="lsa-tab-{{key}}">
+                        <div class="lsa-sections">
+                            <section class="lsa-section" data-key="{{key}}">
+                                <button type="button" class="lsa-section__hd" aria-expanded="true">
+                                    <span class="lsa-section__ico" aria-hidden="true"></span>
+                                    <span class="lsa-section__name">{{text}} {{#str}}sa_section_suffix, theme_lumina{{/str}}</span>
+                                    <span class="lsa-section__chevron" aria-hidden="true"></span>
+                                </button>
+                                <div class="lsa-section__items">
+                                    {{#children}}
+                                        {{^children.count}}
+                                            {{#display}}
+                                                {{#action}}<a class="lsa-item" href="{{{action}}}">{{text}}</a>{{/action}}
+                                            {{/display}}
+                                        {{/children.count}}
+                                    {{/children}}
+                                </div>
+                            </section>
+
+                            {{#children}}
+                                {{#display}}
+                                    {{#children.count}}
+                                        {{> theme_lumina/site_admin_section }}
+                                    {{/children.count}}
+                                {{/display}}
+                            {{/children}}
+                        </div>
+                    </div>
+                {{/is_short_branch}}
+            {{/children.count}}
+        {{/display}}
+    {{/node.children}}
+    </div>{{! .tab-content }}
+</div>{{! .lsa-main }}
+</div>{{! .lumina-siteadmin }}
+
+<script>
+(function() {
+    function initLuminaSiteAdmin() {
+        var root = document.querySelector('.lumina-siteadmin, .learnova-siteadmin');
+        if (!root || root.dataset.lsaInit) return;
+        root.dataset.lsaInit = 'true';
+
+        var COLLAPSED = 'is-collapsed';
+        var ACTIVE = 'is-on';
+
+        function syncFromPanes() {
+            var pane = root.querySelector('.tab-content > .tab-pane.active');
+            var id = pane ? pane.id : null;
+            root.querySelectorAll('.lsa-sbi').forEach(function(item) {
+                var on = id !== null && item.getAttribute('href') === '#' + id;
+                item.classList.toggle(ACTIVE, on);
+                item.setAttribute('aria-selected', on ? 'true' : 'false');
+                item.setAttribute('tabindex', on ? '0' : '-1');
+            });
+        }
+
+        function activate(id) {
+            if (!id) return false;
+            var panes = root.querySelectorAll('.tab-content > .tab-pane');
+            var target = null;
+            panes.forEach(function(p) {
+                if (p.id === id) target = p;
+            });
+            if (!target) return false;
+
+            panes.forEach(function(p) {
+                var on = (p === target);
+                p.classList.toggle('active', on);
+                p.classList.toggle('show', on);
+            });
+            syncFromPanes();
+            return true;
+        }
+
+        root.addEventListener('click', function(e) {
+            var item = e.target.closest('.lsa-sbi');
+            if (item && root.contains(item)) {
+                e.preventDefault();
+                var href = item.getAttribute('href') || '';
+                var targetId = href.replace(/^#/, '');
+                if (activate(targetId) && window.history.replaceState) {
+                    window.history.replaceState(null, '', href);
+                }
+                return;
+            }
+
+            var header = e.target.closest('.lsa-section__hd');
+            if (header && root.contains(header)) {
+                e.preventDefault();
+                var section = header.closest('.lsa-section');
+                if (section) {
+                    var collapsed = section.classList.toggle(COLLAPSED);
+                    header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                }
+            }
+        });
+
+        document.addEventListener('shown.bs.tab', function() {
+            syncFromPanes();
+        });
+
+        var hash = window.location.hash;
+        if (hash) {
+            activate(hash.replace(/^#/, ''));
+        } else {
+            syncFromPanes();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLuminaSiteAdmin);
+    } else {
+        initLuminaSiteAdmin();
+    }
+})();
+</script>

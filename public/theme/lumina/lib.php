@@ -25,6 +25,21 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Hook to initialise page state for Lumina.
+ *
+ * @param moodle_page $page
+ */
+function theme_lumina_page_init(moodle_page $page) {
+    if ($page->pagetype === 'admin-search') {
+        $page->add_body_class('lumina-siteadmin-page');
+        $page->add_body_class('learnova-siteadmin-page');
+        $page->requires->js_call_amd('theme_lumina/site_admin', 'init', [
+            ['bookmarks' => \theme_lumina\site_admin::bookmarks()],
+        ]);
+    }
+}
+
+/**
  * Returns the main SCSS content for Lumina theme.
  *
  * @param theme_config $theme The theme config object.
